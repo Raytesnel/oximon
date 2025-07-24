@@ -1,4 +1,5 @@
 import random
+from pathlib import Path
 
 import arcade
 import os
@@ -11,6 +12,76 @@ SCREEN_HEIGHT = 600
 SCREEN_TITLE = "PokeSmash"
 
 ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
+
+class WildPokemon(arcade.Sprite):
+    def __init__(self, image_path, maggots_bounds, scale=2.0):
+        path_ding = Path(image_path)
+        print(path_ding)
+        self.animations = {
+            "down": [arcade.load_texture(path_ding/ f"player_{i}.png") for i in range(0, 3)],
+            "up": [arcade.load_texture(path_ding/ f"player_{i}.png") for i in range(3, 6)],
+            "left": [arcade.load_texture(path_ding/ f"player_{i}.png") for i in range(6, 9)],
+            "right": [arcade.load_texture(path_ding/ f"player_{i}.png") for i in range(9, 12)],
+        }
+        print(self.animations)
+        super().__init__(path_ding/"player_0.png", scale)
+        self.direction = "down"
+        self.texture = self.animations[self.direction][0]
+        self.maggots_bounds = maggots_bounds  # (left, right, bottom, top)
+        self.direction_timer = 0
+        self.change_interval = 0.5  # Seconds between direction changes
+        self.current_frame = 0
+        self.frame_timer = 0
+        self.frame_duration = 0.05
+
+    def update_animation(self, delta_time: float = 1 / 60):
+        if self.change_x == 0 and self.change_y == 0:
+            self.current_frame = 0
+            self.texture = self.animations[self.direction][0]
+            return
+
+        if abs(self.change_x) > abs(self.change_y):
+            self.direction = "right" if self.change_x > 0 else "left"
+        else:
+            self.direction = "up" if self.change_y > 0 else "down"
+
+        self.frame_timer += delta_time
+        if self.frame_timer > self.frame_duration:
+            self.current_frame = (self.current_frame + 1) % len(self.animations[self.direction])
+            self.texture = self.animations[self.direction][self.current_frame]
+            self.frame_timer = 0
+
+    def update(self, delta_time: float ):
+        self.direction_timer += delta_time
+        self.update_animation(delta_time)
+
+        if self.direction_timer >= self.change_interval:
+            self.direction_timer = 0
+            direction = random.choice(['up', 'down', 'left', 'right', 'idle'])
+            speed = random.uniform(0.5,2)
+            if direction == 'up':
+                self.change_y = speed
+                self.change_x = 0
+            elif direction == 'down':
+                self.change_y = -speed
+                self.change_x = 0
+            elif direction == 'left':
+                self.change_x = -speed
+                self.change_y = 0
+            elif direction == 'right':
+                self.change_x = speed
+                self.change_y = 0
+            else:
+                self.change_x = 0
+                self.change_y = 0
+
+        # Move and clamp inside area
+        self.center_x += self.change_x
+        self.center_y += self.change_y
+
+        left, right, bottom, top = self.maggots_bounds
+        self.center_x = max(left, min(self.center_x, right))
+        self.center_y = max(bottom, min(self.center_y, top))
 
 
 class Player(arcade.Sprite):
@@ -100,28 +171,26 @@ class WalkDemo(arcade.Window):
 
         self.wild_pokemon_list = arcade.SpriteList()
 
-        if maggots_area:
-            # Load a random Pokémon sprite
-            left_top, right_top, right_bottom, left_bottom = maggots_area
+        # Use shape corners
+        left_top, right_top, right_bottom, left_bottom = maggots_area
+        left = left_top[0]
+        right = right_top[0]
+        bottom = left_bottom[1]
+        top = left_top[1]
+        maggots_bounds = (left, right, bottom, top)
 
-            pokemon_images = os.listdir(os.path.join(ASSETS_PATH, "sprites/pokemon"))
-            random_pokemon = random.choice(pokemon_images)
-            print(f"chosen pokemon: {random_pokemon}")
-            pokemon_file = os.path.join(ASSETS_PATH, "sprites/pokemon", random_pokemon)
-            if not os.path.exists(pokemon_file):
-                print(f"ERROR: Sprite not found at {pokemon_file}")
-            self.pokemon_sprite = arcade.Sprite(
-                scale=2.0
-            )
-            self.pokemon_sprite.texture = arcade.load_texture(
-                pokemon_file,
-            )
+        # Create wandering Pokémon
+        self.pokemon_sprite = WildPokemon(
+            image_path=os.path.join(ASSETS_PATH, "sprites/pokemon/pokemon_1/"),
+            maggots_bounds=maggots_bounds,
+            scale=2.0
+        )
 
-            # Random spawn position inside maggots rectangle
-            spawn_x = random.uniform(left_top[0], right_top[0])
-            spawn_y = random.uniform(left_bottom[1], right_bottom[1])
-            self.pokemon_sprite.position = (spawn_x, spawn_y)
-            self.wild_pokemon_list.append(self.pokemon_sprite)
+        # Random initial position
+        spawn_x = random.uniform(left, right)
+        spawn_y = random.uniform(bottom, top)
+        self.pokemon_sprite.position = (spawn_x, spawn_y)
+        self.wild_pokemon_list.append(self.pokemon_sprite)
 
         self.scene.add_sprite_list("WildPokemon", sprite_list=self.wild_pokemon_list)
 
