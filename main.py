@@ -6,6 +6,8 @@ import arcade
 from arcade import load_tilemap
 from arcade.hitbox import HitBoxAlgorithm
 
+from super_smash_platform import SmashStageOnlyView
+
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN_TITLE = "PokeSmash"
@@ -188,6 +190,7 @@ class OverworldView(arcade.View):
                 game_view=self
             )
             self.window.show_view(splash)
+            self.wild_pokemon_list.clear()
 
     def on_key_press(self, key, modifiers):
         self.player.change_x = 0
@@ -216,7 +219,7 @@ class BattleSplashView(arcade.View):
     def __init__(self, player_sprite_path, enemy_sprite_path, banner_path, game_view):
         super().__init__()
         self.timer = 0
-        self.show_duration = 2.5
+        self.show_duration = 1.5
         self.game_view = game_view
         banner_widht = 555
         scaling = self.window.width / banner_widht
@@ -245,7 +248,9 @@ class BattleSplashView(arcade.View):
     def on_update(self, delta_time):
         self.timer += delta_time
         if self.timer > self.show_duration:
-            self.window.show_view(self.game_view)
+            self.window.show_view(SmashStageOnlyView())
+            # self.window.show_view(self.game_view)
+
 
     # def on_key_press(self, key, modifiers):
     #     self.window.show_view(self.game_view)

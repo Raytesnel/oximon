@@ -224,12 +224,6 @@
   </data>
  </layer>
  <objectgroup id="3" name="Objects">
-  <object id="2" name="discover chest" type="trigger" x="201" y="200" width="127" height="127">
-   <properties>
-    <property name="script" value="chest-discovered.lua"/>
-   </properties>
-   <ellipse/>
-  </object>
   <object id="5" name="guard" type="NPC" x="22" y="361">
    <polyline points="-3,120 87,91 154,96 181,16 273,-1"/>
   </object>
