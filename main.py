@@ -182,10 +182,10 @@ class OverworldView(arcade.View):
         if arcade.check_for_collision_with_list(self.player, self.wild_pokemon_list) and self.count == False:
             self.count = True
             splash = BattleSplashView(
-                os.path.join(ASSETS_PATH, "sprites/pokemon/player_banner.png"),
-                os.path.join(ASSETS_PATH, "sprites/pokemon/pokemon_banner.png"),
-                os.path.join(ASSETS_PATH, "sprites/pokemon/banner.jpg"),
-                self
+                player_sprite_path=os.path.join(ASSETS_PATH, "sprites/pokemon/player_shot.png"),
+                enemy_sprite_path=os.path.join(ASSETS_PATH, "sprites/pokemon/pokemon_shot.png"),
+                banner_path=os.path.join(ASSETS_PATH, "sprites/pokemon/banner.jpg"),
+                game_view=self
             )
             self.window.show_view(splash)
 
@@ -218,27 +218,28 @@ class BattleSplashView(arcade.View):
         self.timer = 0
         self.show_duration = 2.5
         self.game_view = game_view
-
-        self.banner = arcade.Sprite(banner_path,scale=5)
-        self.player_sprite = arcade.Sprite(player_sprite_path,scale=1)
-        self.enemy_sprite = arcade.Sprite(enemy_sprite_path,scale=1)
+        banner_widht = 555
+        scaling = self.window.width / banner_widht
+        self.banner = arcade.Sprite(banner_path,scale=scaling)
+        self.player_sprite = arcade.Sprite(player_sprite_path,scale=0.5)
+        self.enemy_sprite = arcade.Sprite(enemy_sprite_path,scale=0.2)
         self.sprites = arcade.SpriteList()
+        self.on_show()
         self.sprites.append(self.banner)
         self.sprites.append(self.player_sprite)
         self.sprites.append(self.enemy_sprite)
 
     def on_show(self):
-        # TODO: fix layout. so it looks okay
-        self.banner.center_x = self.window.width
-        self.banner.center_y = self.window.height
-        self.player_sprite.center_x = self.window.width
-        self.player_sprite.center_y = self.window.height
-        self.enemy_sprite.center_x = self.window.width
-        self.enemy_sprite.center_y = self.window.height
+        print(self.game_view.player.center_y)
+        self.banner.center_x = self.game_view.player.center_x
+        self.banner.center_y = self.game_view.player.center_y
+        self.player_sprite.center_x = self.game_view.player.center_x - self.window.width //2 + self.player_sprite.width//2
+        self.player_sprite.center_y = self.game_view.player.center_y
+        self.enemy_sprite.center_x = self.game_view.player.center_x + self.window.width //2 - self.enemy_sprite.width//2
+        self.enemy_sprite.center_y = self.game_view.player.center_y
 
     def on_draw(self):
         self.clear()
-        self.on_show()
         self.sprites.draw()
 
     def on_update(self, delta_time):
@@ -246,8 +247,8 @@ class BattleSplashView(arcade.View):
         if self.timer > self.show_duration:
             self.window.show_view(self.game_view)
 
-    def on_key_press(self, key, modifiers):
-        self.window.show_view(self.game_view)
+    # def on_key_press(self, key, modifiers):
+    #     self.window.show_view(self.game_view)
 
 
 if __name__ == "__main__":
