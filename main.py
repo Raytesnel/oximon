@@ -90,10 +90,10 @@ class Player(arcade.Sprite):
     def __init__(self, asset_path):
         super().__init__()
         self.animations = {
-            "down": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(0, 3)],
-            "up": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(3, 6)],
-            "left": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(6, 9)],
-            "right": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(9, 12)],
+            "down": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(0, 4)],
+            "left": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(4, 8)],
+            "right": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(8, 12)],
+            "up": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(12, 15)],
         }
         self.direction = "down"
         self.current_frame = 0
@@ -147,7 +147,7 @@ class OverworldView(arcade.View):
             self.player.center_x = SCREEN_WIDTH // 2
             self.player.center_y = SCREEN_HEIGHT // 2
 
-        self.player.scale = 2.0
+        self.player.scale = 1.0
         self.player_list.append(self.player)
         self.walls = self.scene["Fringe"]
         self.wild_pokemon_list = arcade.SpriteList()
