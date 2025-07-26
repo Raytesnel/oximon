@@ -16,15 +16,18 @@ ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
 
 
 class WildPokemon(arcade.Sprite):
-    def __init__(self, image_path, maggots_bounds, scale=2.0):
-        path_ding = Path(image_path)
+    def __init__(self, image_path, maggots_bounds, name:str, scale=2.0,):
+        self.path_ding = Path(image_path)
+        self.sprite_file_location = Path(image_path)/"banner.png"
+        self.name = name
+        self.image_path = image_path
         self.animations = {
-            "down": [arcade.load_texture(path_ding / f"player_{i}.png") for i in range(0, 3)],
-            "up": [arcade.load_texture(path_ding / f"player_{i}.png") for i in range(3, 6)],
-            "left": [arcade.load_texture(path_ding / f"player_{i}.png") for i in range(6, 9)],
-            "right": [arcade.load_texture(path_ding / f"player_{i}.png") for i in range(9, 12)],
+            "down": [arcade.load_texture(self.path_ding / f"over_world_{i}.png") for i in range(0, 3)],
+            "up": [arcade.load_texture(self.path_ding / f"over_world_{i}.png") for i in range(3, 6)],
+            "left": [arcade.load_texture(self.path_ding / f"over_world_{i}.png") for i in range(6, 9)],
+            "right": [arcade.load_texture(self.path_ding / f"over_world_{i}.png") for i in range(9, 12)],
         }
-        super().__init__(path_ding / "player_0.png", scale)
+        super().__init__(self.path_ding / "over_world_0.png", scale)
         self.direction = "down"
         self.texture = self.animations[self.direction][0]
         self.maggots_bounds = maggots_bounds
@@ -58,7 +61,7 @@ class WildPokemon(arcade.Sprite):
         if self.direction_timer >= self.change_interval:
             self.direction_timer = 0
             direction = random.choice(['up', 'down', 'left', 'right', 'idle'])
-            speed = random.uniform(0.5, 2)
+            speed = 1
             if direction == 'up':
                 self.change_y = speed
                 self.change_x = 0
@@ -151,17 +154,18 @@ class OverworldView(arcade.View):
         bounds = (left_top[0], right_top[0], left_bottom[1], left_top[1])
 
         self.wild_pokemon_list = arcade.SpriteList()
+
         pokemon_sprite = WildPokemon(
             image_path=os.path.join(ASSETS_PATH, "sprites/pokemon/pokemon_1/"),
             maggots_bounds=bounds,
-            scale=2.0
+            scale=2.0,
+            name="Charmander"
         )
         pokemon_sprite.position = (
             random.uniform(bounds[0], bounds[1]),
             random.uniform(bounds[2], bounds[3])
         )
         self.wild_pokemon_list.append(pokemon_sprite)
-        self.scene.add_sprite_list("WildPokemon", self.wild_pokemon_list)
 
     def on_draw(self):
         self.clear()
@@ -180,17 +184,20 @@ class OverworldView(arcade.View):
             self.player.center_y -= self.player.change_y
 
         self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
-
-        if arcade.check_for_collision_with_list(self.player, self.wild_pokemon_list) and self.count == False:
+        collided_pokemon_list = arcade.check_for_collision_with_list(self.player, self.wild_pokemon_list)
+        if collided_pokemon_list and not self.count:
             self.count = True
+            collided_pokemon:WildPokemon = collided_pokemon_list[0]  # You can handle multiple later if needed
+
             splash = BattleSplashView(
                 player_sprite_path=os.path.join(ASSETS_PATH, "sprites/pokemon/player_shot.png"),
-                enemy_sprite_path=os.path.join(ASSETS_PATH, "sprites/pokemon/pokemon_shot.png"),
                 banner_path=os.path.join(ASSETS_PATH, "sprites/pokemon/banner.jpg"),
-                game_view=self
+                game_view=self,
+                wild_pokemon=collided_pokemon
             )
             self.window.show_view(splash)
-            self.wild_pokemon_list.clear()
+            self.wild_pokemon_list.remove(collided_pokemon)
+            # TODO make reset world view & walking
 
     def on_key_press(self, key, modifiers):
         self.player.change_x = 0
@@ -216,16 +223,19 @@ class OverworldView(arcade.View):
 
 
 class BattleSplashView(arcade.View):
-    def __init__(self, player_sprite_path, enemy_sprite_path, banner_path, game_view):
+    def __init__(self, player_sprite_path, banner_path, game_view, wild_pokemon):
         super().__init__()
+        self.wild_pokemon = wild_pokemon
         self.timer = 0
         self.show_duration = 1.5
         self.game_view = game_view
         banner_widht = 555
         scaling = self.window.width / banner_widht
         self.banner = arcade.Sprite(banner_path,scale=scaling)
+        print(player_sprite_path)
+        print(self.wild_pokemon.sprite_file_location)
         self.player_sprite = arcade.Sprite(player_sprite_path,scale=0.5)
-        self.enemy_sprite = arcade.Sprite(enemy_sprite_path,scale=0.2)
+        self.enemy_sprite = arcade.Sprite(self.wild_pokemon.sprite_file_location, scale=0.2)
         self.sprites = arcade.SpriteList()
         self.on_show()
         self.sprites.append(self.banner)
@@ -248,7 +258,7 @@ class BattleSplashView(arcade.View):
     def on_update(self, delta_time):
         self.timer += delta_time
         if self.timer > self.show_duration:
-            self.window.show_view(SmashStageOnlyView())
+            self.window.show_view(SmashStageOnlyView(self.game_view))
             # self.window.show_view(self.game_view)
 
 
