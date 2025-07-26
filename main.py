@@ -169,11 +169,12 @@ class OverworldView(arcade.View):
                 maggots_area = next((obj.shape for obj in self.tile_map.object_lists.get("pokemon", []) if obj.name == "maggots"), None)
                 left_top, right_top, right_bottom, left_bottom = maggots_area
                 bounds = (left_top[0], right_top[0], left_bottom[1], left_top[1])
+                name_pokemon = random.choice(["Charmander","Bulbasaur"])
                 pokemon_sprite = WildPokemon(
-                image_path=os.path.join(ASSETS_PATH, "sprites/pokemon/pokemon_1/"),
+                image_path=os.path.join(ASSETS_PATH, f"sprites/pokemon/{name_pokemon}"),
                 maggots_bounds=bounds,
                 scale=2.0,
-                name="Charmander"
+                name=name_pokemon
                 )
                 pokemon_sprite.position = (
                     random.uniform(bounds[0], bounds[1]),
