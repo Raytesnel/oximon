@@ -123,20 +123,22 @@ class OverworldView(arcade.View):
     def __init__(self):
         super().__init__()
         self.count = False
+        self.max_pokemon_per_bush = 3 # TODO: take this from the tiled map.
+        self.counter_pokemon =0
 
     def setup(self):
         self.player_list = arcade.SpriteList()
         asset_path = os.path.join(ASSETS_PATH, "sprites/player")
         self.camera = arcade.Camera2D()
-        tile_map = load_tilemap(
+        self.tile_map = load_tilemap(
             os.path.join(ASSETS_PATH, "map/orthogonal.tmx"),
             scaling=2.0,
             use_spatial_hash=True,
             layer_options={"Fringe": {"use_spatial_hash": True}}
         )
-        self.scene = arcade.Scene.from_tilemap(tile_map)
+        self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
-        start = next((o for o in tile_map.object_lists["Objects"] if o.name == "player-start"), None)
+        start = next((o for o in self.tile_map.object_lists["Objects"] if o.name == "player-start"), None)
         self.player = Player(asset_path)
         if start:
             self.player.center_x = start.shape[0][0]
@@ -148,24 +150,8 @@ class OverworldView(arcade.View):
         self.player.scale = 2.0
         self.player_list.append(self.player)
         self.walls = self.scene["Fringe"]
-
-        maggots_area = next((obj.shape for obj in tile_map.object_lists.get("pokemon", []) if obj.name == "maggots"), None)
-        left_top, right_top, right_bottom, left_bottom = maggots_area
-        bounds = (left_top[0], right_top[0], left_bottom[1], left_top[1])
-
         self.wild_pokemon_list = arcade.SpriteList()
 
-        pokemon_sprite = WildPokemon(
-            image_path=os.path.join(ASSETS_PATH, "sprites/pokemon/pokemon_1/"),
-            maggots_bounds=bounds,
-            scale=2.0,
-            name="Charmander"
-        )
-        pokemon_sprite.position = (
-            random.uniform(bounds[0], bounds[1]),
-            random.uniform(bounds[2], bounds[3])
-        )
-        self.wild_pokemon_list.append(pokemon_sprite)
 
     def on_draw(self):
         self.clear()
@@ -178,15 +164,32 @@ class OverworldView(arcade.View):
         self.player_list.update()
         self.player_list.update_animation(delta_time)
         self.wild_pokemon_list.update()
-
+        if self.max_pokemon_per_bush > len(self.wild_pokemon_list):
+            if self.counter_pokemon > 300:
+                maggots_area = next((obj.shape for obj in self.tile_map.object_lists.get("pokemon", []) if obj.name == "maggots"), None)
+                left_top, right_top, right_bottom, left_bottom = maggots_area
+                bounds = (left_top[0], right_top[0], left_bottom[1], left_top[1])
+                pokemon_sprite = WildPokemon(
+                image_path=os.path.join(ASSETS_PATH, "sprites/pokemon/pokemon_1/"),
+                maggots_bounds=bounds,
+                scale=2.0,
+                name="Charmander"
+                )
+                pokemon_sprite.position = (
+                    random.uniform(bounds[0], bounds[1]),
+                    random.uniform(bounds[2], bounds[3])
+                )
+                self.wild_pokemon_list.append(pokemon_sprite)
+                self.counter_pokemon = 0
+            else:
+                self.counter_pokemon+=1
         if arcade.check_for_collision_with_list(self.player, self.walls):
             self.player.center_x -= self.player.change_x
             self.player.center_y -= self.player.change_y
 
         self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
         collided_pokemon_list = arcade.check_for_collision_with_list(self.player, self.wild_pokemon_list)
-        if collided_pokemon_list and not self.count:
-            self.count = True
+        if collided_pokemon_list:
             collided_pokemon:WildPokemon = collided_pokemon_list[0]  # You can handle multiple later if needed
 
             splash = BattleSplashView(
