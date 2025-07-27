@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="60" height="45" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="8">
+<map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="60" height="45" tilewidth="16" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="14">
  <tileset firstgid="1" source="../tiles/TilesetFloor.tsx"/>
  <tileset firstgid="573" source="../tiles/TilesetVillageAbandoned.tsx"/>
  <tileset firstgid="813" source="../tiles/TilesetNature.tsx"/>
@@ -8,27 +8,18 @@
    KLUv/WAwKSUHAAIEDRfAJR3+TWsav4DwCxr/////A7MlSWWSAqviipesw/gLGs3nFkJ26fzEP9wr/MEPEJNbZQdQoCC1ZQ7gghKRYKsDyYWfWwUMSpjT5im3jChg3b4xCkqWcjIzvFE+k8zWXkc2f0aMkKlvqDChjiXqXkKc0HCofwV9fjIuFArU5rKEmBoo5FwSUFCO29bVtBnA5d9/UrXSfKGF7koETRn7PBiajYeQCPW8EVZR7b/o7rMicpmP4u5WyIh1f0aObEjXjZZI7VM58Lkn6GarCIIy7pxIFl7+kRYhZerllMRwgpYfog==
   </data>
  </layer>
+ <group id="7" name="pokemons">
+  <objectgroup id="6" name="Bulbasaur">
+   <object id="8" name="60" x="335.917" y="307.75" width="82.8333" height="23.25"/>
+  </objectgroup>
+  <objectgroup id="5" name="Charmander"/>
+ </group>
  <layer id="2" name="abandoned" width="60" height="45">
   <data encoding="base64" compression="zstd">
    KLUv/WAwKY0PAPbbSjrg2hTSGOA3Ovo1wwOU2Q9OmBI6E2OltwbFYJjhx4mYhXRI5XSu4qAinRE9FCRmpW4sEQ0s//9GliEFOwA5AD0A18/l0+HE4bThpOF1eVzeFi+noZPQj2Jy9VxLLiUSThFOEE4Pak4005STlFMUHTXkEnIFuYCk0ZXlwjIL8UC8D89Dz2uwCo/Cm3ApuBJcCK4D60vSOdm8Io/IipOKU4oTiqvmorlmLlERzqKbRQFOMyroAgpHnpFdeVZelUeFx+N5O2ycaizoAb2f5wNlOw/Hu3HiZKK0vCfPyWuyJGlkcwEoB8Vg6AntxXPxWjwWC9Iok49Tj9N5Ml6MByPHaUfAhXPdlHgk3ogngmdiXpgH5jI8DO/Cs5Bj4CpwEbgGnGiknKvMI/PGIHkBTaBhnSLECSQokmCQyg2QAiMzQW4OJkLfglGixo3u8g03twHp/in5xbzvLhQVGgANnprUL0Zryu4wcqUIUu1pNvwK6vCU7vm9g/RDstQ0ovhoG1pMEkEStf5oawOGEShqyIZ9bj4lTqN7ug+lsxPkA1vNYbAO3Yfqd3VU8iUcenk1nzoOq9MTEMX+ZYTNhmtrHSfSed9CxKO1HaJe671DgISp6Hs/stdxSZlHzdb+G/LK8HZiSyCqHvRfg9Pxy4eW33gB
   </data>
  </layer>
- <group id="7" name="pokemons">
-  <objectgroup id="6" name="Bulbasaur">
-   <object id="5" name="60" x="336.637" y="304.212">
-    <properties>
-     <property name="kans" value="0.2"/>
-    </properties>
-    <polygon points="0,0 0,32.4249 79.4229,31.6963 79.4229,0"/>
-   </object>
-   <object id="6" name="10" x="304.212" y="112.577">
-    <polygon points="0,0 0,32.0606 -31.6963,31.6963 -32.0606,159.21 15.666,159.21 15.3017,111.484 -16.3946,111.484 -16.759,95.0889 0.728651,95.0889 0.364325,46.998 15.666,46.998 16.3946,32.0606 47.7266,30.9676 47.3623,15.666 64.8499,16.3946 64.4856,-0.364325"/>
-   </object>
-  </objectgroup>
-  <objectgroup id="5" name="Charmander">
-   <object id="7" name="60" x="304.212" y="112.577">
-    <polygon points="0,0 0,32.0606 -31.6963,31.6963 -32.0606,159.21 15.666,159.21 15.3017,111.484 -16.3946,111.484 -16.759,95.0889 0.728651,95.0889 0.364325,46.998 15.666,46.998 16.3946,32.0606 47.7266,30.9676 47.3623,15.666 64.8499,16.3946 64.4856,-0.364325"/>
-   </object>
-  </objectgroup>
- </group>
+ <objectgroup id="8" name="objects">
+  <object id="12" name="player-start" x="417.333" y="256.667" width="13.3333" height="10.6667"/>
+ </objectgroup>
 </map>

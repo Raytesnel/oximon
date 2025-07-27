@@ -85,6 +85,10 @@ class WildPokemon(arcade.Sprite):
         self.center_x = max(left, min(self.center_x, right))
         self.center_y = max(bottom, min(self.center_y, top))
 
+        self.overlay_visible = False
+
+        # make somthing to make a movement trough grass
+
 
 class Player(arcade.Sprite):
     def __init__(self, asset_path):
@@ -131,14 +135,18 @@ class OverworldView(arcade.View):
         asset_path = os.path.join(ASSETS_PATH, "sprites/player")
         self.camera = arcade.Camera2D()
         self.tile_map = load_tilemap(
-            os.path.join(ASSETS_PATH, "map/orthogonal.tmx"),
+            os.path.join(ASSETS_PATH, "map/probeersel_01.tmx"),
             scaling=2.0,
             use_spatial_hash=True,
-            layer_options={"Fringe": {"use_spatial_hash": True}}
         )
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
-        start = next((o for o in self.tile_map.object_lists["Objects"] if o.name == "player-start"), None)
+        try:
+            start = next((o for o in self.tile_map.object_lists["objects"] if o.name == "player-start"), None)
+            print("found player start")
+        except KeyError:
+            print(" player start not found")
+            start = None
         self.player = Player(asset_path)
         if start:
             self.player.center_x = start.shape[0][0]
@@ -146,10 +154,9 @@ class OverworldView(arcade.View):
         else:
             self.player.center_x = SCREEN_WIDTH // 2
             self.player.center_y = SCREEN_HEIGHT // 2
-
         self.player.scale = 1.0
         self.player_list.append(self.player)
-        self.walls = self.scene["Fringe"]
+        self.walls = self.scene["abandoned"]
         self.wild_pokemon_list = arcade.SpriteList()
 
 
@@ -159,6 +166,7 @@ class OverworldView(arcade.View):
         self.scene.draw()
         self.player_list.draw()
         self.wild_pokemon_list.draw()
+        # self.scene.get_sprite_list("abandoned").draw()
 
     def on_update(self, delta_time):
         self.player_list.update()
@@ -166,8 +174,8 @@ class OverworldView(arcade.View):
         self.wild_pokemon_list.update()
         if self.max_pokemon_per_bush > len(self.wild_pokemon_list):
             if self.counter_pokemon > 300:
-                maggots_area = next((obj.shape for obj in self.tile_map.object_lists.get("pokemon", []) if obj.name == "maggots"), None)
-                left_top, right_top, right_bottom, left_bottom = maggots_area
+                left_top, right_top, right_bottom, left_bottom= self.tile_map.object_lists["Bulbasaur"][0].shape
+                # TODO fix to have multiple grass bushes in different arrays
                 bounds = (left_top[0], right_top[0], left_bottom[1], left_top[1])
                 name_pokemon = random.choice(["Charmander","Bulbasaur"])
                 pokemon_sprite = WildPokemon(
@@ -176,6 +184,7 @@ class OverworldView(arcade.View):
                 scale=2.0,
                 name=name_pokemon
                 )
+
                 pokemon_sprite.position = (
                     random.uniform(bounds[0], bounds[1]),
                     random.uniform(bounds[2], bounds[3])
@@ -202,6 +211,7 @@ class OverworldView(arcade.View):
             self.window.show_view(splash)
             self.wild_pokemon_list.remove(collided_pokemon)
             # TODO make reset world view & walking
+            # TODO make the grass move between pokemon
 
     def on_key_press(self, key, modifiers):
         self.player.change_x = 0
@@ -236,8 +246,6 @@ class BattleSplashView(arcade.View):
         banner_widht = 555
         scaling = self.window.width / banner_widht
         self.banner = arcade.Sprite(banner_path,scale=scaling)
-        print(player_sprite_path)
-        print(self.wild_pokemon.sprite_file_location)
         self.player_sprite = arcade.Sprite(player_sprite_path,scale=0.5)
         self.enemy_sprite = arcade.Sprite(self.wild_pokemon.sprite_file_location, scale=0.2)
         self.sprites = arcade.SpriteList()
@@ -247,7 +255,6 @@ class BattleSplashView(arcade.View):
         self.sprites.append(self.enemy_sprite)
 
     def on_show(self):
-        print(self.game_view.player.center_y)
         self.banner.center_x = self.game_view.player.center_x
         self.banner.center_y = self.game_view.player.center_y
         self.player_sprite.center_x = self.game_view.player.center_x - self.window.width //2 + self.player_sprite.width//2
