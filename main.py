@@ -173,7 +173,7 @@ class OverworldView(arcade.View):
         self.player_list.draw()
         self.wild_pokemon_list.draw()
         self.scene.get_sprite_list("voorgrond").draw()
-        self.player.draw_hit_box(arcade.color.RED)
+        # self.player.draw_hit_box(arcade.color.RED)
 
     def on_update(self, delta_time):
         self.player_list.update()
