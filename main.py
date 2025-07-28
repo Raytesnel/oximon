@@ -105,10 +105,10 @@ class Player(arcade.Sprite):
         self.frame_duration = 0.05
         self.texture = self.animations[self.direction][0]
         self._hit_box = HitBox([
-            (-10, -16),  # Bottom left
-            (10, -16),  # Bottom right
-            (10, -4),  # Top right
-            (-10, -4),  # Top left
+            (-10, -30),
+            (10, -30),
+            (10, -4),
+            (-10, -4),
         ])
 
     def update_animation(self, delta_time: float = 1 / 60):
@@ -173,7 +173,7 @@ class OverworldView(arcade.View):
         self.player_list.draw()
         self.wild_pokemon_list.draw()
         self.scene.get_sprite_list("voorgrond").draw()
-        # self.player.draw_hit_box(arcade.color.RED)
+        self.player.draw_hit_box(arcade.color.RED)
 
     def on_update(self, delta_time):
         self.player_list.update()
