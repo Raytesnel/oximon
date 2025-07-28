@@ -166,7 +166,7 @@ class OverworldView(arcade.View):
         self.scene.draw()
         self.player_list.draw()
         self.wild_pokemon_list.draw()
-        # self.scene.get_sprite_list("abandoned").draw()
+        self.scene.get_sprite_list("voorgrond").draw()
 
     def on_update(self, delta_time):
         self.player_list.update()

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="60" height="45" tilewidth="16" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="14">
+<map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="60" height="45" tilewidth="16" tileheight="16" infinite="0" nextlayerid="11" nextobjectid="14">
  <tileset firstgid="1" source="../tiles/TilesetFloor.tsx"/>
  <tileset firstgid="573" source="../tiles/TilesetVillageAbandoned.tsx"/>
  <tileset firstgid="813" source="../tiles/TilesetNature.tsx"/>
@@ -16,10 +16,20 @@
  </group>
  <layer id="2" name="abandoned" width="60" height="45">
   <data encoding="base64" compression="zstd">
-   KLUv/WAwKY0PAPbbSjrg2hTSGOA3Ovo1wwOU2Q9OmBI6E2OltwbFYJjhx4mYhXRI5XSu4qAinRE9FCRmpW4sEQ0s//9GliEFOwA5AD0A18/l0+HE4bThpOF1eVzeFi+noZPQj2Jy9VxLLiUSThFOEE4Pak4005STlFMUHTXkEnIFuYCk0ZXlwjIL8UC8D89Dz2uwCo/Cm3ApuBJcCK4D60vSOdm8Io/IipOKU4oTiqvmorlmLlERzqKbRQFOMyroAgpHnpFdeVZelUeFx+N5O2ycaizoAb2f5wNlOw/Hu3HiZKK0vCfPyWuyJGlkcwEoB8Vg6AntxXPxWjwWC9Iok49Tj9N5Ml6MByPHaUfAhXPdlHgk3ogngmdiXpgH5jI8DO/Cs5Bj4CpwEbgGnGiknKvMI/PGIHkBTaBhnSLECSQokmCQyg2QAiMzQW4OJkLfglGixo3u8g03twHp/in5xbzvLhQVGgANnprUL0Zryu4wcqUIUu1pNvwK6vCU7vm9g/RDstQ0ovhoG1pMEkEStf5oawOGEShqyIZ9bj4lTqN7ug+lsxPkA1vNYbAO3Yfqd3VU8iUcenk1nzoOq9MTEMX+ZYTNhmtrHSfSed9CxKO1HaJe671DgISp6Hs/stdxSZlHzdb+G/LK8HZiSyCqHvRfg9Pxy4eW33gB
+   KLUv/WAwKYULADZVOjUQV1JoDA8FXwUzQDEVAMFcACDkvpuoRFAaADgC4D2Zt7wSjNQnAgDsU2EdtW2ta21rluwypysAKQAvAGRkKjIRmYZMuCRcES4ID8p78pwsGhRk6kxAph+ZC7Ne4JhuTDamGonJtGSr8Chc5yl48By8BtOBycBUYCJwOl6OEBeI68PlYcpMmGllej6bH82PS+vxeLwdU/KSPCTvSIzHeTBYXCuEdLg4UBMfqWViWUAJpLwoJR6JN+KJQHAXnoUDa8YlI8VD8U48E+XiavEybSbNNjwNL8PDwEkDJgFTgAnApWIxmKo8Km9KLyDQAoskMHIDJoL0Bt70/CfQsrxxUFTSPeoikVUUfDENj4TsNgo0nwpWEsSSXSeidwr8AVNZTx7QXCn9ABd8NvPCHp/SldGrlswWUXcTO8PWmAeh3jn7XzZjrVHVCBG8hiXauhs6gNodo3MaUJ6V6no2bEDdBuWmUquAdLizb49By7+u
+  </data>
+ </layer>
+ <layer id="10" name="grass" width="60" height="45">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAwKW0CAGgAJAQAACQEJAQkBAAAGaCA9TCDypwH8UXPOxVD1aVpUfG5qIFMdNIJn9Uguyr5QXFacoUKoUo7o3Ie2vr9lPQ1VPmN0j31lAm2/CwG
+  </data>
+ </layer>
+ <layer id="9" name="voorgrond" width="60" height="45">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAwKbUDADIGERuwaRkDpPmEItS8ZT4MlfbDsMio4Mh+0OSRkqZ1WZZVKcIaLMEKjCnHaizGWhyWYRVKsRILcZQ3eRLAe57zmos8yHsMDyDwAs10Dhak997Vpur2i0+LZ7TnKMhGgfMwWVKr46S0pabT6J/5Mb9KykHmH2w=
   </data>
  </layer>
  <objectgroup id="8" name="objects">
-  <object id="12" name="player-start" x="417.333" y="256.667" width="13.3333" height="10.6667"/>
+  <object id="12" name="player-start" x="416" y="256" width="16" height="16"/>
  </objectgroup>
 </map>
