@@ -4,7 +4,7 @@ from pathlib import Path
 
 import arcade
 from arcade import load_tilemap
-from arcade.hitbox import HitBoxAlgorithm
+from arcade.hitbox import HitBoxAlgorithm, HitBox
 
 from super_smash_platform import SmashStageOnlyView
 
@@ -104,6 +104,12 @@ class Player(arcade.Sprite):
         self.frame_timer = 0
         self.frame_duration = 0.05
         self.texture = self.animations[self.direction][0]
+        self._hit_box = HitBox([
+            (-10, -16),  # Bottom left
+            (10, -16),  # Bottom right
+            (10, -4),  # Top right
+            (-10, -4),  # Top left
+        ])
 
     def update_animation(self, delta_time: float = 1 / 60):
         if self.change_x == 0 and self.change_y == 0:
@@ -167,6 +173,7 @@ class OverworldView(arcade.View):
         self.player_list.draw()
         self.wild_pokemon_list.draw()
         self.scene.get_sprite_list("voorgrond").draw()
+        # self.player.draw_hit_box(arcade.color.RED)
 
     def on_update(self, delta_time):
         self.player_list.update()
