@@ -55,13 +55,14 @@ class OverworldView(arcade.View):
         self.wild_pokemon_list = arcade.SpriteList()
         self.y_sorted_sprites = arcade.SpriteList()
         self.y_sorted_sprites.extend(self.scene["grass"])
+        self.y_sorted_sprites.extend(self.wild_pokemon_list)
         self.y_sorted_sprites.append(self.player)
 
     def on_draw(self):
         self.clear()
         self.camera.use()
         self.scene.draw()
-        self.wild_pokemon_list.draw()
+        # self.wild_pokemon_list.draw()
         self.y_sorted_sprites.draw()
         self.scene.get_sprite_list("voorgrond").draw()
         # self.player.draw_hit_box(arcade.color.RED)
@@ -94,12 +95,19 @@ class OverworldView(arcade.View):
                     random.uniform(bounds[2], bounds[3])
                 )
                 self.wild_pokemon_list.append(pokemon_sprite)
+                self.y_sorted_sprites.append(pokemon_sprite)
+
                 self.counter_pokemon =0
             else:
                 self.counter_pokemon += 1
         if arcade.check_for_collision_with_list(self.player, self.walls):
             self.player.center_x -= self.player.change_x
             self.player.center_y -= self.player.change_y
+        for pokemon in self.wild_pokemon_list:
+            if arcade.check_for_collision_with_list(pokemon, self.walls):
+                pokemon.center_x -= pokemon.change_x
+                pokemon.center_y -= pokemon.change_y
+
 
         self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
         collided_pokemon_list = arcade.check_for_collision_with_list(self.player, self.wild_pokemon_list)
