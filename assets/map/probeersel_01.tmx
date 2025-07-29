@@ -1,35 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="60" height="45" tilewidth="16" tileheight="16" infinite="0" nextlayerid="11" nextobjectid="14">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="60" height="45" tilewidth="16" tileheight="16" infinite="0" nextlayerid="14" nextobjectid="18">
  <tileset firstgid="1" source="../tiles/TilesetFloor.tsx"/>
  <tileset firstgid="573" source="../tiles/TilesetVillageAbandoned.tsx"/>
  <tileset firstgid="813" source="../tiles/TilesetNature.tsx"/>
  <layer id="1" name="Tile Layer 1" width="60" height="45">
   <data encoding="base64" compression="zstd">
-   KLUv/WAwKSUHAAIEDRfAJR3+TWsav4DwCxr/////A7MlSWWSAqviipesw/gLGs3nFkJ26fzEP9wr/MEPEJNbZQdQoCC1ZQ7gghKRYKsDyYWfWwUMSpjT5im3jChg3b4xCkqWcjIzvFE+k8zWXkc2f0aMkKlvqDChjiXqXkKc0HCofwV9fjIuFArU5rKEmBoo5FwSUFCO29bVtBnA5d9/UrXSfKGF7koETRn7PBiajYeQCPW8EVZR7b/o7rMicpmP4u5WyIh1f0aObEjXjZZI7VM58Lkn6GarCIIy7pxIFl7+kRYhZerllMRwgpYfog==
+   KLUv/WAwKUUPADLHFyGgJ+nQZp0ls//DGZ2tjUP7DxH7+n+oqqqqqgpGuXfskRS9a4wylDTnRa/sBKkQUUn3Sk1iqpdGEGkxdLQ/MWMMZRLSq1qFX1nyqvidv3H4Cf/gf/xNCgB+9VP8eZQEgLOgYWKGTNsBwIIRkalRHn1Kg9+huuQ4VZDYz6orRUk4DqU4A6k2VCEcUFqB0kkxb3puqCfOfjy3EbPlqIGIYuKZWybOSTn8SLje6euV+TTzb8o5QbZQXchEB0qc//VcTsWp8TwcjywenZf6WyeVgNYg1DjUK3C6SuKtUJoDcogZuQPWTjU1M3iUMDnu19OY2gclZTQ4UaHmA5iuj5HW4Uj11zXfiCeze8jwUJMi9XzIzTDW0TL1JNiIc5LXsOU8TSq23wptJ9qnyIUOKUXq5gstTjD0GQijcKcO0EYGsBR3eqExJ6L6iWk4cxavs9k0fiE6Qd6JDcfXI2lIOXrTmncSptST7IqAPl8795QEky45MFtPfe65X3gZbDuv00OLD+K6NveV+yxz96BwVK25/nzcUueQnZO/k4Dvn9XKzPURyP1q0xB9MzZz3ICoJXJvD1SKN+R3ievKhBWYDpG5vCY6TFZP+64gh5wYsJHG3kiebt5XDyjFPgd6NNuneY6JRopTPXUq
   </data>
  </layer>
- <group id="7" name="pokemons">
-  <objectgroup id="6" name="Bulbasaur">
-   <object id="8" name="60" x="335.917" y="307.75" width="82.8333" height="23.25"/>
-  </objectgroup>
-  <objectgroup id="5" name="Charmander"/>
- </group>
  <layer id="2" name="abandoned" width="60" height="45">
   <data encoding="base64" compression="zstd">
-   KLUv/WAwKYULADZVOjUQV1JoDA8FXwUzQDEVAMFcACDkvpuoRFAaADgC4D2Zt7wSjNQnAgDsU2EdtW2ta21rluwypysAKQAvAGRkKjIRmYZMuCRcES4ID8p78pwsGhRk6kxAph+ZC7Ne4JhuTDamGonJtGSr8Chc5yl48By8BtOBycBUYCJwOl6OEBeI68PlYcpMmGllej6bH82PS+vxeLwdU/KSPCTvSIzHeTBYXCuEdLg4UBMfqWViWUAJpLwoJR6JN+KJQHAXnoUDa8YlI8VD8U48E+XiavEybSbNNjwNL8PDwEkDJgFTgAnApWIxmKo8Km9KLyDQAoskMHIDJoL0Bt70/CfQsrxxUFTSPeoikVUUfDENj4TsNgo0nwpWEsSSXSeidwr8AVNZTx7QXCn9ABd8NvPCHp/SldGrlswWUXcTO8PWmAeh3jn7XzZjrVHVCBG8hiXauhs6gNodo3MaUJ6V6no2bEDdBuWmUquAdLizb49By7+u
+   KLUv/WAwKUUPALaZRTrgmiRpDABcDxQMMzwMTJjXN5fB13kMpm4BGZ4WkGED64K3vEAfHp2LyrBpwjnQwQH//5qVtaORZUgBNgAyADcAUegIdDSgrFxVLirXlAsnCyebU4UH5n15XqKaI5qjGSIV5dq5oFw6n5Nn4pFzHbmMXEUWl2vLJ+aFcfFaPBZvhYIOj8Pb8DTczmMw4Ul4Ea4EF4LrwGXglLwkKk4pTihOJ67P5bkAXNHvw/OAswpcBK6ai+ZkY4JwlXlk3pg1eUzekml5WR6Wd8XHw3k9cJxuSDFxKlFdnCwBV4DVYC0IGS4MDy4HNR6NN0PnPQnygLwfJN6IJwLJy9mOp+Pd2DwK05CTEBkvxoPxXtyccsxcoQu0EA9EUqCRHTHEmQpsFIil2vACEpFQow5FVMopELupkE0oo4kQi6lQCCObqRC7j7pDt0E4eM4ooq8lZTsVSFTJTbbI+aD2ma0hQp5c0v4l1usmV48390TU+FMuZ2yJI91RR2Qx5YvoIzm7PXVIh2eGpqGoFTSs0pHYKc0/brq1Jg30B6F8PEc+M7QebkFQHp+6Icur5dtWHwegKCWg8jy6LjN7eEECbkkhI0l4jVZqu051AEV2/F2lAXWsZteRqbXMoLk0MaTbSqYCUnBngp9Dyy++
   </data>
  </layer>
  <layer id="10" name="grass" width="60" height="45">
   <data encoding="base64" compression="zstd">
-   KLUv/WAwKW0CAGgAJAQAACQEJAQkBAAAGaCA9TCDypwH8UXPOxVD1aVpUfG5qIFMdNIJn9Uguyr5QXFacoUKoUo7o3Ie2vr9lPQ1VPmN0j31lAm2/CwG
+   KLUv/WAwKSUDANAAHAUAJAQAACQEJAQkBAAANwQAADsEADgEAB2gcNXmIAPL8AZGwe2OHeqo1qj4TsVQVWlaVHweaigROxTRMzWIrkp8UrglvUKNRUs7UnIutPWbqPS11PIb1T2Fy8QqJfnjrzo=
   </data>
  </layer>
  <layer id="9" name="voorgrond" width="60" height="45">
   <data encoding="base64" compression="zstd">
-   KLUv/WAwKbUDADIGERuwaRkDpPmEItS8ZT4MlfbDsMio4Mh+0OSRkqZ1WZZVKcIaLMEKjCnHaizGWhyWYRVKsRILcZQ3eRLAe57zmos8yHsMDyDwAs10Dhak997Vpur2i0+LZ7TnKMhGgfMwWVKr46S0pabT6J/5Mb9KykHmH2w=
+   KLUv/WAwKZ0FAEJJGSSQOcsY2AfmI4D/JbPH/c/MTDe2AsRvEm6F2CXiYYmYuetKuVLFWZulUWZh1sWyKotSFYtiPZosyYosyBZCWAfLYBUoYAGsjgjWwBK4iAfxHvZ4jtd4jOdNPIlbeAov4Rxew2MYHaAgRWKHrA5wg2UWiwF6xuc4qSD/HlXXqCCupdYMtV88AzMgmIvOKVlS+J7PquHojVpCTVWJFBFKDtcEM6xQoL2ENaDgoYRY/n8C
   </data>
  </layer>
  <objectgroup id="8" name="objects">
   <object id="12" name="player-start" x="416" y="256" width="16" height="16"/>
+ </objectgroup>
+ <objectgroup id="12" name="pokemonFields">
+  <object id="14" name="2" x="273.668" y="97.5451" width="97.0032" height="221.102"/>
+  <object id="15" name="3" x="337.614" y="305.641" width="78.0361" height="29.2635"/>
+  <object id="16" name="1" x="544.627" y="162.033" width="80.7457" height="175.039"/>
  </objectgroup>
 </map>
