@@ -20,7 +20,7 @@ class OverworldView(arcade.View):
     def __init__(self):
         super().__init__()
         self.count = False
-        self.max_pokemon_per_bush = 3 # TODO: take this from the tiled map.
+        self.max_pokemon_per_bush = 3 # TODO: calculate this with surface area of the field.
         self.counter_pokemon =0
         self.pokemon_fields = {}
         self.all_sprites = []
@@ -130,8 +130,9 @@ class OverworldView(arcade.View):
                 sprite.depth_y = sprite.center_y
 
         self.y_sorted_sprites.sort(key=lambda s: -getattr(s, "depth_y", s.center_y))
-        # TODO make reset world view & walking
-        # TODO make the grass move between pokemon
+        # TODO player grass is to small due to hitbox (probly a new special varibel needed instead of _hit_box
+        # TODO refactor on_update. in seperate functions
+        # TODO refactoer all forloops gone. god speed.
 
     def on_key_press(self, key, modifiers):
         self.player.change_x = 0
@@ -144,6 +145,8 @@ class OverworldView(arcade.View):
             self.player.change_x = -5
         elif key == arcade.key.RIGHT:
             self.player.change_x = 5
+            # TODO move to player? so this can be in update nothing more.
+            # TODO: make sure the player and pokemon walking slower and more normal.
 
     def on_key_release(self, key, modifiers):
         if key == arcade.key.UP and self.player.change_y > 0:
