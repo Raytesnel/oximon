@@ -121,8 +121,20 @@ class OverworldView(arcade.View):
             )
             self.window.show_view(splash)
             self.wild_pokemon_list.remove(collided_pokemon)
-        self.y_sorted_sprites.sort(key=lambda s: -s.center_y)
+            self.y_sorted_sprites.remove(collided_pokemon)
 
+
+        # Before sorting:
+        for sprite in self.y_sorted_sprites:
+            if hasattr(sprite, "_hit_box") and sprite._hit_box:
+                # Use bottom of hitbox relative to center_y
+                min_hitbox_y = min(point[1] for point in sprite._hit_box.points)
+                sprite.depth_y = sprite.center_y + min_hitbox_y
+            else:
+                # Fallback to center_y if no hitbox
+                sprite.depth_y = sprite.center_y
+
+        self.y_sorted_sprites.sort(key=lambda s: -getattr(s, "depth_y", s.center_y))
         # TODO make reset world view & walking
         # TODO make the grass move between pokemon
 
