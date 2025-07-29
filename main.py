@@ -105,10 +105,10 @@ class Player(arcade.Sprite):
         self.frame_duration = 0.05
         self.texture = self.animations[self.direction][0]
         self._hit_box = HitBox([
-            (-10, -30),
-            (10, -30),
-            (10, -4),
-            (-10, -4),
+            (-16, -30),
+            (16, -30),
+            (16, -4),
+            (-16, -4),
         ])
 
     def update_animation(self, delta_time: float = 1 / 60):
@@ -135,6 +135,7 @@ class OverworldView(arcade.View):
         self.count = False
         self.max_pokemon_per_bush = 3 # TODO: take this from the tiled map.
         self.counter_pokemon =0
+        self.pokemon_fields = {}
 
     def setup(self):
         self.player_list = arcade.SpriteList()
@@ -165,7 +166,6 @@ class OverworldView(arcade.View):
         self.walls = self.scene["abandoned"]
         self.wild_pokemon_list = arcade.SpriteList()
 
-
     def on_draw(self):
         self.clear()
         self.camera.use()
@@ -179,10 +179,14 @@ class OverworldView(arcade.View):
         self.player_list.update()
         self.player_list.update_animation(delta_time)
         self.wild_pokemon_list.update()
-        if self.max_pokemon_per_bush > len(self.wild_pokemon_list):
-            if self.counter_pokemon > 300:
-                left_top, right_top, right_bottom, left_bottom= self.tile_map.object_lists["Bulbasaur"][0].shape
-                # TODO fix to have multiple grass bushes in different arrays
+        pokemon_fields = self.tile_map.object_lists["pokemonFields"]
+        pokemon_field = random.choice(pokemon_fields)
+        if pokemon_field.name not in self.pokemon_fields.keys():
+            self.pokemon_fields[pokemon_field.name] = []
+
+        if self.max_pokemon_per_bush > len(self.pokemon_fields[pokemon_field.name]):
+            if self.counter_pokemon > random.uniform(200,500):
+                left_top, right_top, right_bottom, left_bottom= pokemon_field.shape
                 bounds = (left_top[0], right_top[0], left_bottom[1], left_top[1])
                 name_pokemon = random.choice(["Charmander","Bulbasaur"])
                 pokemon_sprite = WildPokemon(
@@ -191,15 +195,15 @@ class OverworldView(arcade.View):
                 scale=2.0,
                 name=name_pokemon
                 )
-
                 pokemon_sprite.position = (
                     random.uniform(bounds[0], bounds[1]),
                     random.uniform(bounds[2], bounds[3])
                 )
                 self.wild_pokemon_list.append(pokemon_sprite)
-                self.counter_pokemon = 0
+                self.counter_pokemon =0
+                self.pokemon_fields[pokemon_field.name].append(pokemon_sprite)
             else:
-                self.counter_pokemon+=1
+                self.counter_pokemon += 1
         if arcade.check_for_collision_with_list(self.player, self.walls):
             self.player.center_x -= self.player.change_x
             self.player.center_y -= self.player.change_y

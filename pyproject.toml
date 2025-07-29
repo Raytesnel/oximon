@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "arcade>=3.3.1",
+    "black>=25.1.0",
     "pycairo>=1.28.0",
+    "pydantic>=2.11.7",
     "pytiled-parser[zstd]>=2.2.9",
 ]
