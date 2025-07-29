@@ -138,6 +138,7 @@ class OverworldView(arcade.View):
         self.max_pokemon_per_bush = 3 # TODO: take this from the tiled map.
         self.counter_pokemon =0
         self.pokemon_fields = {}
+        self.all_sprites = []
 
     def setup(self):
         self.player_list = arcade.SpriteList()
@@ -167,13 +168,16 @@ class OverworldView(arcade.View):
         self.player_list.append(self.player)
         self.walls = self.scene["abandoned"]
         self.wild_pokemon_list = arcade.SpriteList()
+        self.y_sorted_sprites = arcade.SpriteList()
+        self.y_sorted_sprites.extend(self.scene["grass"])
+        self.y_sorted_sprites.append(self.player)
 
     def on_draw(self):
         self.clear()
         self.camera.use()
         self.scene.draw()
-        self.player_list.draw()
         self.wild_pokemon_list.draw()
+        self.y_sorted_sprites.draw()
         self.scene.get_sprite_list("voorgrond").draw()
         # self.player.draw_hit_box(arcade.color.RED)
 
@@ -224,8 +228,10 @@ class OverworldView(arcade.View):
             )
             self.window.show_view(splash)
             self.wild_pokemon_list.remove(collided_pokemon)
-            # TODO make reset world view & walking
-            # TODO make the grass move between pokemon
+        self.y_sorted_sprites.sort(key=lambda s: -s.center_y)
+
+        # TODO make reset world view & walking
+        # TODO make the grass move between pokemon
 
     def on_key_press(self, key, modifiers):
         self.player.change_x = 0
