@@ -54,7 +54,6 @@ class OverworldView(arcade.View):
         self.walls = self.scene["abandoned"]
         self.wild_pokemon_list = arcade.SpriteList()
         self.y_sorted_sprites = arcade.SpriteList()
-        self.y_sorted_sprites.extend(self.scene["grass"])
         self.y_sorted_sprites.extend(self.wild_pokemon_list)
         self.y_sorted_sprites.append(self.player)
 
@@ -62,13 +61,12 @@ class OverworldView(arcade.View):
         self.clear()
         self.camera.use()
         self.scene.draw()
-        # self.wild_pokemon_list.draw()
         self.y_sorted_sprites.draw()
         self.scene.get_sprite_list("voorgrond").draw()
-        # self.player.draw_hit_box(arcade.color.RED)
 
     def on_update(self, delta_time):
         self.player_list.update()
+        self.scene.update_animation(delta_time)
         self.player_list.update_animation(delta_time)
         self.wild_pokemon_list.update()
         pokemon_fields = self.tile_map.object_lists["pokemonFields"]
@@ -108,7 +106,6 @@ class OverworldView(arcade.View):
                 pokemon.center_x -= pokemon.change_x
                 pokemon.center_y -= pokemon.change_y
 
-
         self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
         collided_pokemon_list = arcade.check_for_collision_with_list(self.player, self.wild_pokemon_list)
         if collided_pokemon_list:
@@ -123,7 +120,6 @@ class OverworldView(arcade.View):
             self.wild_pokemon_list.remove(collided_pokemon)
             self.y_sorted_sprites.remove(collided_pokemon)
 
-
         # Before sorting:
         for sprite in self.y_sorted_sprites:
             if hasattr(sprite, "_hit_box") and sprite._hit_box:
@@ -131,7 +127,6 @@ class OverworldView(arcade.View):
                 min_hitbox_y = min(point[1] for point in sprite._hit_box.points)
                 sprite.depth_y = sprite.center_y + min_hitbox_y
             else:
-                # Fallback to center_y if no hitbox
                 sprite.depth_y = sprite.center_y
 
         self.y_sorted_sprites.sort(key=lambda s: -getattr(s, "depth_y", s.center_y))
