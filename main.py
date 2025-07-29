@@ -1,11 +1,12 @@
-import random
 import os
+import random
 from pathlib import Path
 
 import arcade
 from arcade import load_tilemap
-from arcade.hitbox import HitBoxAlgorithm, HitBox
+from arcade.hitbox import HitBox
 
+from pokemon import Pokemons
 from super_smash_platform import SmashStageOnlyView
 
 SCREEN_WIDTH = 800
@@ -16,10 +17,11 @@ ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
 
 
 class WildPokemon(arcade.Sprite):
-    def __init__(self, image_path, maggots_bounds, name:str, scale=2.0,):
+    def __init__(self, image_path, maggots_bounds, name:str, field:int,scale=2.0,):
         self.path_ding = Path(image_path)
         self.sprite_file_location = Path(image_path)/"banner.png"
         self.name = name
+        self.field = field
         self.image_path = image_path
         self.animations = {
             "down": [arcade.load_texture(self.path_ding / f"over_world_{i}.png") for i in range(0, 3)],
@@ -183,17 +185,20 @@ class OverworldView(arcade.View):
         pokemon_field = random.choice(pokemon_fields)
         if pokemon_field.name not in self.pokemon_fields.keys():
             self.pokemon_fields[pokemon_field.name] = []
-
-        if self.max_pokemon_per_bush > len(self.pokemon_fields[pokemon_field.name]):
-            if self.counter_pokemon > random.uniform(200,500):
+        pokemons_in_field =[pokemon for pokemon in self.wild_pokemon_list if pokemon_field.name == pokemon.field]
+        if self.max_pokemon_per_bush > len(pokemons_in_field):
+            if self.counter_pokemon > random.uniform(100,5000):
                 left_top, right_top, right_bottom, left_bottom= pokemon_field.shape
                 bounds = (left_top[0], right_top[0], left_bottom[1], left_top[1])
-                name_pokemon = random.choice(["Charmander","Bulbasaur"])
+                pokemons_allowed_in_field = [pokemon for pokemon in Pokemons.values() if pokemon_field.name  in pokemon.areas]
+                pokemon = random.choice(pokemons_allowed_in_field)
+
                 pokemon_sprite = WildPokemon(
-                image_path=os.path.join(ASSETS_PATH, f"sprites/pokemon/{name_pokemon}"),
+                image_path=os.path.join(ASSETS_PATH, f"sprites/pokemon/{pokemon.name}"),
                 maggots_bounds=bounds,
                 scale=2.0,
-                name=name_pokemon
+                name=pokemon.name,
+                field = pokemon_field.name
                 )
                 pokemon_sprite.position = (
                     random.uniform(bounds[0], bounds[1]),
@@ -201,7 +206,6 @@ class OverworldView(arcade.View):
                 )
                 self.wild_pokemon_list.append(pokemon_sprite)
                 self.counter_pokemon =0
-                self.pokemon_fields[pokemon_field.name].append(pokemon_sprite)
             else:
                 self.counter_pokemon += 1
         if arcade.check_for_collision_with_list(self.player, self.walls):
@@ -211,8 +215,7 @@ class OverworldView(arcade.View):
         self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
         collided_pokemon_list = arcade.check_for_collision_with_list(self.player, self.wild_pokemon_list)
         if collided_pokemon_list:
-            collided_pokemon:WildPokemon = collided_pokemon_list[0]  # You can handle multiple later if needed
-
+            collided_pokemon:WildPokemon = collided_pokemon_list[0]
             splash = BattleSplashView(
                 player_sprite_path=os.path.join(ASSETS_PATH, "sprites/pokemon/player_shot.png"),
                 banner_path=os.path.join(ASSETS_PATH, "sprites/pokemon/banner.jpg"),
