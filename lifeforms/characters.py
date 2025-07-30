@@ -16,7 +16,7 @@ class Player(arcade.Sprite):
         self.direction = "down"
         self.current_frame = 0
         self.frame_timer = 0
-        self.frame_duration = 0.05
+        self.frame_duration = 0.075
         self.texture = self.animations[self.direction][0]
         self._hit_box = HitBox([
             (-16, -30),

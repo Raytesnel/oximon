@@ -22,7 +22,7 @@ class WildPokemon(arcade.Sprite):
         self.texture = self.animations[self.direction][0]
         self.maggots_bounds = maggots_bounds
         self.direction_timer = 0
-        self.change_interval = 0.5
+        self.change_interval = 0.6
         self.current_frame = 0
         self.frame_timer = 0
         self.frame_duration = 0.05

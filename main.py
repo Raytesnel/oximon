@@ -120,6 +120,8 @@ class OverworldView(arcade.View):
             self.window.show_view(splash)
             self.wild_pokemon_list.remove(collided_pokemon)
             self.y_sorted_sprites.remove(collided_pokemon)
+            self.player.change_x = 0
+            self.player.change_y = 0
 
         # Before sorting:
         for sprite in self.y_sorted_sprites:
@@ -139,15 +141,14 @@ class OverworldView(arcade.View):
         self.player.change_x = 0
         self.player.change_y = 0
         if key == arcade.key.UP:
-            self.player.change_y = 5
+            self.player.change_y = 3
         elif key == arcade.key.DOWN:
-            self.player.change_y = -5
+            self.player.change_y = -3
         elif key == arcade.key.LEFT:
-            self.player.change_x = -5
+            self.player.change_x = -3
         elif key == arcade.key.RIGHT:
-            self.player.change_x = 5
+            self.player.change_x = 3
             # TODO move to player? so this can be in update nothing more.
-            # TODO: make sure the player and pokemon walking slower and more normal.
 
     def on_key_release(self, key, modifiers):
         if key == arcade.key.UP and self.player.change_y > 0:
