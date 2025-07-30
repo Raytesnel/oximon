@@ -1,69 +1,176 @@
 import os
 
 import arcade
+from arcade import load_tilemap
 
 ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
 
+
 class SmashStageOnlyView(arcade.View):
-    def __init__(self,overworld_view):
+    def __init__(self, overworld_view):
         super().__init__()
         self.platforms = arcade.SpriteList()
         self.camera = arcade.Camera2D()
         self.overworld_view = overworld_view
         self.timer = 0
         self.max_duration = 2.0
-
+        self.physics_engine = None
+        self.setup()
+        self.on_show()
+        self.held_keys = set()
+        self.attack_hitboxes = arcade.SpriteList()
+        self.p1_lives_text = arcade.Text(
+            "P1 Lives: 100",
+            20,
+            self.window.height - 40,
+            arcade.color.WHITE,
+            20,
+        )
+        self.p2_lives_text = arcade.Text(
+            "P2 Lives: 100",
+            self.window.width - 160,
+            self.window.height - 40,
+            arcade.color.WHITE,
+            20,
+        )
 
     def setup(self) -> None:
         asset_path = os.path.join(ASSETS_PATH, "sprites/player")
         self.player_list = arcade.SpriteList()
         self.character_1 = Character(asset_path)
-        self.character_1.center_x = 100
+        self.character_1.center_x = 200
         self.character_1.center_y = 200
         self.character_2 = Character(asset_path)
-        self.character_2.center_x = 700
-        self.character_2.center_y = 200
+        self.character_2.center_x = 600
+        self.character_2.center_y = 300
         self.player_list.append(self.character_1)
         self.player_list.append(self.character_2)
 
-
     def on_show(self):
-        self.setup()
-        ground = arcade.SpriteSolidColor(700, 30, arcade.color.GREEN)
-        ground.center_x = self.window.width // 2
-        ground.center_y = 150
-        self.platforms.append(ground)
+        self.tile_map = load_tilemap(
+            os.path.join(ASSETS_PATH, "map/smash.tmx"),
+            scaling=1.0,
+            use_spatial_hash=True,
+        )
+        self.scene = arcade.Scene.from_tilemap(self.tile_map)
+        self.platforms = self.scene["platforms"]
+
+        self.physics_engine = arcade.PhysicsEnginePlatformer(
+            self.character_1,
+            platforms=self.platforms,
+        )
+        self.physics_engine_2 = arcade.PhysicsEnginePlatformer(
+            self.character_2,
+            platforms=self.platforms,
+        )
+
+    def draw_ui(self):
+        self.p1_lives_text.draw()
+        self.p2_lives_text.draw()
 
     def on_draw(self):
         self.clear()
-        self.on_show()
         self.camera.use()
         self.platforms.draw()
         self.player_list.draw()
+        self.attack_hitboxes.draw()
+        self.draw_ui()
 
     def on_update(self, delta_time):
         self.timer += delta_time
+        self.physics_engine.update()
+        self.physics_engine_2.update()
         self.player_list.update()
+        self.player_list.update_animation(delta_time)
+        if self.physics_engine.can_jump():
+            self.character_1.jump_count = 0
+        move_speed = self.character_1.MOVE_SPEED
+        if arcade.key.LCTRL in self.held_keys:
+            move_speed *= 4
 
-        if self.timer >= self.max_duration:
+        if arcade.key.LEFT in self.held_keys:
+            self.character_1.change_x = -move_speed
+        elif arcade.key.RIGHT in self.held_keys:
+            self.character_1.change_x = move_speed
+        else:
+            self.character_1.change_x = 0
+        hitbox = None
+        for hitbox in self.attack_hitboxes:
+            hitbox.life_timer -= delta_time
+            if hitbox.life_timer <= 0:
+                hitbox.remove_from_sprite_lists()
+        if hitbox is not None:
+            for target in self.player_list:
+                if target is not hitbox.owner and arcade.check_for_collision(
+                    hitbox, target
+                ):
+                    target.lives = max(0, target.lives - hitbox.damage)
+
+                    # knockback = hitbox.damage * 0.5
+                    # target.change_x += (
+                    #     knockback if hitbox.center_x < target.center_x else -knockback
+                    # )
+                    # target.change_y += knockback
+                    hitbox.remove_from_sprite_lists()
+        self.p1_lives_text.text = f"P1 Lives: {self.character_1.lives}"
+        self.p2_lives_text.text = f"P2 Lives: {self.character_2.lives}"
+
+        if self.character_1.lives <= 0:
+            print("Player 2 wins!")
             self.window.show_view(self.overworld_view)
 
+        elif self.character_2.lives <= 0:
+            print("Player 1 wins!")
+            self.window.show_view(self.overworld_view)
+
+    def on_key_press(self, key, modifiers):
+        self.held_keys.add(key)
+        if key == arcade.key.Z:
+            hitbox = self.character_1.create_attack_hitbox()
+            self.attack_hitboxes.append(hitbox)
+        if key == arcade.key.SPACE:
+            if self.character_1.jump_count < self.character_1.max_jumps:
+                self.character_1.change_y = self.character_1.JUMP_SPEED
+                self.character_1.jump_count += 1
+
+    def on_key_release(self, key, modifiers):
+        self.held_keys.discard(key)
+
+        if key in (arcade.key.LEFT, arcade.key.RIGHT):
+            self.character_1.change_x = 0
 
 
 class Character(arcade.Sprite):
     def __init__(self, asset_path):
-        super().__init__(scale=3)
+        super().__init__(scale=0.5)
         self.animations = {
-            "down": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(0, 3)],
-            "up": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(3, 6)],
-            "left": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(6, 9)],
-            "right": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(9, 12)],
+            "down": [
+                arcade.load_texture(os.path.join(asset_path, f"player_{i}.png"))
+                for i in range(0, 3)
+            ],
+            "up": [
+                arcade.load_texture(os.path.join(asset_path, f"player_{i}.png"))
+                for i in range(12, 15)
+            ],
+            "left": [
+                arcade.load_texture(os.path.join(asset_path, f"player_{i}.png"))
+                for i in range(4, 8)
+            ],
+            "right": [
+                arcade.load_texture(os.path.join(asset_path, f"player_{i}.png"))
+                for i in range(8, 12)
+            ],
         }
         self.direction = "down"
         self.current_frame = 0
         self.frame_timer = 0
-        self.frame_duration = 0.05
+        self.frame_duration = 0.075
         self.texture = self.animations[self.direction][0]
+        self.MOVE_SPEED = 2
+        self.JUMP_SPEED = 10
+        self.jump_count = 0
+        self.max_jumps = 2
+        self.lives = 100
 
     def update_animation(self, delta_time: float = 1 / 60):
         if self.change_x == 0 and self.change_y == 0:
@@ -72,12 +179,28 @@ class Character(arcade.Sprite):
             return
 
         if abs(self.change_x) > abs(self.change_y):
-            self.direction = "right" if self.change_x > 0 else "left"
-        else:
-            self.direction = "up" if self.change_y > 0 else "down"
+            if self.change_x > 0:
+                self.direction = "right"
+            elif self.change_x < 0:
+                self.direction = "left"
 
         self.frame_timer += delta_time
         if self.frame_timer > self.frame_duration:
-            self.current_frame = (self.current_frame + 1) % len(self.animations[self.direction])
+            self.current_frame = (self.current_frame + 1) % len(
+                self.animations[self.direction]
+            )
             self.texture = self.animations[self.direction][self.current_frame]
             self.frame_timer = 0
+
+    def update(self, delta_time: float = 1 / 60):
+        pass
+
+    def create_attack_hitbox(self) -> arcade.Sprite:
+        hitbox = arcade.SpriteSolidColor(20, 20, arcade.color.RED)
+        offset = 30 if self.direction == "right" else -30
+        hitbox.center_x = self.center_x + offset
+        hitbox.center_y = self.center_y
+        hitbox.life_timer = 0.2  # seconds this hitbox lasts
+        hitbox.owner = self
+        hitbox.damage = 10  # damage dealt
+        return hitbox
