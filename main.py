@@ -54,6 +54,7 @@ class OverworldView(arcade.View):
         self.walls = self.scene["abandoned"]
         self.wild_pokemon_list = arcade.SpriteList()
         self.y_sorted_sprites = arcade.SpriteList()
+        self.y_sorted_sprites.extend(self.scene["grass"])
         self.y_sorted_sprites.extend(self.wild_pokemon_list)
         self.y_sorted_sprites.append(self.player)
 
