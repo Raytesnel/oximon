@@ -59,6 +59,8 @@ class SmashStageOnlyView(arcade.View):
             self.character_1,
             platforms=self.platforms,
         )
+        self.physics_engine.enable_multi_jump(2)
+
         self.physics_engine_2 = arcade.PhysicsEnginePlatformer(
             self.character_2,
             platforms=self.platforms,
@@ -106,11 +108,11 @@ class SmashStageOnlyView(arcade.View):
                 ):
                     target.lives = max(0, target.lives - hitbox.damage)
 
-                    # knockback = hitbox.damage * 0.5
+                    knockback = hitbox.damage * 0.5
                     # target.change_x += (
                     #     knockback if hitbox.center_x < target.center_x else -knockback
                     # )
-                    # target.change_y += knockback
+                    target.change_y += knockback
                     hitbox.remove_from_sprite_lists()
         self.p1_lives_text.text = f"P1 Lives: {self.character_1.lives}"
         self.p2_lives_text.text = f"P2 Lives: {self.character_2.lives}"
@@ -129,9 +131,8 @@ class SmashStageOnlyView(arcade.View):
             hitbox = self.character_1.create_attack_hitbox()
             self.attack_hitboxes.append(hitbox)
         if key == arcade.key.SPACE:
-            if self.character_1.jump_count < self.character_1.max_jumps:
-                self.character_1.change_y = self.character_1.JUMP_SPEED
-                self.character_1.jump_count += 1
+            if self.physics_engine.can_jump():
+                self.physics_engine.jump(self.character_1.JUMP_SPEED)
 
     def on_key_release(self, key, modifiers):
         self.held_keys.discard(key)
@@ -204,3 +205,22 @@ class Character(arcade.Sprite):
         hitbox.owner = self
         hitbox.damage = 10  # damage dealt
         return hitbox
+
+class SmashPhysicsEngine(arcade.PhysicsEnginePlatformer):
+    def is_on_platform(self, platform):
+        """Check if player is above the platform and falling."""
+        return (
+            self.player_sprite.bottom >= platform.top
+            and self.player_sprite.change_y <= 0
+        )
+
+    def _get_new_position(self):
+        """
+        Override this to ignore collisions with 'soft' platforms unless falling onto them.
+        """
+        # Only collide with platforms if you're above them and falling
+        adjusted_platforms = [
+            platform for platform in self.platforms if self.is_on_platform(platform)
+        ]
+        self.platforms = adjusted_platforms
+        return super()._get_new_position()
