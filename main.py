@@ -93,8 +93,9 @@ class OverworldView(arcade.View):
                     random.uniform(bounds[0], bounds[1]),
                     random.uniform(bounds[2], bounds[3])
                 )
-                self.wild_pokemon_list.append(pokemon_sprite)
-                self.y_sorted_sprites.append(pokemon_sprite)
+                if not arcade.check_for_collision_with_list(pokemon_sprite, self.walls):
+                    self.wild_pokemon_list.append(pokemon_sprite)
+                    self.y_sorted_sprites.append(pokemon_sprite)
 
                 self.counter_pokemon =0
             else:

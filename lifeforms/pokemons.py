@@ -2,6 +2,7 @@ import random
 from pathlib import Path
 
 import arcade
+from arcade.hitbox import HitBox
 
 
 class WildPokemon(arcade.Sprite):
@@ -26,6 +27,12 @@ class WildPokemon(arcade.Sprite):
         self.current_frame = 0
         self.frame_timer = 0
         self.frame_duration = 0.05
+        self._hit_box = HitBox([
+            (-4, -20),
+            (4, -20),
+            (4, -4),
+            (-4, -4),
+        ])
 
     def update_animation(self, delta_time: float = 1 / 60):
         if self.change_x == 0 and self.change_y == 0:
