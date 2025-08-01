@@ -53,7 +53,9 @@ class SmashStageOnlyView(arcade.View):
             use_spatial_hash=True,
         )
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
+        self.death_fields = self.tile_map.object_lists["death"]
         self.platforms = self.scene["platforms"]
+        self.death_field = [field for field in self.death_fields if field.name == "Alive"][0]
 
         self.physics_engine = arcade.PhysicsEnginePlatformer(
             self.character_1,
@@ -108,14 +110,25 @@ class SmashStageOnlyView(arcade.View):
                 ):
                     target.lives = max(0, target.lives - hitbox.damage)
 
-                    knockback = hitbox.damage * 0.5
-                    # target.change_x += (
-                    #     knockback if hitbox.center_x < target.center_x else -knockback
-                    # )
-                    target.change_y += knockback
+                    target.change_x += hitbox.knockback[0]
+                    target.change_y += hitbox.knockback[1]
                     hitbox.remove_from_sprite_lists()
         self.p1_lives_text.text = f"P1 Lives: {self.character_1.lives}"
         self.p2_lives_text.text = f"P2 Lives: {self.character_2.lives}"
+
+        left_top, right_top, right_bottom, left_bottom = self.death_field.shape
+        left = left_top[0]
+        right = right_top[0]
+        bottom = right_bottom[1]
+        top = right_top[1]
+
+        for character in self.player_list:
+            x, y = character.center_x, character.center_y
+            if not (left <= x <= right and bottom <= y <= top):
+                character.lives = 0
+                print(
+                    f"{'Player 1' if character == self.character_1 else 'Player 2'} viel uit het speelveld!"
+                )
 
         if self.character_1.lives <= 0:
             print("Player 2 wins!")
@@ -128,8 +141,36 @@ class SmashStageOnlyView(arcade.View):
     def on_key_press(self, key, modifiers):
         self.held_keys.add(key)
         if key == arcade.key.Z:
-            hitbox = self.character_1.create_attack_hitbox()
+            # A-knop = tackle (neutrale melee aanval)
+            hitbox = self.character_1.create_attack_hitbox(
+                direction="neutral", damage=10, knockback=(5, 3), width=40, height=20
+            )
             self.attack_hitboxes.append(hitbox)
+
+        elif key == arcade.key.X:
+            direction = "neutral"
+            if arcade.key.UP in self.held_keys:
+                direction = "up"
+            elif arcade.key.DOWN in self.held_keys:
+                direction = "down"
+            elif arcade.key.LEFT in self.held_keys:
+                direction = "left"
+            elif arcade.key.RIGHT in self.held_keys:
+                direction = "right"
+
+            # Verschillende effecten per richting
+            attack_data = {
+                "neutral": dict(damage=8, knockback=(0, 6), width=20, height=20),
+                "up": dict(damage=10, knockback=(0, 10), width=20, height=30),
+                "down": dict(damage=12, knockback=(0, -8), width=20, height=20),
+                "left": dict(damage=9, knockback=(-7, 1), width=30, height=20),
+                "right": dict(damage=9, knockback=(7, 1), width=30, height=20),
+            }
+
+            props = attack_data[direction]
+            hitbox = self.character_1.create_attack_hitbox(direction=direction, **props)
+            self.attack_hitboxes.append(hitbox)
+
         if key == arcade.key.SPACE:
             if self.physics_engine.can_jump():
                 self.physics_engine.jump(self.character_1.JUMP_SPEED)
@@ -194,17 +235,38 @@ class Character(arcade.Sprite):
             self.frame_timer = 0
 
     def update(self, delta_time: float = 1 / 60):
-        pass
+        if abs(self.change_x) > 0.1:
+            self.change_x *= 0.85  # Slide to a stop
+        else:
+            self.change_x = 0
 
-    def create_attack_hitbox(self) -> arcade.Sprite:
-        hitbox = arcade.SpriteSolidColor(20, 20, arcade.color.RED)
-        offset = 30 if self.direction == "right" else -30
-        hitbox.center_x = self.center_x + offset
-        hitbox.center_y = self.center_y
-        hitbox.life_timer = 0.2  # seconds this hitbox lasts
+    def create_attack_hitbox(
+        self, direction="neutral", damage=10, knockback=(0, 5), width=20, height=20
+    ):
+        hitbox = arcade.SpriteSolidColor(width, height, arcade.color.RED_DEVIL)
+
+        # Positioneer hitbox op basis van richting
+        offset_x, offset_y = 0, 0
+        if direction == "up":
+            offset_y = 40
+        elif direction == "down":
+            offset_y = -40
+        elif direction == "left":
+            offset_x = -40
+        elif direction == "right":
+            offset_x = 40
+        elif direction == "neutral":
+            offset_x = 30 if self.direction == "right" else -30
+
+        hitbox.center_x = self.center_x + offset_x
+        hitbox.center_y = self.center_y + offset_y
+
+        hitbox.life_timer = 0.2
         hitbox.owner = self
-        hitbox.damage = 10  # damage dealt
+        hitbox.damage = damage
+        hitbox.knockback = knockback  # (x, y)
         return hitbox
+
 
 class SmashPhysicsEngine(arcade.PhysicsEnginePlatformer):
     def is_on_platform(self, platform):
