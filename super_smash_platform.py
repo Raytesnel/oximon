@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import arcade
 from arcade import load_tilemap
@@ -103,6 +104,14 @@ class SmashStageOnlyView(arcade.View):
             hitbox.life_timer -= delta_time
             if hitbox.life_timer <= 0:
                 hitbox.remove_from_sprite_lists()
+            if hasattr(hitbox, "textures"):
+                hitbox.animation_timer += delta_time
+                if hitbox.animation_timer > hitbox.frame_duration:
+                    hitbox.current_frame = (hitbox.current_frame + 1) % len(
+                        hitbox.textures
+                    )
+                    hitbox.texture = hitbox.textures[hitbox.current_frame]
+                    hitbox.animation_timer = 0
         if hitbox is not None:
             for target in self.player_list:
                 if target is not hitbox.owner and arcade.check_for_collision(
@@ -112,7 +121,7 @@ class SmashStageOnlyView(arcade.View):
 
                     target.change_x += hitbox.knockback[0]
                     target.change_y += hitbox.knockback[1]
-                    hitbox.remove_from_sprite_lists()
+                    # hitbox.remove_from_sprite_lists()
         self.p1_lives_text.text = f"P1 Lives: {self.character_1.lives}"
         self.p2_lives_text.text = f"P2 Lives: {self.character_2.lives}"
 
@@ -241,11 +250,24 @@ class Character(arcade.Sprite):
             self.change_x = 0
 
     def create_attack_hitbox(
-        self, direction="neutral", damage=10, knockback=(0, 5), width=20, height=20
+        self, direction="neutral", damage=10, knockback=(0, 5), width=20, height=20, time_attack:int=1
     ):
-        hitbox = arcade.SpriteSolidColor(width, height, arcade.color.RED_DEVIL)
+        HADOUKEN_FRAMES = [
+            arcade.load_texture(
+                Path(ASSETS_PATH)
+                / f"sprites/pokemon/Charmander/hadukan/hadukan_{i}.png"
+            )
+            for i in range(1, 11)
+        ]
+        hitbox = arcade.Sprite()
+        hitbox.textures = HADOUKEN_FRAMES
+        hitbox.texture = HADOUKEN_FRAMES[0]
+        hitbox.width = width
+        hitbox.height = height
+        hitbox.animation_timer = 0
+        hitbox.current_frame = 0
+        hitbox.frame_duration = 0.05  # Seconds per frame
 
-        # Positioneer hitbox op basis van richting
         offset_x, offset_y = 0, 0
         if direction == "up":
             offset_y = 40
@@ -261,7 +283,7 @@ class Character(arcade.Sprite):
         hitbox.center_x = self.center_x + offset_x
         hitbox.center_y = self.center_y + offset_y
 
-        hitbox.life_timer = 0.2
+        hitbox.life_timer = 0.5
         hitbox.owner = self
         hitbox.damage = damage
         hitbox.knockback = knockback  # (x, y)

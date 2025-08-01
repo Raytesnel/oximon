@@ -76,7 +76,7 @@ class OverworldView(arcade.View):
             self.pokemon_fields[pokemon_field.name] = []
         pokemons_in_field =[pokemon for pokemon in self.wild_pokemon_list if pokemon_field.name == pokemon.field]
         if self.max_pokemon_per_bush > len(pokemons_in_field):
-            if self.counter_pokemon > random.uniform(100,5000):
+            if self.counter_pokemon > random.uniform(0.5,1):
                 left_top, right_top, right_bottom, left_bottom= pokemon_field.shape
                 bounds = (left_top[0], right_top[0], left_bottom[1], left_top[1])
                 pokemons_allowed_in_field = [pokemon for pokemon in Pokemons.values() if pokemon_field.name  in pokemon.areas]
