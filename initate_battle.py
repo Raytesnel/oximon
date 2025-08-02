@@ -1,6 +1,6 @@
 import arcade
 
-from super_smash_platform import SmashStageOnlyView
+from smash_stage.stage import SmashStageOnlyView
 
 
 class BattleSplashView(arcade.View):
