@@ -81,7 +81,7 @@ class SmashStageOnlyView(arcade.View):
         self.attack_hitboxes.draw()
         self.draw_ui()
 
-    def on_update(self, delta_time):
+    def on_update(self, delta_time:float=1/60):
         self.timer += delta_time
         self.physics_engine.update()
         self.physics_engine_2.update()
@@ -250,7 +250,7 @@ class Character(arcade.Sprite):
             self.change_x = 0
 
     def create_attack_hitbox(
-        self, direction="neutral", damage=10, knockback=(0, 5), width=20, height=20, time_attack:int=1
+        self, direction="neutral", damage=10, knockback=(0, 5), width=20, height=20, frame_duration:float=1/60
     ):
         HADOUKEN_FRAMES = [
             arcade.load_texture(
@@ -266,7 +266,7 @@ class Character(arcade.Sprite):
         hitbox.height = height
         hitbox.animation_timer = 0
         hitbox.current_frame = 0
-        hitbox.frame_duration = 0.05  # Seconds per frame
+        hitbox.frame_duration = frame_duration *2
 
         offset_x, offset_y = 0, 0
         if direction == "up":
@@ -283,7 +283,7 @@ class Character(arcade.Sprite):
         hitbox.center_x = self.center_x + offset_x
         hitbox.center_y = self.center_y + offset_y
 
-        hitbox.life_timer = 0.5
+        hitbox.life_timer = 10*hitbox.frame_duration
         hitbox.owner = self
         hitbox.damage = damage
         hitbox.knockback = knockback  # (x, y)
