@@ -70,7 +70,6 @@ class Character(arcade.Sprite):
         if not data:
             return None
 
-        width, height = data["size"]
         knockback = data["knockback"]
         damage = data["damage"]
         offset = data["offset"]
@@ -79,14 +78,14 @@ class Character(arcade.Sprite):
         if direction == "neutral":
             offset = (30 if self.direction == "right" else -30, 0)
 
-        return Attack(
-            owner=self,
+        attack = Attack(
             textures=self.hadouken_frames,
             damage=damage,
             knockback=knockback,
-            width=width,
-            height=height,
-            direction=direction,
-            offset=offset,
+            up_force=direction,
             frame_duration=1 / 20,
         )
+        attack.owner = self
+        attack.center_y = self.center_y + offset[1]
+        attack.center_x = self.center_x + offset[0]
+        return attack
