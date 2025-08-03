@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="15">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="15">
  <tileset firstgid="1" source="../tiles/TilesetFloor.tsx"/>
  <tileset firstgid="573" source="../tiles/TilesetVillageAbandoned.tsx"/>
  <tileset firstgid="813" source="../tiles/TilesetRelief.tsx"/>
@@ -21,27 +21,27 @@
    KLUv/WAAGL0RAGbbSjnw2hSGMcBzIVglhCklFNdxhBT3Sf1QhCXmJ4sf+UIb4BraPM0aWaMS0mRBLauN9yo+/2FYRcheaVM4AEAAOABEXpLLeTjvZsfVWJ2W5WF5V56VE8/EK1GGtLphYwW0Jo/JW/KUaHg+L8OZoQ15Ql6QB2QVHoU3Ya8ULxRGRjWjAEVWQi9seF47L52XCck7smxeCF4HXqUFLajH4+HitXgsqlNSDennyXOyH89Hh8fhbRiNN0OdhF6PypvypGzL0xLigXgfnod1eVwez9t5Os8U5UF5Dl6Dx+AtOB0vx8NxMl6MB2Pk0zMzdKQgwYqXikU4BnJuSLyfN+KJ6HkY3oVnYRJehAfhPVhUEpWKCpgWEagGrARUa6VWW8kAWNGEeWDel+dlzBMzoCoBd6CxmUOCmglIJhQtB8CCkxFRwwGqiOrmUul8xZMd1DYXkkLIFHqkRNPBNI6SBugNWOoQpYYYk+SUkXREHKKl/4SGdqgTTc/zypqGqjpSKaw020jpw6mUSLiJc4Zza1I6RMvljdINMH2fj0w0+NM2J3mYeewk7fymRHIIVUU8oZTMVC4BRfbUjPeJLxkXFOu9WSKdAh0ZYYhMdD0ccjIw1nCf66FWumlsqPxHyiAOkGjjBXeghAWGmuN1COzAbLB9pMDF1zACodJQ4GRs4JfD9n52d/h5jXOiRxGifMuz7YUmJEQ/N8LysbglhMjxnvaNLYh0mwCExvu0N5ycqHnSRI57/7wFAepKAg==
   </data>
  </layer>
- <layer id="9" name="crypt" width="40" height="40">
+ <layer id="9" name="crypt" width="40" height="40" visible="0">
   <data encoding="base64" compression="zstd">
    KLUv/WAAGF0DAPQCACEEAAAiBAAAIwQAACQEAEIEAABDBAAARAQAAEVjBAAAZAQAAGUEAABmFQMpAyMYoJDFfhwDgIMYPRTzak51spFCJmloEyKNG5WLNFJSlBGVH2ogqU/UMd1EUdQgpgQyoohjUona+BEF
   </data>
  </layer>
- <layer id="7" name="trap" width="40" height="40">
+ <layer id="7" name="trap" width="40" height="40" visible="0">
   <data encoding="base64" compression="zstd">
    KLUv/WAAGBUBADgAFwY4BlkGCAABDxH+UC/gwQ7DCqBhN2AF0LAbEDd+xwY=
   </data>
  </layer>
- <layer id="2" name="voorgrond" width="40" height="40">
+ <layer id="2" name="voorgrond" width="40" height="40" visible="0">
   <data encoding="base64" compression="zstd">
    KLUv/WAAGH0EAALEDBiwJ40BiF8D5a2RgltTckFlU5IkSeJa0qWnvOSlh+54xisesWHCggfU41RzMdey0oUuJCqgoLVUag4AgwlqFB4CBj85QMVbSeVluTvzNbcylK/LXZhX3MpbXpd3MXU6OVcKYGFc9Cdi+1VkOnf6L7chE+ngxaRzUpl11nklb9ixa3dvOpvn/tSM114Z
   </data>
  </layer>
- <layer id="3" name="grass" width="40" height="40">
+ <layer id="3" name="grass" width="40" height="40" visible="0">
   <data encoding="base64" compression="zstd">
    KLUv/WAAGP0BADgApQKlAqUCHaDQdZCDNQe5gN8zorbSPTPSIVaHInSo1SGrk9TqjFC9lBP39neI1aEIHRpEZ0QFTs2wExmKkA==
   </data>
  </layer>
- <objectgroup id="5" name="objects">
+ <objectgroup id="5" name="objects" visible="0">
   <object id="7" name="player-start" x="254.277" y="83.7406" width="16" height="16"/>
  </objectgroup>
  <objectgroup id="6" name="pokemonFields" visible="0">
