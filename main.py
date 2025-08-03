@@ -30,7 +30,7 @@ class OverworldView(arcade.View):
         asset_path = os.path.join(ASSETS_PATH, "sprites/player")
         self.camera = arcade.Camera2D()
         self.tile_map = load_tilemap(
-            os.path.join(ASSETS_PATH, "map/probeersel_01.tmx"),
+            os.path.join(ASSETS_PATH, "map/new_beginning.tmx"),
             scaling=2.0,
             use_spatial_hash=True,
         )

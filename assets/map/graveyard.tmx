@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="15">
+ <tileset firstgid="1" source="../tiles/TilesetFloor.tsx"/>
+ <tileset firstgid="573" source="../tiles/TilesetVillageAbandoned.tsx"/>
+ <tileset firstgid="813" source="../tiles/TilesetRelief.tsx"/>
+ <tileset firstgid="1053" source="House.tsx"/>
+ <layer id="1" name="Tile Layer 1" width="40" height="40">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAAGHUEABQCbwAAABhvpwMYAAAYGBiSAwAAk5QDpgOougMAALsYALwYOKBwreEgAwsLcw5l/W8BpRMp6zAABY8I7TctybvBN7IVhhNnRs4A+wsm+SaSkX+FUxACpk4YQC7wnenP4ycWCIwVyBjRVlwkcpf7eAviJ/xDr3VyQEKl5lSwCaonzkpzOY6ko6R4hqJTQwY=
+  </data>
+ </layer>
+ <layer id="8" name="achtergrond" width="40" height="40">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAAGM0BAAQCAH8CgQIAAIICAJOVAgAAlgIAqAIAAKkCALwCAAC9AgAHAHoEemMBlHHg1CbGuAocNS8bUqJybA==
+  </data>
+ </layer>
+ <layer id="4" name="abandoned" width="40" height="40">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAAGG0GAOKHFx9wTxoDWH3h9maLGMm8kAxvD9Cep/4etv7/94M3pJECD92hN3TGS1foCR1x0A16QSc80qtBOnVmj95ZWrJFr0zxibdY3kCgVRc4gEgt9PQ0Rr9QER2yRu2jcSS1jQEvoODIKKytA/ACCyxRcjj3uZIPQCXIbpSUquLTfgXWIk5DwdpaS36FHSI4KGus1F8s6/AQv4tTPhOXMBn/uyCeA1Ed2ZCANNvc950zbAxVH9s+QhrIAYmRqRzZcOYjZH+FESO4FqT6zaOjehE=
+  </data>
+ </layer>
+ <layer id="7" name="trap" width="40" height="40">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAAGK0BAJgAFwY4BlkGFgYYBjcGOQZYBloGDaCQ6ANAA+47t/3wB2r7AD1E2/HSj1GB/kAl/UFx448m
+  </data>
+ </layer>
+ <layer id="2" name="voorgrond" width="40" height="40">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAAGOUAAEAAewIAj48CAAYADoX3czDhFZDGTwaAZVhSuSs=
+  </data>
+ </layer>
+ <layer id="3" name="grass" width="40" height="40">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAAGEUAAAgAAQD8SO+E
+  </data>
+ </layer>
+ <objectgroup id="5" name="objects">
+  <object id="7" name="player-start" x="254.277" y="83.7406" width="16" height="16"/>
+ </objectgroup>
+ <objectgroup id="6" name="pokemonFields">
+  <object id="8" name="1" x="241.091" y="235.211" width="101.141" height="83.4999"/>
+  <object id="12" name="2" x="358.468" y="262.421" width="76.5123" height="65.7681"/>
+  <object id="13" name="3" x="380.283" y="207.723" width="63.1634" height="44.9307"/>
+ </objectgroup>
+</map>

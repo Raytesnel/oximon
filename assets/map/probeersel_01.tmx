@@ -3,19 +3,20 @@
  <tileset firstgid="1" source="../tiles/TilesetFloor.tsx"/>
  <tileset firstgid="573" source="../tiles/TilesetVillageAbandoned.tsx"/>
  <tileset firstgid="813" source="../tiles/TilesetNature.tsx"/>
+ <tileset firstgid="1317" source="../tiles/TilesetRelief.tsx"/>
  <layer id="1" name="Tile Layer 1" width="60" height="45">
   <data encoding="base64" compression="zstd">
-   KLUv/WAwKUUPADLHFyGgJ+nQZp0ls//DGZ2tjUP7DxH7+n+oqqqqqgpGuXfskRS9a4wylDTnRa/sBKkQUUn3Sk1iqpdGEGkxdLQ/MWMMZRLSq1qFX1nyqvidv3H4Cf/gf/xNCgB+9VP8eZQEgLOgYWKGTNsBwIIRkalRHn1Kg9+huuQ4VZDYz6orRUk4DqU4A6k2VCEcUFqB0kkxb3puqCfOfjy3EbPlqIGIYuKZWybOSTn8SLje6euV+TTzb8o5QbZQXchEB0qc//VcTsWp8TwcjywenZf6WyeVgNYg1DjUK3C6SuKtUJoDcogZuQPWTjU1M3iUMDnu19OY2gclZTQ4UaHmA5iuj5HW4Uj11zXfiCeze8jwUJMi9XzIzTDW0TL1JNiIc5LXsOU8TSq23wptJ9qnyIUOKUXq5gstTjD0GQijcKcO0EYGsBR3eqExJ6L6iWk4cxavs9k0fiE6Qd6JDcfXI2lIOXrTmncSptST7IqAPl8795QEky45MFtPfe65X3gZbDuv00OLD+K6NveV+yxz96BwVK25/nzcUueQnZO/k4Dvn9XKzPURyP1q0xB9MzZz3ICoJXJvD1SKN+R3ievKhBWYDpG5vCY6TFZP+64gh5wYsJHG3kiebt5XDyjFPgd6NNuneY6JRopTPXUq
+   KLUv/WAwKW0RANKIHCSgKY0BIBa4t/0fuNMZmWj63e6J/W2qqqqqgB34a2dJKSu3tlMHw1/I3IyTfYqJ0ZJ9hMEvyHwBwK8UjcHmSVVXYnDlbkFNG9vZy2O5p5X4Q35PY59m2Vzmmh86LTfyRz/F8TP+xS/90Eogfva0+vSKCYDIoFFeBi1tB7ACEhGxbR5poMCmgTq8c3Kq8QR2Sg6KoBqpekrTNJ9UeyiVyQY1zJlKHOVprcFLxTGqdSmdlMN4aUTA9FnRj81tSIb6SZEEkLlzphwGE/S8UDvY0Ncr2T3zb8q8IPsoLiSJnA8KZzwou5p07pyZ9HI+r9/b8bBNCvfcmJvySyeRBq1BqHFpyF9BrlLwJ745IO8EXtVpIGW+KlEGwF1l3TVE2DkN0+R861kP6QRxMtK0BO8f815fwJppeBmlDyFa7TDVR005PzVrOKb9dc2N+GTpHHoc1KSgnDu5KcYaemY9BQFxTvI1bJmnnfI2trLbTX9KOKFDokDNnKHFDZo+g2UUNuoAbWYAS3BPLUTmiah+Ypw7Z3F1NpvmF6IYZDux4/5alM7SQjetcZ9gWi2ZrWlo83VyTEmw6ZMrk/XUd++I4MKsdl7TRxsPhPVo7iv/WfbOoHD0WXKF8/FPnXtmTv4+BHyfBFZmro3AuqMyDdH3Mc5zKaQW0Hr1IEryhvyeWHs2rPjpAUSWYfgDs/raNwc51LSAjDT2RPCciaceUJT7QOjRaDfFA807UpzqyaQB
   </data>
  </layer>
  <layer id="2" name="abandoned" width="60" height="45">
   <data encoding="base64" compression="zstd">
-   KLUv/WAwKUUPALaZRTrgmiRpDABcDxQMMzwMTJjXN5fB13kMpm4BGZ4WkGED64K3vEAfHp2LyrBpwjnQwQH//5qVtaORZUgBNgAyADcAUegIdDSgrFxVLirXlAsnCyebU4UH5n15XqKaI5qjGSIV5dq5oFw6n5Nn4pFzHbmMXEUWl2vLJ+aFcfFaPBZvhYIOj8Pb8DTczmMw4Ul4Ea4EF4LrwGXglLwkKk4pTihOJ67P5bkAXNHvw/OAswpcBK6ai+ZkY4JwlXlk3pg1eUzekml5WR6Wd8XHw3k9cJxuSDFxKlFdnCwBV4DVYC0IGS4MDy4HNR6NN0PnPQnygLwfJN6IJwLJy9mOp+Pd2DwK05CTEBkvxoPxXtyccsxcoQu0EA9EUqCRHTHEmQpsFIil2vACEpFQow5FVMopELupkE0oo4kQi6lQCCObqRC7j7pDt0E4eM4ooq8lZTsVSFTJTbbI+aD2ma0hQp5c0v4l1usmV48390TU+FMuZ2yJI91RR2Qx5YvoIzm7PXVIh2eGpqGoFTSs0pHYKc0/brq1Jg30B6F8PEc+M7QebkFQHp+6Icur5dtWHwegKCWg8jy6LjN7eEECbkkhI0l4jVZqu051AEV2/F2lAXWsZteRqbXMoLk0MaTbSqYCUnBngp9Dyy++
+   KLUv/WAwKWUQAAZdTDXw3Epr8DoFwzMwwxF4XoIjk8bQzal8A6MfHQ2Llmvr6+7u56FijsbbCD5jOEhEsEkTIjeJUzoAPwA+ANvNZrPd0/lyPgHGZduyadmyWDhVOPmcKFxmrjIXmev5eL4dIruyHW1WNiOc080EVLQp2ZJsSJqYLcwnG1hKnEjYGCotwAagMWgKFprrTIuLxbXiUpGAw7Xh0nBlWEfXAglXhAvChmA7sBnYCqwmF5MUJxSnEycTG05p6CQU44Jxvbhc/Jxw7Gw6W06BuD5cHq4OQY3ANmDr2XhONaYH25pLzZWmoFxPLicF5vpyebm6BLmCLiA3Ahi2C83B1uBN+aR8Ud6Rj+gzQuOacckwuqoQuYZcQn58Pr4eIy4RV4glV1HpuHJcP0W+oU/I55rweHw7PqABVqBxHTGEGSW4oUAs1QbwAhKRUKMORVTKKSC6KSCaUEQSQBRTQCCIaKaA6D6KHbINAsFz1JpT7YXqEYMKmznD7IBp8TzOf7YbFsxZCvGb5NS/tFI7PZnkauDNPQU1/nTLGUXiSHeUEVlM/UW0SJLdnjIkwzNA01DUChLW60zslOYfN91akwD6g1A/nls+M1oZbsFQHp8KIZNXy7StNo5CoUpA9Tw6XmZmeEEGbkl1I0l3jVZqu051ADV2/F1pQHGr2XVkai0vaC5NDOm2kqmAVO8M8TPQ8gsk
   </data>
  </layer>
  <layer id="10" name="grass" width="60" height="45">
   <data encoding="base64" compression="zstd">
-   KLUv/WAwKSUDANAAHAUAJAQAACQEJAQkBAAANwQAADsEADgEAB2gcNXmIAPL8AZGwe2OHeqo1qj4TsVQVWlaVHweaigROxTRMzWIrkp8UrglvUKNRUs7UnIutPWbqPS11PIb1T2Fy8QqJfnjrzo=
+   KLUv/WAwKWUDAOAAHAUAJAQAACoEJAQAACQEAAA3BAAAOwQAOAQAH6Bw1eYAA8vsBkbB7Y4dalGtWfGNijFVaVpUfE5qKBE7KKJnahFdEbV0PqY6UVZzqLGK5si3TTukOQft+s1U+hpK+Y3qiuryt0pJ/vi9Dg==
   </data>
  </layer>
  <layer id="9" name="voorgrond" width="60" height="45">
@@ -27,7 +28,7 @@
   <object id="12" name="player-start" x="416" y="256" width="16" height="16"/>
  </objectgroup>
  <objectgroup id="12" name="pokemonFields">
-  <object id="14" name="2" x="273.668" y="97.5451" width="97.0032" height="221.102"/>
+  <object id="14" name="2" x="223.628" y="97.5451" width="101.471" height="221.102"/>
   <object id="15" name="3" x="337.614" y="305.641" width="78.0361" height="29.2635"/>
   <object id="16" name="1" x="544.627" y="162.033" width="80.7457" height="175.039"/>
  </objectgroup>
