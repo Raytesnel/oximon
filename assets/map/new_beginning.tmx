@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="29" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="22">
+<map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="40" height="29" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="22">
  <tileset firstgid="1" source="../tiles/TilesetFloor.tsx"/>
  <tileset firstgid="573" source="../tiles/TilesetNature.tsx"/>
  <tileset firstgid="1077" source="../tiles/TilesetRelief.tsx"/>
  <tileset firstgid="1317" source="../tiles/TilesetVillageAbandoned.tsx"/>
- <tileset firstgid="1557" source="TilesetWater.tsx"/>
+ <tileset firstgid="1557" source="../tiles/TilesetWater.tsx"/>
  <layer id="1" name="Tile Layer 1" width="40" height="29">
   <data encoding="base64" compression="zstd">
    KLUv/WAgEV0AACBvAAAAAQAZcu+I
