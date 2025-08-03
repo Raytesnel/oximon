@@ -1,6 +1,6 @@
 import arcade
 
-from smash_stage.stage import SmashStageOnlyView
+from smash_stage.SmashWorld import SmashWorld
 
 
 class BattleSplashView(arcade.View):
@@ -36,7 +36,7 @@ class BattleSplashView(arcade.View):
     def on_update(self, delta_time):
         self.timer += delta_time
         if self.timer > self.show_duration:
-            self.window.show_view(SmashStageOnlyView(self.game_view))
+            self.window.show_view(SmashWorld(self.game_view))
             # self.window.show_view(self.game_view)
 
 
