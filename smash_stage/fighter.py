@@ -3,7 +3,7 @@ from pathlib import Path
 
 import arcade
 
-from smash_stage.attacks import Attack
+from smash_stage.attacks import Attack, HADUKAN, HADUKAN_BLITZ
 from utils import ASSETS_PATH
 
 
@@ -74,17 +74,11 @@ class Character(arcade.Sprite):
         damage = data["damage"]
         offset = data["offset"]
 
-        # Flip horizontal offset based on facing direction
+        attack = HADUKAN_BLITZ
         if direction == "neutral":
             offset = (30 if self.direction == "right" else -30, 0)
-
-        attack = Attack(
-            textures=self.hadouken_frames,
-            damage=damage,
-            knockback=knockback,
-            up_force=direction,
-            frame_duration=1 / 20,
-        )
+            attack = HADUKAN
+        attack.new_attack()
         attack.owner = self
         attack.center_y = self.center_y + offset[1]
         attack.center_x = self.center_x + offset[0]

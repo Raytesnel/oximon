@@ -16,6 +16,7 @@ class Attack(arcade.Sprite):
         lifetime=10,
     ):
         super().__init__()
+        self.lifetime = lifetime
         self.textures = textures
         self.texture = textures[0]
         self.current_frame = 0
@@ -24,6 +25,12 @@ class Attack(arcade.Sprite):
         self.life_timer = lifetime * frame_duration
         self.damage = damage
         self.knockback = knockback
+    def new_attack(self):
+        self.current_frame = 0
+        self.animation_timer = 0
+        self.texture = self.textures[0]
+        self.life_timer = self.lifetime * self.frame_duration
+
 
     def update(self, delta_time):
         self.life_timer -= delta_time
@@ -49,7 +56,7 @@ def collect_attack_sprites(attack_folder:Path)->list[arcade.Texture]:
 HADUKAN = Attack(
     textures= collect_attack_sprites(Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan_2"),
     damage=1.5,
-    knockback=3,
+    knockback=(0, 3),
     up_force=1,
     frame_duration=1 / 60,
 )
@@ -57,7 +64,7 @@ HADUKAN = Attack(
 HADUKAN_BLITZ = Attack(
     textures= collect_attack_sprites(Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan"),
     damage=6,
-    knockback=0.5,
+    knockback=(0, 1),
     up_force=5,
     frame_duration=1 / 60,
 )
