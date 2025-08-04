@@ -113,9 +113,8 @@ class OverworldView(arcade.View):
         if collided_pokemon_list:
             collided_pokemon: WildPokemon = collided_pokemon_list[0]
             splash = BattleSplashView(
-                player_sprite_path=os.path.join(ASSETS_PATH, "sprites/pokemon/player_shot.png"),
-                banner_path=os.path.join(ASSETS_PATH, "sprites/pokemon/banner.jpg"),
-                game_view=self,
+                # banner_path=os.path.join(ASSETS_PATH, "sprites/pokemon/banner.jpg"),
+                overworld_view=self,
                 wild_pokemon=collided_pokemon
             )
             self.window.show_view(splash)
