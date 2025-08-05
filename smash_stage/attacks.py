@@ -1,46 +1,70 @@
+from pathlib import Path
+
 import arcade
+
+from utils import ASSETS_PATH
 
 
 class Attack(arcade.Sprite):
     def __init__(
         self,
-        owner,
         textures,
         damage,
         knockback,
-        width,
-        height,
-        direction,
-        offset=(0, 0),
+        up_force,
         frame_duration=1 / 30,
         lifetime=10,
     ):
         super().__init__()
-        self.owner = owner
+        self.lifetime = lifetime
         self.textures = textures
         self.texture = textures[0]
         self.current_frame = 0
         self.animation_timer = 0
         self.frame_duration = frame_duration
         self.life_timer = lifetime * frame_duration
-
         self.damage = damage
         self.knockback = knockback
-        self.width = width
-        self.height = height
+    def new_attack(self):
+        self.current_frame = 0
+        self.animation_timer = 0
+        self.texture = self.textures[0]
+        self.life_timer = self.lifetime * self.frame_duration
 
-        offset_x, offset_y = offset
-        self.center_x = owner.center_x + offset_x
-        self.center_y = owner.center_y + offset_y
 
     def update(self, delta_time):
         self.life_timer -= delta_time
         if self.life_timer <= 0:
             self.remove_from_sprite_lists()
             return
+        height_last_frame = self.texture.height
 
         self.animation_timer += delta_time
         if self.animation_timer >= self.frame_duration:
             self.current_frame = (self.current_frame + 1) % len(self.textures)
             self.texture = self.textures[self.current_frame]
             self.animation_timer = 0
+            self.height = self.texture.height
+            self.center_y = self.center_y - (height_last_frame - self.height) //2
+
+def collect_attack_sprites(attack_folder:Path)->list[arcade.Texture]:
+    return [
+        arcade.load_texture(attack_folder / f"hadukan_{i}.png") for i in range(1, 11)
+    ]
+
+
+HADUKAN = Attack(
+    textures= collect_attack_sprites(Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan_2"),
+    damage=1.5,
+    knockback=(0, 3),
+    up_force=1,
+    frame_duration=1 / 60,
+)
+
+HADUKAN_BLITZ = Attack(
+    textures= collect_attack_sprites(Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan"),
+    damage=6,
+    knockback=(0, 1),
+    up_force=5,
+    frame_duration=1 / 60,
+)

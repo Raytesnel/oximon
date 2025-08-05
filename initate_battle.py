@@ -1,44 +1,87 @@
 import arcade
-
 from smash_stage.SmashWorld import SmashWorld
+from utils import POKEMON_SPRITES_PATH
+
+
+class Monster:
+    def __init__(self, name, hp, atk, image_path, scale):
+        self.name = name
+        self.hp = hp
+        self.atk = atk
+        self.image_path = image_path
+        self.sprite = arcade.Sprite(image_path, scale=scale)
 
 
 class BattleSplashView(arcade.View):
-    def __init__(self, player_sprite_path, banner_path, game_view, wild_pokemon):
+    def __init__(self, overworld_view, wild_pokemon):
         super().__init__()
         self.wild_pokemon = wild_pokemon
-        self.timer = 0
-        self.show_duration = 1.5
-        self.game_view = game_view
-        banner_widht = 555
-        scaling = self.window.width / banner_widht
-        self.banner = arcade.Sprite(banner_path,scale=scaling)
-        self.player_sprite = arcade.Sprite(player_sprite_path,scale=0.5)
-        self.enemy_sprite = arcade.Sprite(self.wild_pokemon.sprite_file_location, scale=0.2)
-        self.sprites = arcade.SpriteList()
-        self.on_show()
-        self.sprites.append(self.banner)
-        self.sprites.append(self.player_sprite)
-        self.sprites.append(self.enemy_sprite)
+        self.game_view = overworld_view
+        self.selected_index = 0
+        self.camera = arcade.Camera2D()
 
-    def on_show(self):
-        self.banner.center_x = self.game_view.player.center_x
-        self.banner.center_y = self.game_view.player.center_y
-        self.player_sprite.center_x = self.game_view.player.center_x - self.window.width //2 + self.player_sprite.width//2
-        self.player_sprite.center_y = self.game_view.player.center_y
-        self.enemy_sprite.center_x = self.game_view.player.center_x + self.window.width //2 - self.enemy_sprite.width//2
-        self.enemy_sprite.center_y = self.game_view.player.center_y
+        self.team_monsters = [
+            Monster(
+                "Firefox",
+                40,
+                10,
+                POKEMON_SPRITES_PATH / "Bulbasaur" / "banner.png",
+                0.1,
+            ),
+            Monster(
+                "Pengu", 35, 8, POKEMON_SPRITES_PATH / "Charmander" / "banner.png", 0.03
+            ),
+            Monster(
+                "Snaky", 50, 6, POKEMON_SPRITES_PATH / "Bulbasaur" / "banner.png", 0.1
+            ),
+        ]
+
+        # Pre-create enemy text labels
+        self.enemy_labels = [
+            arcade.Text("Enemy:", 550, 400, arcade.color.WHITE, 16),
+            arcade.Text(f"Name: {wild_pokemon.name}", 550, 370, arcade.color.WHITE, 14),
+            arcade.Text("HP: 100", 550, 350, arcade.color.WHITE, 14),
+            arcade.Text("ATK: 20", 550, 330, arcade.color.WHITE, 14),
+        ]
 
     def on_draw(self):
         self.clear()
-        self.sprites.draw()
+        self.camera.use()
+        # Background
+        arcade.draw_lbwh_rectangle_filled(
+            bottom=0,
+            left=0,
+            width=self.window.width,
+            height=self.window.height,
+            color=arcade.color.BLACK,
+        )
 
-    def on_update(self, delta_time):
-        self.timer += delta_time
-        if self.timer > self.show_duration:
+        # Draw static enemy info
+        for label in self.enemy_labels:
+            label.draw()
+
+        # Draw your team with highlight
+        for i, monster in enumerate(self.team_monsters):
+            y = 400 - i * 70
+            color = (
+                arcade.color.YELLOW if i == self.selected_index else arcade.color.WHITE
+            )
+
+            # Position and draw sprite
+            monster.sprite.center_x = 40
+            monster.sprite.center_y = y + 10
+            arcade.draw_sprite(monster.sprite)
+
+            # Draw name & HP next to sprite
+            text = arcade.Text(f"{monster.name} - HP: {monster.hp}", 80, y, color, 14)
+            text.draw()
+
+    def on_key_press(self, key, modifiers):
+        if key == arcade.key.UP:
+            self.selected_index = (self.selected_index - 1) % len(self.team_monsters)
+        elif key == arcade.key.DOWN:
+            self.selected_index = (self.selected_index + 1) % len(self.team_monsters)
+        elif key == arcade.key.SPACE:
+            selected = self.team_monsters[self.selected_index]
+            print(f"You chose: {selected.name}")
             self.window.show_view(SmashWorld(self.game_view))
-            # self.window.show_view(self.game_view)
-
-
-    # def on_key_press(self, key, modifiers):
-    #     self.window.show_view(self.game_view)
