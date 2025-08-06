@@ -76,7 +76,9 @@ class SmashWorld(arcade.View):
             for target in self.player_list:
                 if target is not hitbox.owner and arcade.check_for_collision(hitbox, target) and not target.is_hit:
                     target.lives = max(0, target.lives - hitbox.damage)
-                    dir_dx, dir_dy = hitbox.knockback_direction
+
+                    dir_dx = hitbox.knockback_direction.x_direction
+                    dir_dy = hitbox.knockback_direction.y_direction
                     dir_dx *= hitbox.facing
                     expl_dx = target.center_x - hitbox.center_x
                     expl_dy = target.center_y - hitbox.center_y
