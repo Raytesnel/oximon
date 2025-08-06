@@ -54,18 +54,15 @@ def collect_attack_sprites(attack_folder: Path) -> list[arcade.Texture]:
     ]
 
 
-# TODO: add up_force per attack
-# TODO: add parameter for each attack how long unvunable enemy is.
-# TODO: add recovery time
-# TODO: attack hit flashy things.
+
 
 HADUKAN = Attack(
     textures= collect_attack_sprites(Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan_2"),
     damage=1.5,
     knockback_direction=(0, 1),
-    knockback_strength=2,
-    frame_duration=1 / 40,
-    explosion_knock_back=-0,
+    knockback_strength=1,
+    frame_duration=1 / 5,
+    explosion_knock_back=-1,
 )
 
 HADUKAN_BLITZ = Attack(
@@ -73,7 +70,7 @@ HADUKAN_BLITZ = Attack(
         Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan"
     ),
     damage=6,
-    knockback_direction=(0.01, 1),
+    knockback_direction=(1,1),
     knockback_strength=8,
     frame_duration=1 / 20,
     explosion_knock_back=2,

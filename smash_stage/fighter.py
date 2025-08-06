@@ -95,3 +95,7 @@ class Character(arcade.Sprite):
         attack.center_y = self.center_y + offset[1]
         attack.center_x = self.center_x + offset[0]
         return attack
+
+
+# TODO: add recovery time
+# TODO: attack hit flashy things.

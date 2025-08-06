@@ -19,8 +19,8 @@ class SmashWorld(arcade.View):
         self.stage = SmashStage(
             SMASH_MAP_PATH
         )
-        self.physics_engine_1 = arcade.PhysicsEnginePlatformer(self.character_1, platforms=self.stage.platforms,gravity_constant=0.2)
-        self.physics_engine_2 = arcade.PhysicsEnginePlatformer(self.character_2, platforms=self.stage.platforms)
+        self.physics_engine_1 = arcade.PhysicsEnginePlatformer(self.character_1, platforms=self.stage.platforms,gravity_constant=0.3)
+        self.physics_engine_2 = arcade.PhysicsEnginePlatformer(self.character_2, platforms=self.stage.platforms,gravity_constant=0.3)
         self.physics_engine_1.enable_multi_jump(2)
         self.setup()
 
@@ -48,8 +48,8 @@ class SmashWorld(arcade.View):
         self.clear()
         self.camera.use()
         self.stage.on_draw()
-        self.player_list.draw()
         self.attack_hitboxes.draw()
+        self.player_list.draw()
         self.draw_ui()
 
     def on_update(self, delta_time: float = 1 / 60):
@@ -110,7 +110,7 @@ class SmashWorld(arcade.View):
         self.held_keys.add(key)
         if key == arcade.key.Z:
             hitbox = self.character_1.perform_attack("tackle", "neutral")
-            if hitbox:
+            if hitbox and hitbox not in self.attack_hitboxes:
                 self.attack_hitboxes.append(hitbox)
         elif key == arcade.key.X:
             direction = "neutral"
