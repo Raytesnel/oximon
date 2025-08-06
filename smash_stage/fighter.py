@@ -27,6 +27,9 @@ class Character(arcade.Sprite):
         self.MOVE_SPEED = 2
         self.JUMP_SPEED = 10
         self.name = name
+        self.is_hit = False
+        self.hit_timer = 1/20
+        self.hit_counter=0
 
         # Attack animation
         hadouken_path = Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan"
@@ -36,12 +39,12 @@ class Character(arcade.Sprite):
 
         # Define attack presets
         self.attacks = {
-            "neutral": dict(damage=8, knockback=(0, 6), size=(20, 20), offset=(30, 0)),
-            "up": dict(damage=10, knockback=(0, 10), size=(20, 30), offset=(0, 40)),
-            "down": dict(damage=12, knockback=(0, -8), size=(20, 20), offset=(0, -40)),
-            "left": dict(damage=9, knockback=(-7, 1), size=(30, 20), offset=(-40, 0)),
-            "right": dict(damage=9, knockback=(7, 1), size=(30, 20), offset=(40, 0)),
-            "tackle": dict(damage=10, knockback=(5, 3), size=(40, 20), offset=(30, 0)),
+            "neutral": dict(damage=8, knockback=6, size=(20, 20), offset=(30, 0)),
+            "up": dict(damage=10, knockback=10, size=(20, 30), offset=(0, 40)),
+            "down": dict(damage=12, knockback=8, size=(20, 20), offset=(0, -40)),
+            "left": dict(damage=9, knockback= 1, size=(30, 20), offset=(-40, 0)),
+            "right": dict(damage=9, knockback=1, size=(30, 20), offset=(40, 0)),
+            "tackle": dict(damage=10, knockback=3, size=(40, 20), offset=(30, 0)),
         }
 
     def update_animation(self, delta_time: float = 1 / 60):
@@ -60,6 +63,12 @@ class Character(arcade.Sprite):
             self.frame_timer = 0
 
     def update(self, delta_time: float = 1 / 60):
+        if self.is_hit:
+            self.hit_counter += delta_time
+            if self.hit_timer< self.hit_counter:
+                self.is_hit = False
+                self.hit_counter = 0
+
         if abs(self.change_x) > 0.1:
             self.change_x *= 0.85
         else:
@@ -70,14 +79,15 @@ class Character(arcade.Sprite):
         if not data:
             return None
 
-        knockback = data["knockback"]
-        damage = data["damage"]
         offset = data["offset"]
 
         attack = HADUKAN_BLITZ
+        attack.direction = direction
         if direction == "neutral":
             offset = (30 if self.direction == "right" else -30, 0)
             attack = HADUKAN
+            attack.direction = self.direction
+
         attack.new_attack()
         attack.owner = self
         attack.center_y = self.center_y + offset[1]

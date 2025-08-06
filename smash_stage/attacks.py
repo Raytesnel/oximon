@@ -10,12 +10,13 @@ class Attack(arcade.Sprite):
         self,
         textures,
         damage,
-        knockback,
-        up_force,
+        knockback_direction,
+        knockback_strength,
         frame_duration=1 / 30,
         lifetime=10,
     ):
         super().__init__()
+        self.knockback_strength = knockback_strength
         self.lifetime = lifetime
         self.textures = textures
         self.texture = textures[0]
@@ -24,7 +25,7 @@ class Attack(arcade.Sprite):
         self.frame_duration = frame_duration
         self.life_timer = lifetime * frame_duration
         self.damage = damage
-        self.knockback = knockback
+        self.knockback_direction = knockback_direction
     def new_attack(self):
         self.current_frame = 0
         self.animation_timer = 0
@@ -52,19 +53,24 @@ def collect_attack_sprites(attack_folder:Path)->list[arcade.Texture]:
         arcade.load_texture(attack_folder / f"hadukan_{i}.png") for i in range(1, 11)
     ]
 
+# TODO: calculate knockback from center of attack to character.
+# TODO: add up_force per attack
+# TODO: add parameter for each attack how long unvunable enemy is.
+# TODO: add recovery time
+# TODO: attack hit flashy things.
 
 HADUKAN = Attack(
     textures= collect_attack_sprites(Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan_2"),
     damage=1.5,
-    knockback=(0, 3),
-    up_force=1,
-    frame_duration=1 / 60,
+    knockback_direction=(1,0),
+    knockback_strength=1,
+    frame_duration=1 / 20,
 )
 
 HADUKAN_BLITZ = Attack(
     textures= collect_attack_sprites(Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan"),
     damage=6,
-    knockback=(0, 1),
-    up_force=5,
-    frame_duration=1 / 60,
+    knockback_direction=(1,1),
+    knockback_strength=5,
+    frame_duration=1 / 20,
 )

@@ -1,4 +1,6 @@
 import arcade
+from loguru import logger
+from typing_inspection.typing_objects import target
 
 from smash_stage.fighter import Character
 from smash_stage.stage import SmashStage
@@ -73,10 +75,16 @@ class SmashWorld(arcade.View):
         for hitbox in self.attack_hitboxes:
             hitbox.update(delta_time)
             for target in self.player_list:
-                if target is not hitbox.owner and arcade.check_for_collision(hitbox, target):
+                if target is not hitbox.owner and arcade.check_for_collision(hitbox, target) and not target.is_hit:
                     target.lives = max(0, target.lives - hitbox.damage)
-                    target.change_x += hitbox.knockback[0]
-                    target.change_y += hitbox.knockback[1]
+                    dx, dy = hitbox.knockback_direction
+                    if hitbox.direction == "left":
+                        target.change_x -= dx * hitbox.knockback_strength
+                        target.change_y += dy * hitbox.knockback_strength
+                    elif hitbox.direction == "right":
+                        target.change_x += dx * hitbox.knockback_strength
+                        target.change_y += dy * hitbox.knockback_strength
+                    target.is_hit = True
 
         self.p1_lives_text.text = f"P1 Lives: {self.character_1.lives}"
         self.p2_lives_text.text = f"P2 Lives: {self.character_2.lives}"
@@ -110,7 +118,7 @@ class SmashWorld(arcade.View):
                 direction = "right"
 
             hitbox = self.character_1.perform_attack(direction, direction)
-            if hitbox:
+            if hitbox and hitbox not in self.attack_hitboxes:
                 self.attack_hitboxes.append(hitbox)
 
         elif key == arcade.key.SPACE:
