@@ -82,12 +82,14 @@ class Character(arcade.Sprite):
         offset = data["offset"]
 
         attack = HADUKAN_BLITZ
-        attack.direction = direction
+
         if direction == "neutral":
             offset = (30 if self.direction == "right" else -30, 0)
             attack = HADUKAN
-            attack.direction = self.direction
-
+        if direction == "left":
+            attack.facing = -1
+        else:
+            attack.facing = 1
         attack.new_attack()
         attack.owner = self
         attack.center_y = self.center_y + offset[1]

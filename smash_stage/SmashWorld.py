@@ -1,3 +1,5 @@
+import math
+
 import arcade
 from loguru import logger
 from typing_inspection.typing_objects import target
@@ -77,13 +79,20 @@ class SmashWorld(arcade.View):
             for target in self.player_list:
                 if target is not hitbox.owner and arcade.check_for_collision(hitbox, target) and not target.is_hit:
                     target.lives = max(0, target.lives - hitbox.damage)
-                    dx, dy = hitbox.knockback_direction
-                    if hitbox.direction == "left":
-                        target.change_x -= dx * hitbox.knockback_strength
-                        target.change_y += dy * hitbox.knockback_strength
-                    elif hitbox.direction == "right":
-                        target.change_x += dx * hitbox.knockback_strength
-                        target.change_y += dy * hitbox.knockback_strength
+                    dir_dx, dir_dy = hitbox.knockback_direction
+                    dir_dx *= hitbox.facing
+                    expl_dx = target.center_x - hitbox.center_x
+                    expl_dy = target.center_y - hitbox.center_y
+                    length = math.hypot(expl_dx, expl_dy)
+                    if length != 0:
+                        expl_dx /= length
+                        expl_dy /= length
+                    else:
+                        expl_dx, expl_dy = 0, 0
+
+                    target.change_x += dir_dx * hitbox.knockback_strength + expl_dx * hitbox.explosion_knock_back
+                    target.change_y += dir_dy * hitbox.knockback_strength + expl_dy * hitbox.explosion_knock_back
+
                     target.is_hit = True
 
         self.p1_lives_text.text = f"P1 Lives: {self.character_1.lives}"
