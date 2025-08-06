@@ -1,6 +1,5 @@
 from pathlib import Path
-from typing import Literal
-
+from loguru import logger
 import arcade
 
 from utils import ASSETS_PATH
@@ -15,7 +14,7 @@ class Attack(arcade.Sprite):
         knockback_strength: float,
         explosion_knock_back: float,
         frame_duration=1 / 30,
-        lifetime=10,
+        lifetime=1/10,
     ):
         super().__init__()
         self.explosion_knock_back = explosion_knock_back
@@ -26,7 +25,7 @@ class Attack(arcade.Sprite):
         self.current_frame = 0
         self.animation_timer = 0
         self.frame_duration = frame_duration
-        self.life_timer = lifetime * frame_duration
+        self.life_timer = lifetime
         self.damage = damage
         self.knockback_direction = knockback_direction
 
@@ -34,16 +33,13 @@ class Attack(arcade.Sprite):
         self.current_frame = 0
         self.animation_timer = 0
         self.texture = self.textures[0]
-        self.life_timer = self.lifetime * self.frame_duration
+        self.life_timer = self.lifetime
 
     def update(self, delta_time):
-        self.life_timer -= delta_time
-        if self.life_timer <= 0:
-            self.remove_from_sprite_lists()
-            return
-        height_last_frame = self.texture.height
-
         self.animation_timer += delta_time
+        height_last_frame = self.texture.height
+        if self.current_frame == len(self.textures)-1:
+            self.remove_from_sprite_lists()
         if self.animation_timer >= self.frame_duration:
             self.current_frame = (self.current_frame + 1) % len(self.textures)
             self.texture = self.textures[self.current_frame]
@@ -58,7 +54,6 @@ def collect_attack_sprites(attack_folder: Path) -> list[arcade.Texture]:
     ]
 
 
-# TODO: calculate knockback from center of attack to character.
 # TODO: add up_force per attack
 # TODO: add parameter for each attack how long unvunable enemy is.
 # TODO: add recovery time
@@ -67,10 +62,10 @@ def collect_attack_sprites(attack_folder: Path) -> list[arcade.Texture]:
 HADUKAN = Attack(
     textures= collect_attack_sprites(Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan_2"),
     damage=1.5,
-    knockback_direction=(1, 0),
-    knockback_strength=1,
-    frame_duration=1 / 20,
-    explosion_knock_back=-0.5,
+    knockback_direction=(0, 1),
+    knockback_strength=2,
+    frame_duration=1 / 40,
+    explosion_knock_back=-0,
 )
 
 HADUKAN_BLITZ = Attack(

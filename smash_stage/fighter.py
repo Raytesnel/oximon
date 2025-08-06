@@ -25,7 +25,7 @@ class Character(arcade.Sprite):
         self.max_jumps = 2
         self.lives = 100
         self.MOVE_SPEED = 2
-        self.JUMP_SPEED = 10
+        self.JUMP_SPEED = 4
         self.name = name
         self.is_hit = False
         self.hit_timer = 1/20

@@ -1,9 +1,6 @@
 import math
 
 import arcade
-from loguru import logger
-from typing_inspection.typing_objects import target
-
 from smash_stage.fighter import Character
 from smash_stage.stage import SmashStage
 from utils import PLAYER_PATH, SMASH_MAP_PATH
@@ -22,7 +19,7 @@ class SmashWorld(arcade.View):
         self.stage = SmashStage(
             SMASH_MAP_PATH
         )
-        self.physics_engine_1 = arcade.PhysicsEnginePlatformer(self.character_1, platforms=self.stage.platforms)
+        self.physics_engine_1 = arcade.PhysicsEnginePlatformer(self.character_1, platforms=self.stage.platforms,gravity_constant=0.2)
         self.physics_engine_2 = arcade.PhysicsEnginePlatformer(self.character_2, platforms=self.stage.platforms)
         self.physics_engine_1.enable_multi_jump(2)
         self.setup()
