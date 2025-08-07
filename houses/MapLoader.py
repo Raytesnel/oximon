@@ -25,7 +25,6 @@ class HouseMap(arcade.View):
             logger.debug("found player start")
         except KeyError:
             raise ValueError(" player start not found")
-
         self.player.center_x = start.shape[0][0]
         self.player.center_y = start.shape[0][1]
 
@@ -42,10 +41,10 @@ class HouseMap(arcade.View):
         self.player_list.update()
         self.scene.update_animation(delta_time)
         self.player_list.update_animation(delta_time)
-        self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
         if arcade.check_for_collision_with_list(self.player, self.walls):
             self.player.center_x -= self.player.change_x
             self.player.center_y -= self.player.change_y
+        self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
 
     def on_key_press(self, key, modifiers):
         self.player.change_x = 0
