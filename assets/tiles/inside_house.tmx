@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="2">
+ <tileset firstgid="1" source="TilesetWater.tsx"/>
+ <tileset firstgid="477" source="TilesetElement.tsx"/>
+ <layer id="1" name="Tile Layer 1" width="40" height="40">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAAGF0AACDEAQAAAQD5eO+I
+  </data>
+ </layer>
+ <layer id="4" name="achtergrond" width="40" height="40">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAAGE0CAOQCABECAAASAgAhAgAAIioCAAArAgAALAI6AgAAOwIAADxKAgAASwIAAEwCACkCAAcAggX+cIOrPAVQZwIUwowMpS2AMjz53RU=
+  </data>
+ </layer>
+ <objectgroup id="5" name="objects">
+  <object id="1" name="player-start" x="228.003" y="285.667" width="10.9362" height="8.9478"/>
+ </objectgroup>
+ <layer id="2" name="Abandoned" width="40" height="40">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAAGEUAAAgAAQD8SO+E
+  </data>
+ </layer>
+ <layer id="3" name="voorgrond" width="40" height="40">
+  <data encoding="base64" compression="zstd">
+   KLUv/WAAGEUAAAgAAQD8SO+E
+  </data>
+ </layer>
+</map>

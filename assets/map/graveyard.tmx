@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="15">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="16">
  <tileset firstgid="1" source="../tiles/TilesetFloor.tsx"/>
  <tileset firstgid="573" source="../tiles/TilesetVillageAbandoned.tsx"/>
  <tileset firstgid="813" source="../tiles/TilesetRelief.tsx"/>
  <tileset firstgid="1053" source="../tiles/House.tsx"/>
  <tileset firstgid="1812" source="../tiles/TilesetNature.tsx"/>
  <tileset firstgid="2316" source="../tiles/TilesetWater.tsx"/>
+ <tileset firstgid="2792" source="TilesetFloorDetail.tsx"/>
  <layer id="1" name="Tile Layer 1" width="40" height="40">
   <data encoding="base64" compression="zstd">
-   KLUv/WAAGIUHAFKFEh6gJ+m8/eSVY4XMOouQthvPBu8WqqqO+v/v1Yha3ymILdstc7PCEXFNLCD4FxqwH0BArl0ovomVY/6j/jT6j4PhW+havnk1kr8GTKAA0YI84IIKRES3GBVU8I2nNuahTiDzpTk5csYsRUTOKJXckMsoc0GhC4J+U55ZI6C+G1nCU+wYMsR20ifXBEX23QdJUj9aHU68m7JoqZTXNd4j1cBRfjXk8ymCo3+Wzmp3ZCLWLnSk1G9w/jAI94iBcx7nXOzNCLWUPLFOI0t027HreOcRL4PhOF9CoJILqGg0FLYTRyjtqfyOhx6iTXSVWw==
+   KLUv/WAAGCULALLGFB3Apznbon6Z7CatuOzuEJzcrapmAUDQEJK2QYpMAc8pT3XeY7DQao7TNsWxfm4xQZMZFU5YED8slsQZmr/Mlz93SVWSs0fIcUQl1gIMAkZSh04qfaAQk0GybAawghIRsW0HIOAnOi0TYFFCDXn/9BlD2t1mrygzTSZ1CYLucMMtTR3QLnEpwl0EHSNN1DwcBOnsEKgbhN3qtLQhIjfQ4YRcRDnuc+ILpqgbjfiIKkGccNcERfLZNQST83ZETJ6qNFq14ciZMxUjW+IYSR+RfiWAqaOqfWKSgWOkRoM2uWJDu2uhr13M+qM657465jZxnCAjlgZcXU9433ujOc0Itsz8wB9IOBoSsofpN3CPJnz0rvtUQ/3IcFgfW7qfBWYa9QuCywNZ71dqn0R29Z7aSEe+jWfB+QgzkklIq57RmmKCs3/CNaqTBxoUZKunKUKLYqUyQ9AIwenoflzD5NTO0moB
   </data>
  </layer>
  <layer id="8" name="achtergrond" width="40" height="40">
   <data encoding="base64" compression="zstd">
-   KLUv/WAAGN0CADQCAIECAACCAgCVAgAAln8CkwKoAgAAqbwCAAC9f5eDAgCVAgASIACDiqnQA76hH57QcBZwfohuVxsTQHkw6jr/UIEijVmRlBUdBXsUI3M0eMMckbTFlMGiwis=
+   KLUv/WAAGLUGAHJEDhfAJY0BrXl8LzsnifyHNyH8//+/GiWVAtdmLschOArj3DVdJrerz8y1kQk5GuiCgA64TIVuTuiDATug8E4XiwGwApJApMa2AVf6Zyg4t1mquM6ojFohlSeSaTyh/zgzpFyF1N420RtUDaS80mT91ul7ijGkHYyTzY6WMhNYFf6eDrXOKYjq385xOSjdSTqXacnwmaUfP+cGOnfe8ZfT/o0eFCgP9iV17U8vEHvODyW7sCCmPJBmQuUf6CeEqhTMiuktHW2Hisyja1OOkLalVLCoNAc=
   </data>
  </layer>
  <layer id="4" name="abandoned" width="40" height="40">
   <data encoding="base64" compression="zstd">
-   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
+   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
   </data>
  </layer>
  <layer id="9" name="crypt" width="40" height="40">
   <data encoding="base64" compression="zstd">
-   KLUv/WAAGF0DAPQCACEEAAAiBAAAIwQAACQEAEIEAABDBAAARAQAAEVjBAAAZAQAAGUEAABmFQMpAyMYoJDFfhwDgIMYPRTzak51spFCJmloEyKNG5WLNFJSlBGVH2ogqU/UMd1EUdQgpgQyoohjUona+BEF
+   KLUv/WAAGP0AAGAAJwMAEwaGBAB+AgAFAM5AHXbg/nHTxq5BNdzGd1c=
   </data>
  </layer>
  <layer id="7" name="trap" width="40" height="40">
@@ -33,16 +34,17 @@
  </layer>
  <layer id="2" name="voorgrond" width="40" height="40">
   <data encoding="base64" compression="zstd">
-   KLUv/WAAGH0EAALEDBiwJ40BiF8D5a2RgltTckFlU5IkSeJa0qWnvOSlh+54xisesWHCggfU41RzMdey0oUuJCqgoLVUag4AgwlqFB4CBj85QMVbSeVluTvzNbcylK/LXZhX3MpbXpd3MXU6OVcKYGFc9Cdi+1VkOnf6L7chE+ngxaRzUpl11nklb9ixa3dvOpvn/tSM114Z
+   KLUv/WAAGL0HACJJGyeQNxnG77f47PuI/AIfH3+7Wzrlp7idBgzb+KytDazr5rj78p3sEqQXeZD3eI7O83QSx/AW3vQkzcs8TMEjeANP4C7P8iqqsWKsFitFtAgaNIC3WcCKgFjCQ3gHz2CUN3mS9fByeDVc00t6KQQ+oFBnSkqSQgfQggpqNDt24Ee8fcZIle5BUpUvpOKhsCD1GbcFSYKqhEeR2kW6bSFts1pL1+XuGK9yLmv5urQ75lXupVpel3dn1Olkf6c4BzpjPMW0v4o0mjLhgjWzC4kRS5/m3lmY6fzpfV3b7JFF09yCDTy6ypFVjL08t12KzXNvaorbBhI=
   </data>
  </layer>
  <layer id="3" name="grass" width="40" height="40">
   <data encoding="base64" compression="zstd">
-   KLUv/WAAGP0BADgApQKlAqUCHaDQdZCDNQe5gN8zorbSPTPSIVaHInSo1SGrk9TqjFC9lBP39neI1aEIHRpEZ0QFTs2wExmKkA==
+   KLUv/WAAGP0BADgApwKnAqcCHaDQdZCDNQe5gN8zorbSPTPSIVaHInSo1SGrk9TqjFC9lBP39neI1aEIHRpEZ0QFTs2wExmKkA==
   </data>
  </layer>
  <objectgroup id="5" name="objects">
   <object id="7" name="player-start" x="254.277" y="83.7406" width="16" height="16"/>
+  <object id="15" name="graveyard-house" x="448.837" y="145.406" width="14.6208" height="14.4205"/>
  </objectgroup>
  <objectgroup id="6" name="pokemonFields">
   <object id="8" name="1" x="16.9756" y="365.666" width="190.787" height="52.0568"/>
