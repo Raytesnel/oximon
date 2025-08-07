@@ -19,7 +19,7 @@
   <object id="1" name="player-start" x="228.003" y="285.667" width="10.9362" height="8.9478"/>
   <object id="4" gid="1201" x="255.684" y="207.474" width="16" height="16"/>
  </objectgroup>
- <layer id="2" name="Abandoned" width="40" height="40">
+ <layer id="2" name="abandoned" width="40" height="40">
   <data encoding="base64" compression="zstd">
    KLUv/WAAGDUCAOQCAE0CAABVAgAAVgIAABECAAASAgBdAgAAZQIAAGYCAAAhAgAAIgIAAP8BAG8CAAYAkQUfOiNDAQ2gRtGgahWACszxOyE=
   </data>
