@@ -3,7 +3,9 @@ import random
 
 import arcade
 from arcade import load_tilemap
+from loguru import logger
 
+from houses.MapLoader import HouseMap
 from initate_battle import BattleSplashView
 from lifeforms.characters import Player
 from lifeforms.pokemons import WildPokemon
@@ -24,6 +26,7 @@ class OverworldView(arcade.View):
         self.counter_pokemon =0
         self.pokemon_fields = {}
         self.all_sprites = []
+        self.hous_graveyard_1 =None
 
     def setup(self):
         self.player_list = arcade.SpriteList()
@@ -57,6 +60,10 @@ class OverworldView(arcade.View):
         self.y_sorted_sprites.extend(self.scene["grass"])
         self.y_sorted_sprites.extend(self.wild_pokemon_list)
         self.y_sorted_sprites.append(self.player)
+        try:
+            self.hous_graveyard_1 = next((o for o in self.tile_map.object_lists["objects"] if o.name == "graveyard-house"), None)
+        except KeyError:
+            raise KeyError("house not found")
 
     def on_draw(self):
         self.clear()
@@ -69,6 +76,19 @@ class OverworldView(arcade.View):
         self.player_list.update()
         self.scene.update_animation(delta_time)
         self.player_list.update_animation(delta_time)
+        if check_object_collision(self.player,self.hous_graveyard_1):
+            logger.debug("going in the house.")
+            house = HouseMap(
+                player = self.player,
+                overworld_map = self,
+                tile_map=load_tilemap(
+            os.path.join(ASSETS_PATH, "map/inside_house.tmx"),
+            scaling=2.0,
+            use_spatial_hash=True,
+        )
+            )
+            self.window.show_view(house)
+            pass  # load house
         self.wild_pokemon_list.update()
         pokemon_fields = self.tile_map.object_lists["pokemonFields"]
         pokemon_field = random.choice(pokemon_fields)
@@ -160,7 +180,14 @@ class OverworldView(arcade.View):
         elif key == arcade.key.RIGHT and self.player.change_x > 0:
             self.player.change_x = 0
 
-
+def check_object_collision(player, obj):
+    (left, top), (right, _), (_, _), (_, bottom) = obj.shape
+    return (
+        player.right > left and
+        player.left < right and
+        player.top > bottom and
+        player.bottom < top
+    )
 if __name__ == "__main__":
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     view = OverworldView()
