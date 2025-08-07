@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="5">
- <tileset firstgid="1" source="TilesetWater.tsx"/>
- <tileset firstgid="477" source="TilesetElement.tsx"/>
- <tileset firstgid="717" source="TilesetInteriorFloor.tsx"/>
- <tileset firstgid="1091" source="TilesetWallSimple.tsx"/>
+ <tileset firstgid="1" source="../tiles/TilesetWater.tsx"/>
+ <tileset firstgid="477" source="../tiles/TilesetElement.tsx"/>
+ <tileset firstgid="717" source="../tiles/TilesetInteriorFloor.tsx"/>
+ <tileset firstgid="1091" source="../tiles/TilesetWallSimple.tsx"/>
  <tileset firstgid="1201" source="../sprites/npcs/SpriteSheet.tsx"/>
  <layer id="1" name="Tile Layer 1" width="40" height="40">
   <data encoding="base64" compression="zstd">
