@@ -1,20 +1,29 @@
 import arcade
-from arcade import TileMap, View
+from arcade import TileMap, View, load_spritesheet
 from loguru import logger
 
+from houses.npc import NPC
 from lifeforms.characters import Player
+from utils import ASSETS_PATH
+
 
 class HouseMap(arcade.View):
     def __init__(self, player:Player, overworld_map:View,tile_map:TileMap):
         super().__init__()
         self.world = overworld_map
         self.player_list = arcade.SpriteList()
+        self.npc_list = arcade.SpriteList()
+
         self.player = player
         self.player_list.append(self.player )
         self.all_sprites = []
         self.tile_map = tile_map
         self.scene=None
+        self.walls =None
         self.camera = arcade.Camera2D()
+        self.npc = NPC(sheet_path=ASSETS_PATH/"sprites"/"npcs"/"SpriteSheet.png")
+        self.npc.scale = 2.0
+        self.npc_list.append(self.npc)
         self.setup()
 
     def setup(self):
@@ -27,6 +36,12 @@ class HouseMap(arcade.View):
             raise ValueError(" player start not found")
         self.player.center_x = start.shape[0][0]
         self.player.center_y = start.shape[0][1]
+        try:
+            npc_start = next((o for o in self.tile_map.object_lists["objects"] if o.name == "npc_dude"), None)
+            logger.debug("found npc start")
+        except KeyError:
+            raise ValueError(" player npc not found")
+        self.npc.position = npc_start.shape[0]
 
     def on_draw(self):
         self.clear()
@@ -35,15 +50,20 @@ class HouseMap(arcade.View):
         self.scene["achtergrond"].draw()
         self.walls.draw()
         self.player_list.draw()
+        self.npc_list.draw()
         self.scene["voorgrond"].draw()
 
     def on_update(self, delta_time):
         self.player_list.update()
         self.scene.update_animation(delta_time)
         self.player_list.update_animation(delta_time)
+        self.npc_list.update()
         if arcade.check_for_collision_with_list(self.player, self.walls):
             self.player.center_x -= self.player.change_x
             self.player.center_y -= self.player.change_y
+        if arcade.check_for_collision_with_list(self.npc, self.walls):
+            self.npc.center_x -= self.npc.change_x
+            self.npc.center_y -= self.npc.change_y
         self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
 
     def on_key_press(self, key, modifiers):
