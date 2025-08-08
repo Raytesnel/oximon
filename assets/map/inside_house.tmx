@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="5">
+<map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="9">
  <tileset firstgid="1" source="../tiles/TilesetWater.tsx"/>
  <tileset firstgid="477" source="../tiles/TilesetElement.tsx"/>
  <tileset firstgid="717" source="../tiles/TilesetInteriorFloor.tsx"/>
@@ -16,8 +16,10 @@
   </data>
  </layer>
  <objectgroup id="5" name="objects">
-  <object id="1" name="player-start" x="228.003" y="285.667" width="10.9362" height="8.9478"/>
+  <object id="1" name="player-start" x="226.336" y="282" width="10.9362" height="8.9478"/>
   <object id="4" gid="1201" x="255.684" y="207.474" width="16" height="16"/>
+  <object id="5" name="npc_dude" x="210.066" y="206.052" width="16.725" height="16.056"/>
+  <object id="6" name="exit" x="223.458" y="303.736" width="15.387" height="12.711"/>
  </objectgroup>
  <layer id="2" name="abandoned" width="40" height="40">
   <data encoding="base64" compression="zstd">

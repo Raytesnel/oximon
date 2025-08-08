@@ -10,13 +10,11 @@ from initate_battle import BattleSplashView
 from lifeforms.characters import Player
 from lifeforms.pokemons import WildPokemon
 from pokemon import Pokemons
+from utils import ASSETS_PATH
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN_TITLE = "PokeSmash"
-
-ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
-
 
 class OverworldView(arcade.View):
     def __init__(self):
@@ -30,10 +28,10 @@ class OverworldView(arcade.View):
 
     def setup(self):
         self.player_list = arcade.SpriteList()
-        asset_path = os.path.join(ASSETS_PATH, "sprites/player")
+        asset_path = ASSETS_PATH/ "sprites/player"
         self.camera = arcade.Camera2D()
         self.tile_map = load_tilemap(
-            os.path.join(ASSETS_PATH, "map/graveyard.tmx"),
+            ASSETS_PATH/ "map/graveyard.tmx",
             scaling=2.0,
             use_spatial_hash=True,
         )
@@ -82,7 +80,7 @@ class OverworldView(arcade.View):
                 player = self.player,
                 overworld_map = self,
                 tile_map=load_tilemap(
-            os.path.join(ASSETS_PATH, "map/inside_house.tmx"),
+            ASSETS_PATH/ "map/inside_house.tmx",
             scaling=2.0,
             use_spatial_hash=True,
         )
@@ -103,7 +101,7 @@ class OverworldView(arcade.View):
                 pokemon = random.choice(pokemons_allowed_in_field)
 
                 pokemon_sprite = WildPokemon(
-                image_path=os.path.join(ASSETS_PATH, f"sprites/pokemon/{pokemon.name}"),
+                image_path=ASSETS_PATH/ f"sprites/pokemon/{pokemon.name}",
                 maggots_bounds=bounds,
                 scale=2.0,
                 name=pokemon.name,
@@ -133,7 +131,7 @@ class OverworldView(arcade.View):
         if collided_pokemon_list:
             collided_pokemon: WildPokemon = collided_pokemon_list[0]
             splash = BattleSplashView(
-                # banner_path=os.path.join(ASSETS_PATH, "sprites/pokemon/banner.jpg"),
+                # banner_path=ASSETS_PATH/ "sprites/pokemon/banner.jpg"
                 overworld_view=self,
                 wild_pokemon=collided_pokemon
             )
