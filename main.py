@@ -88,7 +88,7 @@ class OverworldView(arcade.View):
         )
             )
             self.window.show_view(house)
-            pass  # load house
+
         self.wild_pokemon_list.update()
         pokemon_fields = self.tile_map.object_lists["pokemonFields"]
         pokemon_field = random.choice(pokemon_fields)

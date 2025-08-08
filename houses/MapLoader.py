@@ -10,7 +10,7 @@ from utils import ASSETS_PATH
 class HouseMap(arcade.View):
     def __init__(self, player:Player, overworld_map:View,tile_map:TileMap):
         super().__init__()
-        self.world = overworld_map
+        self.over_world = overworld_map
         self.player_list = arcade.SpriteList()
         self.npc_list = arcade.SpriteList()
 
@@ -24,6 +24,7 @@ class HouseMap(arcade.View):
         self.npc = NPC(sheet_path=ASSETS_PATH/"sprites"/"npcs"/"SpriteSheet.png")
         self.npc.scale = 2.0
         self.npc_list.append(self.npc)
+        self.exit = None
         self.setup()
 
     def setup(self):
@@ -42,6 +43,11 @@ class HouseMap(arcade.View):
         except KeyError:
             raise ValueError(" player npc not found")
         self.npc.position = npc_start.shape[0]
+        try:
+            self.exit = next((o for o in self.tile_map.object_lists["objects"] if o.name == "exit"), None)
+            logger.debug("found npc start")
+        except KeyError:
+            raise ValueError(" exit of house not found")
 
     def on_draw(self):
         self.clear()
@@ -65,6 +71,8 @@ class HouseMap(arcade.View):
             self.npc.center_x -= self.npc.change_x
             self.npc.center_y -= self.npc.change_y
         self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
+        if check_object_collision(self.player,self.exit):
+            self.window.show_view(self.over_world)
 
     def on_key_press(self, key, modifiers):
         self.player.change_x = 0
@@ -87,3 +95,11 @@ class HouseMap(arcade.View):
             self.player.change_x = 0
         elif key == arcade.key.RIGHT and self.player.change_x > 0:
             self.player.change_x = 0
+def check_object_collision(player, obj):
+    (left, top), (right, _), (_, _), (_, bottom) = obj.shape
+    return (
+        player.right > left and
+        player.left < right and
+        player.top > bottom and
+        player.bottom < top
+    )
