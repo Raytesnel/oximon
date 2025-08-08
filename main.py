@@ -17,7 +17,7 @@ SCREEN_HEIGHT = 600
 SCREEN_TITLE = "PokeSmash"
 
 class OverworldView(arcade.View):
-    def __init__(self):
+    def __init__(self, player_start:tuple[float,float]=None):
         super().__init__()
         self.count = False
         self.max_pokemon_per_bush = 3 # TODO: calculate this with surface area of the field.
@@ -25,25 +25,24 @@ class OverworldView(arcade.View):
         self.pokemon_fields = {}
         self.all_sprites = []
         self.hous_graveyard_1 =None
-
-    def setup(self):
-        self.player_list = arcade.SpriteList()
-        asset_path = ASSETS_PATH/ "sprites/player"
-        self.camera = arcade.Camera2D()
+        self.player_start=player_start
         self.tile_map = load_tilemap(
             ASSETS_PATH/ "map/graveyard.tmx",
             scaling=2.0,
             use_spatial_hash=True,
         )
-        self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
+    def setup(self):
+        self.camera = arcade.Camera2D()
+        self.player_list = arcade.SpriteList()
+        self.scene = arcade.Scene.from_tilemap(self.tile_map)
         try:
             start = next((o for o in self.tile_map.object_lists["objects"] if o.name == "player-start"), None)
             print("found player start")
         except KeyError:
             print(" player start not found")
             start = None
-        self.player = Player(asset_path)
+        self.player = Player(ASSETS_PATH/ "sprites/player")
         if start:
             self.player.center_x = start.shape[0][0]
             self.player.center_y = start.shape[0][1]
@@ -71,9 +70,24 @@ class OverworldView(arcade.View):
         self.scene.get_sprite_list("voorgrond").draw()
 
     def on_update(self, delta_time):
-        self.player_list.update()
+        if self.player_start:
+            self.player.center_x = 400
+            self.player.center_y = 400
+            self.player_start = None
         self.scene.update_animation(delta_time)
+        for sprite in self.y_sorted_sprites:
+            if hasattr(sprite, "_hit_box") and sprite._hit_box:
+                # Use bottom of hitbox relative to center_y
+                min_hitbox_y = min(point[1] for point in sprite._hit_box.points)
+                sprite.depth_y = sprite.center_y + min_hitbox_y
+            else:
+                sprite.depth_y = sprite.center_y
+        self.y_sorted_sprites.sort(key=lambda s: -getattr(s, "depth_y", s.center_y))
+        self.player_list.update()
         self.player_list.update_animation(delta_time)
+        self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
+
+
         if check_object_collision(self.player,self.hous_graveyard_1):
             logger.debug("going in the house.")
             house = HouseMap(
@@ -126,7 +140,6 @@ class OverworldView(arcade.View):
                 pokemon.center_x -= pokemon.change_x
                 pokemon.center_y -= pokemon.change_y
 
-        self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
         collided_pokemon_list = arcade.check_for_collision_with_list(self.player, self.wild_pokemon_list)
         if collided_pokemon_list:
             collided_pokemon: WildPokemon = collided_pokemon_list[0]
@@ -142,15 +155,8 @@ class OverworldView(arcade.View):
             self.player.change_y = 0
 
         # Before sorting:
-        for sprite in self.y_sorted_sprites:
-            if hasattr(sprite, "_hit_box") and sprite._hit_box:
-                # Use bottom of hitbox relative to center_y
-                min_hitbox_y = min(point[1] for point in sprite._hit_box.points)
-                sprite.depth_y = sprite.center_y + min_hitbox_y
-            else:
-                sprite.depth_y = sprite.center_y
 
-        self.y_sorted_sprites.sort(key=lambda s: -getattr(s, "depth_y", s.center_y))
+
         # TODO player grass is to small due to hitbox (probly a new special varibel needed instead of _hit_box
         # TODO refactor on_update. in seperate functions
         # TODO refactoer all forloops gone. god speed.

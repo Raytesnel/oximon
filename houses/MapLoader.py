@@ -35,14 +35,14 @@ class HouseMap(arcade.View):
             logger.debug("found player start")
         except KeyError:
             raise ValueError(" player start not found")
-        self.player.center_x = start.shape[0][0]
-        self.player.center_y = start.shape[0][1]
+        self.player.center_x = start.shape[0]
+        self.player.center_y = start.shape[1]
         try:
             npc_start = next((o for o in self.tile_map.object_lists["objects"] if o.name == "npc_dude"), None)
             logger.debug("found npc start")
         except KeyError:
             raise ValueError(" player npc not found")
-        self.npc.position = npc_start.shape[0]
+        self.npc.position = (npc_start.shape[0],npc_start.shape[1])
         try:
             self.exit = next((o for o in self.tile_map.object_lists["objects"] if o.name == "exit"), None)
             logger.debug("found npc start")
@@ -62,16 +62,30 @@ class HouseMap(arcade.View):
     def on_update(self, delta_time):
         self.player_list.update()
         self.scene.update_animation(delta_time)
-        self.player_list.update_animation(delta_time)
         self.npc_list.update()
         if arcade.check_for_collision_with_list(self.player, self.walls):
             self.player.center_x -= self.player.change_x
             self.player.center_y -= self.player.change_y
+        else:
+            self.player_list.update_animation(delta_time)
         if arcade.check_for_collision_with_list(self.npc, self.walls):
             self.npc.center_x -= self.npc.change_x
             self.npc.center_y -= self.npc.change_y
         self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
         if check_object_collision(self.player,self.exit):
+            try:
+                hous_graveyard_1_exit = next(
+                    (
+                        o
+                        for o in self.over_world.tile_map.object_lists["objects"]
+                        if o.name == "graveyard-house-exit"
+                    ),
+                    None,
+                )
+            except KeyError:
+                raise KeyError("house not found")
+            self.player.center_x = hous_graveyard_1_exit.shape[0]
+            self.player.center_y = hous_graveyard_1_exit.shape[1]
             self.window.show_view(self.over_world)
 
     def on_key_press(self, key, modifiers):
