@@ -1,16 +1,34 @@
 from pathlib import Path
 
 import arcade
-from arcade import TileMap, View, load_spritesheet
 from loguru import logger
 
 from houses.BaseMap import BaseMap
 from houses.npc import NPC
-from lifeforms.characters import Player
 from utils import ASSETS_PATH
 
 
 class HouseMap(BaseMap):
     def __init__(self,player_location_key:str,map:Path,possible_gates:list[str]):
         super().__init__(player_location_key=player_location_key,map=map,possible_gates=possible_gates)
-        logger.debug(possible_gates)
+        self.npc_list = arcade.SpriteList()
+        self.npc = NPC(sheet_path=ASSETS_PATH/"sprites"/"npcs"/"SpriteSheet.png")
+        self.npc.scale = 2.0
+        self.npc_list.append(self.npc)
+        try:
+            npc_start = next((o for o in self.tile_map.object_lists["objects"] if o.name == "npc_dude"), None)
+            logger.debug("found npc start")
+        except KeyError:
+            raise ValueError(" player npc not found")
+        self.npc.position = npc_start.shape
+
+    def on_draw(self):
+        super().on_draw()
+        self.npc_list.draw()
+
+    def on_update(self,delta_time):
+        super().on_update(delta_time)
+        self.npc_list.update()
+        if arcade.check_for_collision_with_list(self.npc, self.walls):
+            self.npc.center_x -= self.npc.change_x
+            self.npc.center_y -= self.npc.change_y

@@ -16,7 +16,6 @@
   </data>
  </layer>
  <objectgroup id="5" name="objects">
-  <object id="4" gid="1201" x="255.684" y="207.474" width="16" height="16"/>
   <object id="6" name="exit_1" x="223.791" y="296.069" width="15.387" height="12.711"/>
   <object id="9" name="npc_dude" x="263.333" y="199.333"/>
   <object id="11" name="entrance_2" x="231" y="265.333"/>
