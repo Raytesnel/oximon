@@ -1,106 +1,36 @@
 import os
 import random
+from pathlib import Path
 
 import arcade
 from arcade import load_tilemap
 from loguru import logger
 
+from houses.BaseMap import BaseMap
 from houses.MapLoader import HouseMap
 from initate_battle import BattleSplashView
 from lifeforms.characters import Player
 from lifeforms.pokemons import WildPokemon
 from pokemon import Pokemons
-from utils import ASSETS_PATH
+from utils import ASSETS_PATH, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-SCREEN_TITLE = "PokeSmash"
 
-class OverworldView(arcade.View):
-    def __init__(self, player_start:tuple[float,float]=None):
-        super().__init__()
-        self.count = False
+class OverworldView(BaseMap):
+    def __init__(self,player_location_key:str,map:Path,possible_gates:list[str]):
         self.max_pokemon_per_bush = 3 # TODO: calculate this with surface area of the field.
         self.counter_pokemon =0
         self.pokemon_fields = {}
-        self.all_sprites = []
-        self.hous_graveyard_1 =None
-        self.player_start=player_start
-        self.tile_map = load_tilemap(
-            ASSETS_PATH/ "map/graveyard.tmx",
-            scaling=2.0,
-            use_spatial_hash=True,
-        )
+        self.wild_pokemon_list = arcade.SpriteList()
+        super().__init__(player_location_key=player_location_key,map=map,possible_gates=possible_gates)
+
 
     def setup(self):
-        self.camera = arcade.Camera2D()
-        self.player_list = arcade.SpriteList()
-        self.scene = arcade.Scene.from_tilemap(self.tile_map)
-        try:
-            start = next((o for o in self.tile_map.object_lists["objects"] if o.name == "player-start"), None)
-            print("found player start")
-        except KeyError:
-            print(" player start not found")
-            start = None
-        self.player = Player(ASSETS_PATH/ "sprites/player")
-        if start:
-            self.player.center_x = start.shape[0][0]
-            self.player.center_y = start.shape[0][1]
-        else:
-            self.player.center_x = SCREEN_WIDTH // 2
-            self.player.center_y = SCREEN_HEIGHT // 2
-        self.player.scale = 1.0
-        self.player_list.append(self.player)
-        self.walls = self.scene["abandoned"]
-        self.wild_pokemon_list = arcade.SpriteList()
-        self.y_sorted_sprites = arcade.SpriteList()
+        super().setup()
         self.y_sorted_sprites.extend(self.scene["grass"])
         self.y_sorted_sprites.extend(self.wild_pokemon_list)
-        self.y_sorted_sprites.append(self.player)
-        try:
-            self.hous_graveyard_1 = next((o for o in self.tile_map.object_lists["objects"] if o.name == "graveyard-house"), None)
-        except KeyError:
-            raise KeyError("house not found")
-
-    def on_draw(self):
-        self.clear()
-        self.camera.use()
-        self.scene.draw()
-        self.y_sorted_sprites.draw()
-        self.scene.get_sprite_list("voorgrond").draw()
 
     def on_update(self, delta_time):
-        if self.player_start:
-            self.player.center_x = 400
-            self.player.center_y = 400
-            self.player_start = None
-        self.scene.update_animation(delta_time)
-        for sprite in self.y_sorted_sprites:
-            if hasattr(sprite, "_hit_box") and sprite._hit_box:
-                # Use bottom of hitbox relative to center_y
-                min_hitbox_y = min(point[1] for point in sprite._hit_box.points)
-                sprite.depth_y = sprite.center_y + min_hitbox_y
-            else:
-                sprite.depth_y = sprite.center_y
-        self.y_sorted_sprites.sort(key=lambda s: -getattr(s, "depth_y", s.center_y))
-        self.player_list.update()
-        self.player_list.update_animation(delta_time)
-        self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
-        # TODO: move to a basic viewer, and a maploader see shelf..
-
-        if check_object_collision(self.player,self.hous_graveyard_1):
-            logger.debug("going in the house.")
-            house = HouseMap(
-                player = self.player,
-                overworld_map = self,
-                tile_map=load_tilemap(
-            ASSETS_PATH/ "map/inside_house.tmx",
-            scaling=2.0,
-            use_spatial_hash=True,
-        )
-            )
-            self.window.show_view(house)
-
+        super().on_update(delta_time)
         self.wild_pokemon_list.update()
         pokemon_fields = self.tile_map.object_lists["pokemonFields"]
         pokemon_field = random.choice(pokemon_fields)
@@ -132,9 +62,6 @@ class OverworldView(arcade.View):
                 self.counter_pokemon =0
             else:
                 self.counter_pokemon += 1
-        if arcade.check_for_collision_with_list(self.player, self.walls):
-            self.player.center_x -= self.player.change_x
-            self.player.center_y -= self.player.change_y
         for pokemon in self.wild_pokemon_list:
             if arcade.check_for_collision_with_list(pokemon, self.walls):
                 pokemon.center_x -= pokemon.change_x
@@ -144,7 +71,6 @@ class OverworldView(arcade.View):
         if collided_pokemon_list:
             collided_pokemon: WildPokemon = collided_pokemon_list[0]
             splash = BattleSplashView(
-                # banner_path=ASSETS_PATH/ "sprites/pokemon/banner.jpg"
                 overworld_view=self,
                 wild_pokemon=collided_pokemon
             )
@@ -154,47 +80,8 @@ class OverworldView(arcade.View):
             self.player.change_x = 0
             self.player.change_y = 0
 
-        # Before sorting:
 
 
         # TODO player grass is to small due to hitbox (probly a new special varibel needed instead of _hit_box
         # TODO refactor on_update. in seperate functions
         # TODO refactoer all forloops gone. god speed.
-
-    def on_key_press(self, key, modifiers):
-        self.player.change_x = 0
-        self.player.change_y = 0
-        if key == arcade.key.UP:
-            self.player.change_y = 3
-        elif key == arcade.key.DOWN:
-            self.player.change_y = -3
-        elif key == arcade.key.LEFT:
-            self.player.change_x = -3
-        elif key == arcade.key.RIGHT:
-            self.player.change_x = 3
-            # TODO move to player? so this can be in update nothing more.
-
-    def on_key_release(self, key, modifiers):
-        if key == arcade.key.UP and self.player.change_y > 0:
-            self.player.change_y = 0
-        elif key == arcade.key.DOWN and self.player.change_y < 0:
-            self.player.change_y = 0
-        elif key == arcade.key.LEFT and self.player.change_x < 0:
-            self.player.change_x = 0
-        elif key == arcade.key.RIGHT and self.player.change_x > 0:
-            self.player.change_x = 0
-
-def check_object_collision(player, obj):
-    (left, top), (right, _), (_, _), (_, bottom) = obj.shape
-    return (
-        player.right > left and
-        player.left < right and
-        player.top > bottom and
-        player.bottom < top
-    )
-if __name__ == "__main__":
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    view = OverworldView()
-    view.setup()
-    window.show_view(view)
-    arcade.run()

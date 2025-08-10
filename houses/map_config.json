@@ -1,7 +1,7 @@
 {
   "graveyard": {
     "_file": "map/graveyard.tmx",
-    "_type": "base",
+    "_type": "overworld",
     "entrance_1": { "map": "house_1", "spawn": "entrance_2" }
   },
   "house_1": {

@@ -52,8 +52,6 @@ class BaseMap(arcade.View):
         self.scene.draw()
         self.y_sorted_sprites.draw()
         self.player_list.draw()
-        # logger.debug(f"player starts at {self.player.center_x}:{self.player.center_y}")
-
         self.scene.get_sprite_list("voorgrond").draw()
 
     def on_update(self, delta_time):
