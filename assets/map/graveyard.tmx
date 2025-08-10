@@ -44,8 +44,8 @@
  </layer>
  <objectgroup id="5" name="objects">
   <object id="7" name="player-start" x="254.277" y="83.7406" width="16" height="16"/>
-  <object id="15" name="graveyard-house" x="448.837" y="145.406" width="14.6208" height="14.4205"/>
-  <object id="16" name="graveyard-house-exit" x="456.023" y="167.79"/>
+  <object id="15" name="entrance_1" x="448.837" y="145.406" width="14.6208" height="14.4205"/>
+  <object id="16" name="exit_house_1" x="456.023" y="173.79"/>
  </objectgroup>
  <objectgroup id="6" name="pokemonFields">
   <object id="8" name="1" x="16.9756" y="365.666" width="190.787" height="52.0568"/>

@@ -1,0 +1,12 @@
+{
+  "graveyard": {
+    "_file": "map/graveyard.tmx",
+    "_type": "base",
+    "entrance_1": { "map": "house_1", "spawn": "entrance_2" }
+  },
+  "house_1": {
+    "_file": "map/inside_house.tmx",
+    "_type": "house",
+    "exit_1": { "map": "graveyard", "spawn": "exit_house_1" }
+  }
+}

@@ -86,7 +86,7 @@ class OverworldView(arcade.View):
         self.player_list.update()
         self.player_list.update_animation(delta_time)
         self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
-
+        # TODO: move to a basic viewer, and a maploader see shelf..
 
         if check_object_collision(self.player,self.hous_graveyard_1):
             logger.debug("going in the house.")
