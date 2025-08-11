@@ -8,3 +8,5 @@ SMASH_MAP_PATH = ASSETS_PATH / "map" / "smash.tmx"
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN_TITLE = "PokeSmash"
+
+ROOT_DIR = Path(__file__).resolve().parent

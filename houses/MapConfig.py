@@ -1,12 +1,13 @@
 import json
+from pathlib import Path
 
 import arcade
 from loguru import logger
 
 from houses.BaseMap import BaseMap
 from houses.MapLoader import HouseMap
-from main import OverworldView
-from utils import SCREEN_HEIGHT, SCREEN_TITLE, SCREEN_WIDTH, ASSETS_PATH
+from houses.overworld import OverworldView
+from utils import SCREEN_HEIGHT, SCREEN_TITLE, SCREEN_WIDTH, ASSETS_PATH, ROOT_DIR
 
 
 class MapConfigs:
@@ -17,7 +18,7 @@ class MapConfigs:
     }
 
     def __init__(self):
-        with open("map_config.json") as f:
+        with open(ROOT_DIR/"houses"/"map_config.json") as f:
             self.map_connections = json.load(f)
 
     def load_map_by_id(self, map_id, spawn_point_id):
@@ -49,11 +50,3 @@ class MapConfigs:
                         if choosen_map:
                             return key
         raise ValueError("choosen map couldnt be found json error")
-
-
-if __name__ == "__main__":
-    test = MapConfigs()
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    view = test.load_map_by_id("house_1", "exit_1")
-    window.show_view(view)
-    arcade.run()
