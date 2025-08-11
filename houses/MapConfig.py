@@ -1,12 +1,13 @@
 import json
 
 import arcade
+from loguru import logger
 
 from houses.BaseMap import BaseMap
 from houses.MapLoader import HouseMap
 from main import OverworldView
 from utils import SCREEN_HEIGHT, SCREEN_TITLE, SCREEN_WIDTH, ASSETS_PATH
-from loguru import logger
+
 
 class MapConfigs:
     MAP_REGISTRY = {

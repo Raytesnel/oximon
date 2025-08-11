@@ -1,18 +1,13 @@
-import os
 import random
 from pathlib import Path
 
 import arcade
-from arcade import load_tilemap
-from loguru import logger
 
 from houses.BaseMap import BaseMap
-from houses.MapLoader import HouseMap
 from initate_battle import BattleSplashView
-from lifeforms.characters import Player
 from lifeforms.pokemons import WildPokemon
 from pokemon import Pokemons
-from utils import ASSETS_PATH, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE
+from utils import ASSETS_PATH
 
 
 class OverworldView(BaseMap):
@@ -66,6 +61,8 @@ class OverworldView(BaseMap):
             if arcade.check_for_collision_with_list(pokemon, self.walls):
                 pokemon.center_x -= pokemon.change_x
                 pokemon.center_y -= pokemon.change_y
+            else:
+                pokemon.update_animation()
 
         collided_pokemon_list = arcade.check_for_collision_with_list(self.player, self.wild_pokemon_list)
         if collided_pokemon_list:
@@ -79,6 +76,7 @@ class OverworldView(BaseMap):
             self.y_sorted_sprites.remove(collided_pokemon)
             self.player.change_x = 0
             self.player.change_y = 0
+
 
 
 

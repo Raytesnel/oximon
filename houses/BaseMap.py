@@ -26,7 +26,11 @@ class BaseMap(arcade.View):
         self.player_list.append(self.player)
         self.walls = self.scene["abandoned"]
         self.y_sorted_sprites = arcade.SpriteList()
-
+        self.possible_gate_objects = [
+                        o
+                        for o in self.tile_map.object_lists["objects"]
+                        if o.name == self.possible_gates
+                    ]
         self.setup()
 
     def setup(self):
@@ -46,12 +50,13 @@ class BaseMap(arcade.View):
             logger.debug("player start set on default")
         self.y_sorted_sprites.append(self.player)
 
+
     def on_draw(self):
         self.clear()
         self.camera.use()
         self.scene.draw()
-        self.y_sorted_sprites.draw()
         self.player_list.draw()
+        self.y_sorted_sprites.draw()
         self.scene.get_sprite_list("voorgrond").draw()
 
     def on_update(self, delta_time):
@@ -92,8 +97,6 @@ class BaseMap(arcade.View):
         self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
 
         # TODO player grass is to small due to hitbox (probly a new special varibel needed instead of _hit_box
-        # TODO refactor on_update. in seperate functions
-        # TODO refactoer all forloops gone. god speed.
 
     def _read_all_entrances(self,):
         pass

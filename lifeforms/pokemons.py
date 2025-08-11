@@ -53,8 +53,6 @@ class WildPokemon(arcade.Sprite):
 
     def update(self, delta_time: float):
         self.direction_timer += delta_time
-        self.update_animation(delta_time)
-
         if self.direction_timer >= self.change_interval:
             self.direction_timer = 0
             direction = random.choice(['up', 'down', 'left', 'right', 'idle'])
