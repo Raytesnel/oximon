@@ -26,11 +26,7 @@ class BaseMap(arcade.View):
         self.player_list.append(self.player)
         self.walls = self.scene["abandoned"]
         self.y_sorted_sprites = arcade.SpriteList()
-        self.possible_gate_objects = [
-                        o
-                        for o in self.tile_map.object_lists["objects"]
-                        if o.name == self.possible_gates
-                    ]
+        self.possible_gate_objects=None
         self.setup()
 
     def setup(self):
@@ -49,6 +45,14 @@ class BaseMap(arcade.View):
             self.player.center_y = 400
             logger.debug("player start set on default")
         self.y_sorted_sprites.append(self.player)
+        for gate in self.possible_gates:
+
+            self.possible_gate_objects = [
+                    o
+                    for o in self.tile_map.object_lists["objects"]
+                    if o.name == gate
+                ]
+
 
 
     def on_draw(self):
@@ -69,23 +73,12 @@ class BaseMap(arcade.View):
                 sprite.depth_y = sprite.center_y
         self.y_sorted_sprites.sort(key=lambda s: -getattr(s, "depth_y", s.center_y))
 
-        for gate in self.possible_gates:
-            try:
-                gate_object = next(
-                    (
-                        o
-                        for o in self.tile_map.object_lists["objects"]
-                        if o.name == gate
-                    ),
-                    None,
-                )
-            except KeyError:
-                raise KeyError("house not found")
-            if check_object_collision(self.player, gate_object):
+        for gate in self.possible_gate_objects:
+            if check_object_collision(self.player, gate):
                 logger.debug("going in the house.")
                 from houses.MapConfig import MapConfigs
                 mapchanger = MapConfigs()
-                view = mapchanger.load_map_by_id(mapchanger.get_shizzle(gate_object),gate_object.name)
+                view = mapchanger.load_map_by_id(mapchanger.get_shizzle(gate),gate.name)
                 self.window.clear()
                 self.window.show_view(view)
         self.player_list.update()
@@ -95,8 +88,6 @@ class BaseMap(arcade.View):
         else:
             self.player_list.update_animation(delta_time)
         self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
-
-        # TODO player grass is to small due to hitbox (probly a new special varibel needed instead of _hit_box
 
     def _read_all_entrances(self,):
         pass
