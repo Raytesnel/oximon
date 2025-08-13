@@ -28,18 +28,24 @@ class Attack(arcade.Sprite):
     ):
         super().__init__()
         self.attack_pattern = attack_pattern
-        self.explosion_knock_back = attack_pattern[0].explosion_knock_back
-        self.knockback_strength = attack_pattern[0].knockback_strength
+        self.attack_flow = None
+        self.explosion_knock_back = 0
+        self.knockback_strength = 0
         self.textures = [pattern.texture for pattern in attack_pattern]
         self.texture = attack_pattern[0].texture
         self.current_frame = 0
         self.animation_timer = 0
         self.frame_duration = frame_duration
-        self.damage = attack_pattern[0].damage
-        self.knockback_direction = attack_pattern[0].knockback_direction
-    # TODO: nog ff de lijst gebruiken ipv alles op 1 value
+        self.damage = 0
+        self.knockback_direction = Position(x_direction=0, y_direction=0)
+
     def new_attack(self):
+        self.attack_flow = iter(self.attack_pattern)
         self.current_frame = 0
+        self.explosion_knock_back = 0
+        self.damage = 0
+        self.knockback_direction = Position(x_direction=0, y_direction=0)
+        self.knockback_strength = 0
         self.animation_timer = 0
         self.texture = self.attack_pattern[0].texture
 
@@ -49,8 +55,17 @@ class Attack(arcade.Sprite):
         if self.current_frame == len(self.textures) - 1:
             self.remove_from_sprite_lists()
         if self.animation_timer >= self.frame_duration:
-            self.current_frame = (self.current_frame + 1) % len(self.textures)
-            self.texture = self.textures[self.current_frame]
+            try:
+                new_attack: AttackPattern = next(self.attack_flow)
+            except StopIteration:
+                logger.debug("eind of animation")
+                self.remove_from_sprite_lists()
+                return
+            self.texture = new_attack.texture
+            self.explosion_knock_back = new_attack.explosion_knock_back
+            self.knockback_strength = new_attack.knockback_strength
+            self.damage = new_attack.damage
+            self.knockback_direction = new_attack.knockback_direction
             self.animation_timer = 0
             self.height = self.texture.height
             self.center_y = self.center_y - (height_last_frame - self.height) // 2
@@ -75,7 +90,21 @@ HADUKAN = Attack(
                 / f"hadukan_{i}.png"
             ),
         )
-        for i in range(1, 11)
+        for i in range(1, 8)
+    ]
+    + [
+        AttackPattern(
+            explosion_knock_back=5,
+            damage=1.5,
+            knockback_direction=Position(x_direction=1, y_direction=1),
+            knockback_strength=1,
+            texture=arcade.load_texture(
+                Path(ASSETS_PATH)
+                / "sprites/pokemon/Charmander/hadukan"
+                / f"hadukan_{i}.png"
+            ),
+        )
+        for i in range(4, 8)
     ],
     frame_duration=1 / 5,
 )
@@ -84,7 +113,7 @@ HADUKAN_BLITZ = Attack(
     attack_pattern=[
         AttackPattern(
             damage=6,
-            knockback_direction=Position(x_direction=1,y_direction=1),
+            knockback_direction=Position(x_direction=1, y_direction=1),
             knockback_strength=8,
             explosion_knock_back=2,
             texture=arcade.load_texture(
