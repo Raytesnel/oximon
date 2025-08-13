@@ -95,7 +95,7 @@ HADUKAN = Attack(
     + [
         AttackPattern(
             explosion_knock_back=5,
-            damage=1.5,
+            damage=20,
             knockback_direction=Position(x_direction=1, y_direction=1),
             knockback_strength=1,
             texture=arcade.load_texture(
