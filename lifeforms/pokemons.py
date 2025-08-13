@@ -6,7 +6,7 @@ from arcade.hitbox import HitBox
 
 
 class WildPokemon(arcade.Sprite):
-    def __init__(self, image_path, maggots_bounds, name:str, field:int,scale=2.0,):
+    def __init__(self, image_path, maggots_bounds, name:str, field:str,scale=2.0,):
         self.path_ding = Path(image_path)
         self.sprite_file_location = Path(image_path)/"banner.png"
         self.name = name
