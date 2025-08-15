@@ -80,10 +80,10 @@ def collect_attack_sprites(attack_folder: Path) -> list[arcade.Texture]:
 HADUKAN = Attack(
     attack_pattern=[
         AttackPattern(
-            explosion_knock_back=-1,
-            damage=1.5,
-            knockback_direction=Position(x_direction=0, y_direction=1),
-            knockback_strength=1,
+            explosion_knock_back=-5,
+            damage=2,
+            knockback_direction=Position(x_direction=0, y_direction=2),
+            knockback_strength=0,
             texture=arcade.load_texture(
                 Path(ASSETS_PATH)
                 / "sprites/pokemon/Charmander/hadukan_2"
@@ -94,10 +94,10 @@ HADUKAN = Attack(
     ]
     + [
         AttackPattern(
-            explosion_knock_back=5,
+            explosion_knock_back=0,
             damage=20,
-            knockback_direction=Position(x_direction=1, y_direction=1),
-            knockback_strength=1,
+            knockback_direction=Position(x_direction=1, y_direction=5),
+            knockback_strength=5,
             texture=arcade.load_texture(
                 Path(ASSETS_PATH)
                 / "sprites/pokemon/Charmander/hadukan"

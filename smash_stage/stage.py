@@ -6,7 +6,6 @@ class SmashStage:
     def __init__(self, tmx_path):
         self.tile_map = load_tilemap(tmx_path)
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
-
         self.platforms = self.scene["platforms"]
         self.background = self.scene["background"]
         self.background_2 = self.scene["background_2"]

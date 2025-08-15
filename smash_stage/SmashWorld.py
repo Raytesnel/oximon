@@ -1,7 +1,7 @@
 import math
 
 import arcade
-from smash_stage.fighter import Character
+from smash_stage.fighter import Character, KnockBackDamage
 from smash_stage.stage import SmashStage
 from utils import PLAYER_PATH, SMASH_MAP_PATH
 
@@ -14,14 +14,16 @@ class SmashWorld(arcade.View):
         self.held_keys = set()
         self.attack_hitboxes = arcade.SpriteList()
         self.timer = 0
-        self.character_1 = Character(PLAYER_PATH,"hero")
-        self.character_2 = Character(PLAYER_PATH,"monster")
-        self.stage = SmashStage(
-            SMASH_MAP_PATH
+        self.character_1 = Character(PLAYER_PATH, "hero")
+        self.character_2 = Character(PLAYER_PATH, "monster")
+        self.stage = SmashStage(SMASH_MAP_PATH)
+        self.physics_engine_1 = arcade.PhysicsEnginePlatformer(
+            self.character_1, platforms=self.stage.platforms, gravity_constant=1
         )
-        self.physics_engine_1 = arcade.PhysicsEnginePlatformer(self.character_1, platforms=self.stage.platforms,gravity_constant=0.3)
-        self.physics_engine_2 = arcade.PhysicsEnginePlatformer(self.character_2, platforms=self.stage.platforms,gravity_constant=0.3)
-        self.physics_engine_1.enable_multi_jump(2)
+        self.physics_engine_2 = arcade.PhysicsEnginePlatformer(
+            self.character_2, platforms=self.stage.platforms, gravity_constant=1
+        )
+        self.physics_engine_1.enable_multi_jump(1)
         self.setup()
 
     def setup(self):
@@ -34,8 +36,16 @@ class SmashWorld(arcade.View):
         self.character_2.center_y = self.stage.spawn_points["player2"].shape[1]
 
         # UI
-        self.p1_lives_text = arcade.Text("P1 Lives: 100", 20, self.window.height - 40, arcade.color.WHITE, 20)
-        self.p2_lives_text = arcade.Text("P2 Lives: 100", self.window.width - 160, self.window.height - 40, arcade.color.WHITE, 20)
+        self.p1_lives_text = arcade.Text(
+            "P1 Lives: 100", 20, self.window.height - 40, arcade.color.WHITE, 20
+        )
+        self.p2_lives_text = arcade.Text(
+            "P2 Lives: 100",
+            self.window.width - 160,
+            self.window.height - 40,
+            arcade.color.WHITE,
+            20,
+        )
 
     def on_show(self):
         pass  # everything handled in setup
@@ -62,7 +72,9 @@ class SmashWorld(arcade.View):
             self.character_1.jump_count = 0
 
         # Movement
-        move_speed = self.character_1.MOVE_SPEED * (4 if arcade.key.LCTRL in self.held_keys else 1)
+        move_speed = self.character_1.MOVE_SPEED * (
+            4 if arcade.key.LCTRL in self.held_keys else 1
+        )
         if arcade.key.LEFT in self.held_keys:
             self.character_1.change_x = -move_speed
         elif arcade.key.RIGHT in self.held_keys:
@@ -74,25 +86,17 @@ class SmashWorld(arcade.View):
         for hitbox in self.attack_hitboxes:
             hitbox.update(delta_time)
             for target in self.player_list:
-                if target is not hitbox.owner and arcade.check_for_collision(hitbox, target) and not target.is_hit:
-                    target.lives = max(0, target.lives - hitbox.damage)
-
-                    dir_dx = hitbox.knockback_direction.x_direction
-                    dir_dy = hitbox.knockback_direction.y_direction
-                    dir_dx *= hitbox.facing
-                    expl_dx = target.center_x - hitbox.center_x
-                    expl_dy = target.center_y - hitbox.center_y
-                    length = math.hypot(expl_dx, expl_dy)
-                    if length != 0:
-                        expl_dx /= length
-                        expl_dy /= length
-                    else:
-                        expl_dx, expl_dy = 0, 0
-
-                    target.change_x += dir_dx * hitbox.knockback_strength + expl_dx * hitbox.explosion_knock_back
-                    target.change_y += dir_dy * hitbox.knockback_strength + expl_dy * hitbox.explosion_knock_back
-
-                    target.is_hit = True
+                target: Character = target
+                if (
+                    target is not hitbox.owner
+                    and arcade.check_for_collision(hitbox, target)
+                ):
+                    target.take_hit(KnockBackDamage(
+                        x_position=hitbox.knockback_direction.x_direction,
+                        y_position=hitbox.knockback_direction.y_direction,
+                        knockback=hitbox.knockback_strength,
+                        damage= hitbox.damage
+                    ))
 
         self.p1_lives_text.text = f"P1 Lives: {self.character_1.lives}"
         self.p2_lives_text.text = f"P2 Lives: {self.character_2.lives}"
