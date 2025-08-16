@@ -1,9 +1,8 @@
-import math
-
 import arcade
+
 from smash_stage.fighter import Character, KnockBackDamage
 from smash_stage.stage import SmashStage
-from utils import PLAYER_PATH, SMASH_MAP_PATH
+from utils import SMASH_MAP_PATH, ASSETS_PATH
 
 
 class SmashWorld(arcade.View):
@@ -14,8 +13,12 @@ class SmashWorld(arcade.View):
         self.held_keys = set()
         self.attack_hitboxes = arcade.SpriteList()
         self.timer = 0
-        self.character_1 = Character(PLAYER_PATH, "hero")
-        self.character_2 = Character(PLAYER_PATH, "monster")
+        self.character_1 = Character(
+            ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"
+        )
+        self.character_2 = Character(
+            ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"
+        )
         self.stage = SmashStage(SMASH_MAP_PATH)
         self.physics_engine_1 = arcade.PhysicsEnginePlatformer(
             self.character_1, platforms=self.stage.platforms, gravity_constant=1
@@ -31,9 +34,9 @@ class SmashWorld(arcade.View):
         self.player_list.extend([self.character_1, self.character_2])
 
         self.character_1.center_x = self.stage.spawn_points["player1"].shape[0]
-        self.character_1.center_y = self.stage.spawn_points["player1"].shape[1]
+        self.character_1.center_y = self.stage.spawn_points["player1"].shape[1] + 128
         self.character_2.center_x = self.stage.spawn_points["player2"].shape[0]
-        self.character_2.center_y = self.stage.spawn_points["player2"].shape[1]
+        self.character_2.center_y = self.stage.spawn_points["player2"].shape[1] + 128
 
         # UI
         self.p1_lives_text = arcade.Text(
@@ -58,8 +61,8 @@ class SmashWorld(arcade.View):
         self.clear()
         self.camera.use()
         self.stage.on_draw()
-        self.attack_hitboxes.draw()
         self.player_list.draw()
+        self.attack_hitboxes.draw()
         self.draw_ui()
 
     def on_update(self, delta_time: float = 1 / 60):
@@ -72,31 +75,44 @@ class SmashWorld(arcade.View):
             self.character_1.jump_count = 0
 
         # Movement
-        move_speed = self.character_1.MOVE_SPEED * (
-            4 if arcade.key.LCTRL in self.held_keys else 1
-        )
+        move_speed = self.character_1.MOVE_SPEED
+
         if arcade.key.LEFT in self.held_keys:
             self.character_1.change_x = -move_speed
+            self.character_1.animation_state = "walk"
+            if arcade.key.LCTRL in self.held_keys:
+                self.character_1.change_x = -move_speed * 2
+                self.character_1.animation_state = "run"
+
         elif arcade.key.RIGHT in self.held_keys:
             self.character_1.change_x = move_speed
+            self.character_1.animation_state = "walk"
+            if arcade.key.LCTRL in self.held_keys:
+                self.character_1.change_x = move_speed * 2
+                self.character_1.animation_state = "run"
+
         else:
             self.character_1.change_x = 0
+            # self.character_1.animation_state = "idle"
 
         # Attacks
+        self.attack_hitboxes.update()
         for hitbox in self.attack_hitboxes:
             hitbox.update(delta_time)
             for target in self.player_list:
                 target: Character = target
-                if (
-                    target is not hitbox.owner
-                    and arcade.check_for_collision(hitbox, target)
+                if target is not hitbox.owner and arcade.check_for_collision(
+                    hitbox, target
                 ):
-                    target.take_hit(KnockBackDamage(
-                        x_position=hitbox.knockback_direction.x_direction,
-                        y_position=hitbox.knockback_direction.y_direction,
-                        knockback=hitbox.knockback_strength,
-                        damage= hitbox.damage
-                    ))
+                    target.take_hit(
+                        KnockBackDamage(
+                            x_position=hitbox.knockback_direction.x_direction,
+                            y_position=hitbox.knockback_direction.y_direction,
+                            knockback=hitbox.knockback_strength,
+                            damage=hitbox.damage,
+                        )
+                    )
+                    hitbox.is_hit = True
 
         self.p1_lives_text.text = f"P1 Lives: {self.character_1.lives}"
         self.p2_lives_text.text = f"P2 Lives: {self.character_2.lives}"
@@ -115,19 +131,24 @@ class SmashWorld(arcade.View):
     def on_key_press(self, key, modifiers):
         self.held_keys.add(key)
         if key == arcade.key.Z:
-            hitbox = self.character_1.perform_attack("tackle", "neutral")
-            if hitbox and hitbox not in self.attack_hitboxes:
-                self.attack_hitboxes.append(hitbox)
+            self.character_1.animation_state = "attack_2"
+            self.character_1.current_frame = 0
+
+            # hitbox = self.character_1.perform_attack("tackle", "neutral")
+            # if hitbox and hitbox not in self.attack_hitboxes:
+            #     self.attack_hitboxes.append(hitbox)
         elif key == arcade.key.X:
-            direction = "neutral"
+            self.character_1.animation_state = "attack_heavy_1"
+            self.character_1.current_frame = 0
+            direction = "special_neutral"
             if arcade.key.UP in self.held_keys:
-                direction = "up"
+                direction = "special_up"
             elif arcade.key.DOWN in self.held_keys:
-                direction = "down"
+                direction = "special_down"
             elif arcade.key.LEFT in self.held_keys:
-                direction = "left"
+                direction = "special_left"
             elif arcade.key.RIGHT in self.held_keys:
-                direction = "right"
+                direction = "special_right"
 
             hitbox = self.character_1.perform_attack(direction, direction)
             if hitbox and hitbox not in self.attack_hitboxes:

@@ -6,7 +6,13 @@ import arcade
 from loguru import logger
 from pydantic import BaseModel
 
-from smash_stage.attacks import Attack, HADUKAN, HADUKAN_BLITZ
+from smash_stage.attacks import (
+    Attack,
+    HADUKAN,
+    HADUKAN_BLITZ,
+    FireBreath,
+    BlueFireBreath,
+)
 from utils import ASSETS_PATH
 
 class KnockBackDamage(BaseModel):
@@ -16,13 +22,19 @@ class KnockBackDamage(BaseModel):
     damage:int
 
 class Character(arcade.Sprite):
-    def __init__(self, asset_path, name:str):
-        super().__init__(scale=0.5)
+    def __init__(self, asset_path:Path, name:str):
+        super().__init__(scale=1)
         self.animations = {
-            "down": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(0, 3)],
-            "up": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(12, 15)],
-            "left": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(4, 8)],
-            "right": [arcade.load_texture(os.path.join(asset_path, f"player_{i}.png")) for i in range(8, 12)],
+            "walk": arcade.load_spritesheet(asset_path/ "Walk.png").get_texture_grid(size=(128, 128), columns=7, count=7),
+            "run": arcade.load_spritesheet(asset_path/ "Run.png").get_texture_grid(size=(128, 128), columns=8, count=8),
+            "jump": arcade.load_spritesheet(asset_path/ "Jump.png").get_texture_grid(size=(128, 128), columns=8, count=8),
+            "idle": arcade.load_spritesheet(asset_path/ "Idle.png").get_texture_grid(size=(128, 128), columns=7, count=7),
+            "hurt": arcade.load_spritesheet(asset_path/ "Hurt.png").get_texture_grid(size=(128, 128), columns=3, count=3),
+            "dead": arcade.load_spritesheet(asset_path/ "Dead.png").get_texture_grid(size=(128, 128), columns=5, count=5),
+            "attack_1": arcade.load_spritesheet(asset_path/ "Attack_1.png").get_texture_grid(size=(128, 128), columns=10, count=10),
+            "attack_2": arcade.load_spritesheet(asset_path/ "Attack_2.png").get_texture_grid(size=(128, 128), columns=4, count=4),
+            "attack_heavy_1": arcade.load_spritesheet(asset_path/ "Light_ball.png").get_texture_grid(size=(128, 128), columns=7, count=7),
+            # "attack_heavy_2": arcade.load_spritesheet(asset_path/ "charge_attack.png").get_texture_grid(size=(128, 128), columns=13, count=13),
         }
         self.direction = "down"
         self.stun_duration = 2/60
@@ -31,11 +43,11 @@ class Character(arcade.Sprite):
         self.pending_knockback: Optional[KnockBackDamage] = None
         self.current_frame = 0
         self.frame_timer = 0
-        self.frame_duration = 0.075
-        self.texture = self.animations[self.direction][0]
+        self.frame_duration = 1/10
+        self.texture = self.animations["idle"][0]
         self.jump_count = 0
         self.max_jumps = 2
-        self.lives = 10000
+        self.lives = 100
         self.MOVE_SPEED = 2
         self.JUMP_SPEED = 20
         self.name = name
@@ -43,6 +55,10 @@ class Character(arcade.Sprite):
         self.hit_counter=0
         self.invincible_frame=2/60
         self.hits_take:Optional[KnockBackDamage]=None
+        self.held_keys = set()
+        self.animation_state = "idle"
+        self.attack = BlueFireBreath()
+        self.attack_2 = FireBreath()
 
         # Attack animation
         hadouken_path = Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan"
@@ -50,15 +66,6 @@ class Character(arcade.Sprite):
             arcade.load_texture(hadouken_path / f"hadukan_{i}.png") for i in range(1, 11)
         ]
 
-        # Define attack presets
-        self.attacks = {
-            "neutral": dict(damage=8, knockback=6, size=(20, 20), offset=(30, 0)),
-            "up": dict(damage=10, knockback=10, size=(20, 30), offset=(0, 40)),
-            "down": dict(damage=12, knockback=8, size=(20, 20), offset=(0, -40)),
-            "left": dict(damage=9, knockback= 1, size=(30, 20), offset=(-40, 0)),
-            "right": dict(damage=9, knockback=1, size=(30, 20), offset=(40, 0)),
-            "tackle": dict(damage=10, knockback=3, size=(40, 20), offset=(30, 0)),
-        }
     def take_hit(self, knockback_data: KnockBackDamage):
         """Trigger stun + knockback sequence."""
         self.pending_knockback = knockback_data
@@ -71,22 +78,14 @@ class Character(arcade.Sprite):
         self.change_x = 0
 
     def update_animation(self, delta_time: float = 1 / 60):
-        if self.hits_take:
-            logger.debug("TODO: hit animation")
-            return
-        if self.change_x == 0 and self.change_y == 0:
-            self.current_frame = 0
-            self.texture = self.animations[self.direction][0]
-            return
-
-        if abs(self.change_x) > abs(self.change_y):
-            self.direction = "right" if self.change_x > 0 else "left"
-
         self.frame_timer += delta_time
         if self.frame_timer > self.frame_duration:
-            self.current_frame = (self.current_frame + 1) % len(self.animations[self.direction])
-            self.texture = self.animations[self.direction][self.current_frame]
+            if self.animation_state in ["attack_1","attack_heavy_1","attack_2","attack_heavy_2"] and self.current_frame == len(self.animations[self.animation_state])-1:
+                self.animation_state = "idle"
+            self.current_frame = (self.current_frame + 1) % len(self.animations[self.animation_state])
+            self.texture = self.animations[self.animation_state][self.current_frame]
             self.frame_timer = 0
+
 
     def update(self, delta_time: float = 1 / 60):
         if self.is_stunned:
@@ -107,29 +106,25 @@ class Character(arcade.Sprite):
             self.change_x = 0
 
     def perform_attack(self, name, direction="neutral"):
-        data = self.attacks.get(name)
-        if not data:
-            return None
+        logger.debug("pew pew")
+        offset_hand_x = 30
+        offset_hand_y = -15
+        attack = self.attack
 
-        offset = data["offset"]
-
-        attack = HADUKAN_BLITZ
-
-        if direction == "neutral":
-            offset = (30 if self.direction == "right" else -30, 0)
-            attack = HADUKAN
-        if direction == "left":
+        # if direction == "neutral":
+        #     attack = self.attack_2
+        if direction == "special_left":
             attack.facing = -1
         else:
             attack.facing = 1
         attack.new_attack()
         attack.owner = self
-        attack.center_y = self.center_y + offset[1]
-        attack.center_x = self.center_x + offset[0]
+        attack.center_y = self.center_y + offset_hand_y
+        attack.center_x = self.center_x +offset_hand_x
         return attack
 
 
 # TODO: add recovery time
-# TODO: while in recovery state, movement in reduced ( terug lopen terwilj je weg wordt geschoten)
+# TODO: while in recovery state,Character(PLAYER_PATH, "monster") movement in reduced ( terug lopen terwilj je weg wordt geschoten)
 # TODO: build up force, combo's builds up a dicrectional force. before unleashing it.
 # TODO: attack hit flashy things.

@@ -1,7 +1,7 @@
-from enum import Enum
 from pathlib import Path
-from loguru import logger
+
 import arcade
+from loguru import logger
 from pydantic import BaseModel
 
 from utils import ASSETS_PATH
@@ -24,9 +24,10 @@ class Attack(arcade.Sprite):
     def __init__(
         self,
         attack_pattern: list[AttackPattern],
-        frame_duration=1 / 30,
+        frame_duration=2 / 10,
     ):
         super().__init__()
+        self.is_hit = False
         self.attack_pattern = attack_pattern
         self.attack_flow = None
         self.explosion_knock_back = 0
@@ -42,6 +43,7 @@ class Attack(arcade.Sprite):
     def new_attack(self):
         self.attack_flow = iter(self.attack_pattern)
         self.current_frame = 0
+        self.is_hit = False
         self.explosion_knock_back = 0
         self.damage = 0
         self.knockback_direction = Position(x_direction=0, y_direction=0)
@@ -50,31 +52,80 @@ class Attack(arcade.Sprite):
         self.texture = self.attack_pattern[0].texture
 
     def update(self, delta_time):
-        self.animation_timer += delta_time
-        height_last_frame = self.texture.height
-        if self.current_frame == len(self.textures) - 1:
+        try:
+            new_attack: AttackPattern = next(self.attack_flow)
+        except StopIteration:
+            logger.debug("eind of animation")
             self.remove_from_sprite_lists()
-        if self.animation_timer >= self.frame_duration:
-            try:
-                new_attack: AttackPattern = next(self.attack_flow)
-            except StopIteration:
-                logger.debug("eind of animation")
-                self.remove_from_sprite_lists()
-                return
-            self.texture = new_attack.texture
-            self.explosion_knock_back = new_attack.explosion_knock_back
-            self.knockback_strength = new_attack.knockback_strength
-            self.damage = new_attack.damage
-            self.knockback_direction = new_attack.knockback_direction
-            self.animation_timer = 0
-            self.height = self.texture.height
-            self.center_y = self.center_y - (height_last_frame - self.height) // 2
+            return
+        self.texture = new_attack.texture
+        self.explosion_knock_back = new_attack.explosion_knock_back
+        self.knockback_strength = new_attack.knockback_strength
+        self.damage = new_attack.damage
+        self.knockback_direction = new_attack.knockback_direction
+
+        self.height = self.texture.height
 
 
 def collect_attack_sprites(attack_folder: Path) -> list[arcade.Texture]:
     return [
         arcade.load_texture(attack_folder / f"hadukan_{i}.png") for i in range(1, 11)
     ]
+
+class BlueFireBreath(Attack):
+    def __init__(self)->None:
+        file_name = ASSETS_PATH / "sprites" / "pokemon" /"atacks"/"Fire_2.png"
+        self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(size=(64, 64), columns=11, count=11)
+        attack_patern =  [
+            AttackPattern(
+                explosion_knock_back=0,
+                damage=10,
+                knockback_direction=Position(x_direction=1, y_direction=1),
+                knockback_strength=10,
+                texture=attack_texture
+            )
+            for attack_texture in self.attack_textures
+        ]
+        logger.debug("it will rain fire!")
+        super().__init__(attack_pattern=attack_patern)
+
+    def update(self,delta_time:float):
+        self.animation_timer += delta_time
+        idx = self.attack_textures.index(self.texture)
+        if idx < len(self.attack_textures) - 6:
+            self.center_x += 2
+
+        else:
+            self.center_x +=0.5
+        if self.animation_timer >= self.frame_duration:
+            # width_last_frame = self.texture.width
+            super().update(delta_time)
+
+            self.animation_timer = 0
+
+
+class FireBreath(Attack):
+    def __init__(self)->None:
+        file_name = ASSETS_PATH / "sprites" / "pokemon" /"atacks"/"Flame_jet.png"
+        self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(size=(88, 79), columns=12, count=12)
+        attack_patern =  [
+            AttackPattern(
+                explosion_knock_back=-5,
+                damage=2,
+                knockback_direction=Position(x_direction=0, y_direction=2),
+                knockback_strength=0,
+                texture=attack_texture
+            )
+            for attack_texture in self.attack_textures
+        ]
+        logger.debug("it will rain fire!")
+        super().__init__(attack_pattern=attack_patern)
+
+    def update(self,delta_time:float):
+        if self.animation_timer >= self.frame_duration:
+            # width_last_frame = self.texture.width
+            super().update(delta_time)
+            self.animation_timer = 0
 
 
 HADUKAN = Attack(
