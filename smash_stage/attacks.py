@@ -90,6 +90,7 @@ class BlueFireBreath(Attack):
         logger.debug("it will rain fire!")
         super().__init__(attack_pattern=attack_patern)
         self.direction = (1,0)
+        # TODO: implement, self.is_hit so the ball can trigger effect when hit.
 
     def update(self,delta_time:float):
         self.animation_timer += delta_time
@@ -145,3 +146,43 @@ class FireBreath(Attack):
             # width_last_frame = self.texture.width
             super().update(delta_time)
             self.animation_timer = 0
+
+class ElectroBall(Attack):
+    def __init__(self)->None:
+        file_name = ASSETS_PATH / "sprites" / "pokemon" /"atacks"/"Charge.png"
+        self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(size=(64, 64), columns=10, count=10)
+        attack_patern =  [
+            AttackPattern(
+                explosion_knock_back=-5,
+                damage=2,
+                knockback_direction=Position(x_direction=-2, y_direction=-2),
+                knockback_strength=0,
+                texture=attack_texture
+            )
+            for attack_texture in self.attack_textures
+        ]
+        logger.debug("it will rain fire!")
+        super().__init__(attack_pattern=attack_patern)
+        self.direction=(0,0)
+
+    def update(self,delta_time:float):
+        self.animation_timer += delta_time
+        idx = self.attack_textures.index(self.texture)
+        match self.direction:
+            case (1, 0):
+                self.center_x += 0.5
+            case (-1,0):
+                self.center_x -= 0.5
+            case (0,1):
+                self.center_y += 0.5
+            case (0,-1):
+                self.center_y -= 0.5
+
+        if self.animation_timer >= self.frame_duration:
+            # width_last_frame = self.texture.width
+            super().update(delta_time)
+
+            self.animation_timer = 0
+
+# TODO: add config for possible attacks and config for the player chosen attacks.
+# TODO: add hitbox damage for blunt attack (taclke) atacks.

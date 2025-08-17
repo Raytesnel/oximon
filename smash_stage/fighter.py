@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from smash_stage.attacks import (
     FireBreath,
     BlueFireBreath,
+    ElectroBall,
 )
 from utils import ASSETS_PATH
 
@@ -163,7 +164,7 @@ class Character(arcade.Sprite):
             case _ :
                 offset_hand_x = 30
                 offset_hand_y = -15
-                attack = BlueFireBreath()
+                attack = ElectroBall()
                 attack.direction = (1, 0)
 
         attack.new_attack()
