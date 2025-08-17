@@ -141,16 +141,36 @@ class Character(arcade.Sprite):
 
     def perform_attack(self, name, direction="neutral"):
         logger.debug("pew pew")
-        offset_hand_x = 30
-        offset_hand_y = -15
-        attack = self.attack
+        match direction:
+            case "special_right":
+                offset_hand_x = 30
+                offset_hand_y = -15
+                attack = self.attack
+                attack.direction = (1, 0)
+            case "special_left":
+                offset_hand_x = 30
+                offset_hand_y = -15
+                attack = self.attack
+                attack.angle = 180
+                attack.direction = (-1, 0)
 
-        # if direction == "neutral":
-        #     attack = self.attack_2
-        if direction == "special_left":
-            attack.facing = -1
-        else:
-            attack.facing = 1
+            case "special_neutral":
+                offset_hand_x = 30
+                offset_hand_y = -15
+                attack = self.attack_2
+            case "special_up":
+                offset_hand_x = 0
+                offset_hand_y = +15
+                attack = self.attack
+                attack.angle = 90
+                attack.direction = (0, 1)
+
+            case _ :
+                offset_hand_x = 30
+                offset_hand_y = -15
+                attack = self.attack
+                attack.direction = (1, 0)
+
         attack.new_attack()
         attack.owner = self
         attack.center_y = self.center_y + offset_hand_y

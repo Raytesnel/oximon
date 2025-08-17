@@ -39,6 +39,7 @@ class Attack(arcade.Sprite):
         self.frame_duration = frame_duration
         self.damage = 0
         self.knockback_direction = Position(x_direction=0, y_direction=0)
+        self.direction = (0,0) # (1,0) right, (-1,0) left, (0,1) up, (0,-1) down
 
     def new_attack(self):
         self.attack_flow = iter(self.attack_pattern)
@@ -88,15 +89,32 @@ class BlueFireBreath(Attack):
         ]
         logger.debug("it will rain fire!")
         super().__init__(attack_pattern=attack_patern)
+        self.direction = (1,0)
 
     def update(self,delta_time:float):
         self.animation_timer += delta_time
         idx = self.attack_textures.index(self.texture)
         if idx < len(self.attack_textures) - 6:
-            self.center_x += 2
+            match self.direction:
+                case (1, 0):
+                    self.center_x += 2
+                case (-1,0):
+                    self.center_x -= 2
+                case (0,1):
+                    self.center_y += 2
+                case (0,-1):
+                    self.center_y -= 2
 
         else:
-            self.center_x +=0.5
+            match self.direction:
+                case (1, 0):
+                    self.center_x += 0.5
+                case (-1, 0):
+                    self.center_x -= 0.5
+                case (0, 1):
+                    self.center_y += 0.5
+                case (0, -1):
+                    self.center_y -= 0.5
         if self.animation_timer >= self.frame_duration:
             # width_last_frame = self.texture.width
             super().update(delta_time)
