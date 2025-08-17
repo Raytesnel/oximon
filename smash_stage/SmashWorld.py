@@ -103,7 +103,7 @@ class SmashWorld(arcade.View):
                 target: Character = target
                 if target is not hitbox.owner and arcade.check_for_collision(
                     hitbox, target
-                ):
+                ) and not hitbox.is_hit:
                     target.take_hit(
                         KnockBackDamage(
                             x_position=hitbox.knockback_direction.x_direction,
