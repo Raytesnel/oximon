@@ -140,58 +140,8 @@ class FireBreath(Attack):
         super().__init__(attack_pattern=attack_patern)
 
     def update(self,delta_time:float):
+        self.animation_timer += delta_time
         if self.animation_timer >= self.frame_duration:
             # width_last_frame = self.texture.width
             super().update(delta_time)
             self.animation_timer = 0
-
-
-HADUKAN = Attack(
-    attack_pattern=[
-        AttackPattern(
-            explosion_knock_back=-5,
-            damage=2,
-            knockback_direction=Position(x_direction=0, y_direction=2),
-            knockback_strength=0,
-            texture=arcade.load_texture(
-                Path(ASSETS_PATH)
-                / "sprites/pokemon/Charmander/hadukan_2"
-                / f"hadukan_{i}.png"
-            ),
-        )
-        for i in range(1, 8)
-    ]
-    + [
-        AttackPattern(
-            explosion_knock_back=0,
-            damage=20,
-            knockback_direction=Position(x_direction=1, y_direction=5),
-            knockback_strength=5,
-            texture=arcade.load_texture(
-                Path(ASSETS_PATH)
-                / "sprites/pokemon/Charmander/hadukan"
-                / f"hadukan_{i}.png"
-            ),
-        )
-        for i in range(4, 8)
-    ],
-    frame_duration=1 / 5,
-)
-
-HADUKAN_BLITZ = Attack(
-    attack_pattern=[
-        AttackPattern(
-            damage=6,
-            knockback_direction=Position(x_direction=1, y_direction=1),
-            knockback_strength=8,
-            explosion_knock_back=2,
-            texture=arcade.load_texture(
-                Path(ASSETS_PATH)
-                / "sprites/pokemon/Charmander/hadukan"
-                / f"hadukan_{i}.png",
-            ),
-        )
-        for i in range(1, 11)
-    ],
-    frame_duration=1 / 20,
-)

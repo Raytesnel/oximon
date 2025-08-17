@@ -1,4 +1,5 @@
 import arcade
+from loguru import logger
 
 from smash_stage.fighter import Character, KnockBackDamage
 from smash_stage.stage import SmashStage
@@ -138,8 +139,6 @@ class SmashWorld(arcade.View):
             # if hitbox and hitbox not in self.attack_hitboxes:
             #     self.attack_hitboxes.append(hitbox)
         elif key == arcade.key.X:
-            self.character_1.animation_state = "attack_heavy_1"
-            self.character_1.current_frame = 0
             direction = "special_neutral"
             if arcade.key.UP in self.held_keys:
                 direction = "special_up"
@@ -150,12 +149,21 @@ class SmashWorld(arcade.View):
             elif arcade.key.RIGHT in self.held_keys:
                 direction = "special_right"
 
-            hitbox = self.character_1.perform_attack(direction, direction)
-            if hitbox and hitbox not in self.attack_hitboxes:
+            try:
+                hitbox = self.character_1.perform_attack(direction, direction)
+            except ValueError:
+                logger.debug("stil doing a attackx")
+            else:
+                logger.debug("kamehama")
                 self.attack_hitboxes.append(hitbox)
+                self.character_1.animation_state = "attack_heavy_1"
+                self.character_1.current_frame = 0
 
         elif key == arcade.key.SPACE:
             if self.physics_engine_1.can_jump():
+                self.character_1.current_frame = 0
+                self.character_1.animation_state = "jump"
+
                 self.physics_engine_1.jump(self.character_1.JUMP_SPEED)
 
     def on_key_release(self, key, modifiers):

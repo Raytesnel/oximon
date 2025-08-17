@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -7,9 +6,6 @@ from loguru import logger
 from pydantic import BaseModel
 
 from smash_stage.attacks import (
-    Attack,
-    HADUKAN,
-    HADUKAN_BLITZ,
     FireBreath,
     BlueFireBreath,
 )
@@ -77,8 +73,6 @@ class Character(arcade.Sprite):
         self.hits_take: Optional[KnockBackDamage] = None
         self.held_keys = set()
         self.animation_state = "idle"
-        self.attack = BlueFireBreath()
-        self.attack_2 = FireBreath()
 
         # Attack animation
         hadouken_path = Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan"
@@ -104,7 +98,7 @@ class Character(arcade.Sprite):
         if self.frame_timer > self.frame_duration:
             if (
                 self.animation_state
-                in ["hurt","attack_1", "attack_heavy_1", "attack_2", "attack_heavy_2"]
+                in ["jump","hurt","attack_1", "attack_heavy_1", "attack_2", "attack_heavy_2"]
                 and self.current_frame == len(self.animations[self.animation_state]) -1
             ):
                 self.animation_state = "idle"
@@ -140,35 +134,36 @@ class Character(arcade.Sprite):
             self.change_x = 0
 
     def perform_attack(self, name, direction="neutral"):
-        logger.debug("pew pew")
+        if not self.animation_state in ["run","walk","jump","idle"]:
+            raise ValueError("already a attack animation is working.")
         match direction:
             case "special_right":
                 offset_hand_x = 30
                 offset_hand_y = -15
-                attack = self.attack
+                attack = BlueFireBreath()
                 attack.direction = (1, 0)
             case "special_left":
                 offset_hand_x = 30
                 offset_hand_y = -15
-                attack = self.attack
+                attack = BlueFireBreath()
                 attack.angle = 180
                 attack.direction = (-1, 0)
 
             case "special_neutral":
-                offset_hand_x = 30
+                offset_hand_x = 40
                 offset_hand_y = -15
-                attack = self.attack_2
+                attack = FireBreath()
             case "special_up":
                 offset_hand_x = 0
                 offset_hand_y = +15
-                attack = self.attack
+                attack = BlueFireBreath()
                 attack.angle = 90
                 attack.direction = (0, 1)
 
             case _ :
                 offset_hand_x = 30
                 offset_hand_y = -15
-                attack = self.attack
+                attack = BlueFireBreath()
                 attack.direction = (1, 0)
 
         attack.new_attack()
@@ -178,7 +173,5 @@ class Character(arcade.Sprite):
         return attack
 
 
-# TODO: add recovery time
 # TODO: while in recovery state,Character(PLAYER_PATH, "monster") movement in reduced ( terug lopen terwilj je weg wordt geschoten)
-# TODO: build up force, combo's builds up a dicrectional force. before unleashing it.
 # TODO: attack hit flashy things.
