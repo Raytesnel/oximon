@@ -13,6 +13,8 @@ class SmashStage:
         self.spawn_points = {obj.name: obj for obj in self.tile_map.object_lists.get("spawn", [])}
         if "player1" not in self.spawn_points or  "player2" not in self.spawn_points:
             raise ValueError("player should be in list")
+        self.width = self.tile_map.width * self.tile_map.tile_width
+        self.height = self.tile_map.height * self.tile_map.tile_height
 
     def on_draw(self):
         self.platforms.draw()

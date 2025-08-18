@@ -1,7 +1,7 @@
 import arcade
 from loguru import logger
 
-from smash_stage.fighter import Character, KnockBackDamage
+from smash_stage.fighter import Character, KnockBackDamage, EnemyAI
 from smash_stage.stage import SmashStage
 from utils import SMASH_MAP_PATH, ASSETS_PATH
 
@@ -28,6 +28,7 @@ class SmashWorld(arcade.View):
             self.character_2, platforms=self.stage.platforms, gravity_constant=1
         )
         self.physics_engine_1.enable_multi_jump(1)
+        self.enemy_ai = EnemyAI(self.character_2, self.character_1, self.stage)
         self.setup()
 
     def setup(self):
@@ -92,7 +93,7 @@ class SmashWorld(arcade.View):
                 self.character_1.change_x = move_speed * 2
                 self.character_1.animation_state = "run"
         # TODO: add walking direction.
-        # TODO: move all animation_state setters to fighter class. 
+        # TODO: move all animation_state setters to fighter class.
         else:
             self.character_1.change_x = 0
             # self.character_1.animation_state = "idle"
@@ -129,6 +130,7 @@ class SmashWorld(arcade.View):
         elif self.character_2.lives <= 0:
             print(f"{self.character_1.name} wins!")
             self.window.show_view(self.overworld_view)
+        self.enemy_ai.update(delta_time)
 
     def on_key_press(self, key, modifiers):
         self.held_keys.add(key)

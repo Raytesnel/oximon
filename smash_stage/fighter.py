@@ -55,7 +55,7 @@ class Character(arcade.Sprite):
         }
         # TODO: be able to walk to the left.
         self.direction = "down"
-        self.stun_duration = 1/10
+        self.stun_duration = 1/5
         self.stun_counter = 0.0
         self.is_stunned = False
         self.pending_knockback: Optional[KnockBackDamage] = None
@@ -170,3 +170,26 @@ class Character(arcade.Sprite):
 
 # TODO: while in recovery state,Character(PLAYER_PATH, "monster") movement in reduced ( terug lopen terwilj je weg wordt geschoten)
 # TODO: attack hit flashy things.
+
+
+class EnemyAI:
+    def __init__(self, character: Character, target: Character, stage):
+        self.character = character
+        self.target = target
+        self.stage = stage
+
+    def update(self, delta_time: float):
+        """Beweeg richting midden of richting target."""
+        # voorbeeld: altijd naar midden stage bewegen
+        stage_middle_x = (self.stage.width // 2)  # of gebruik spawnpoint / camera
+        if not self.character.is_stunned:
+            if self.character.center_x < stage_middle_x - 10:
+                self.character.change_x = self.character.MOVE_SPEED
+                self.character.animation_state = "walk"
+            elif self.character.center_x > stage_middle_x + 10:
+                self.character.change_x = -self.character.MOVE_SPEED
+                self.character.animation_state = "walk"
+            else:
+                self.character.change_x = 0
+                self.character.animation_state = "idle"
+

@@ -81,7 +81,7 @@ class BlueFireBreath(Attack):
             AttackPattern(
                 explosion_knock_back=0,
                 damage=10,
-                knockback_direction=Position(x_direction=1, y_direction=1),
+                knockback_direction=Position(x_direction=3, y_direction=2),
                 knockback_strength=10,
                 texture=attack_texture
             )
