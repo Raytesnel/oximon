@@ -75,6 +75,7 @@ class Character(arcade.Sprite):
         self.hits_take: Optional[KnockBackDamage] = None
         self.held_keys = set()
         self.animation_state = "idle"
+        self.reverse = False
 
     def take_hit(self, knockback_data: KnockBackDamage):
         """Trigger stun + knockback sequence."""
@@ -93,7 +94,7 @@ class Character(arcade.Sprite):
         if self.frame_timer > self.frame_duration:
             if (
                 self.animation_state
-                in ["jump","hurt","attack_1", "attack_heavy_1", "attack_2", "attack_heavy_2"]
+                in ["jump","hurt","attack_1", "attack_heavy_1", "attack_2", "attack_heavy_2",]
                 and self.current_frame == len(self.animations[self.animation_state]) -1
             ):
                 self.animation_state = "idle"
@@ -102,6 +103,9 @@ class Character(arcade.Sprite):
                 self.animations[self.animation_state]
             )
             self.texture = self.animations[self.animation_state][self.current_frame]
+            if self.reverse:
+                logger.debug("going left!")
+                self.texture = self.texture.flip_horizontally()
             self.frame_timer = 0
 
     def update(self, delta_time: float = 1 / 60):
