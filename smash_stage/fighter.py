@@ -53,6 +53,7 @@ class Character(arcade.Sprite):
             ).get_texture_grid(size=(128, 128), columns=7, count=7),
             # "attack_heavy_2": arcade.load_spritesheet(asset_path/ "charge_attack.png").get_texture_grid(size=(128, 128), columns=13, count=13),
         }
+        # TODO: be able to walk to the left.
         self.direction = "down"
         self.stun_duration = 1/10
         self.stun_counter = 0.0
@@ -74,13 +75,6 @@ class Character(arcade.Sprite):
         self.hits_take: Optional[KnockBackDamage] = None
         self.held_keys = set()
         self.animation_state = "idle"
-
-        # Attack animation
-        hadouken_path = Path(ASSETS_PATH) / "sprites/pokemon/Charmander/hadukan"
-        self.hadouken_frames = [
-            arcade.load_texture(hadouken_path / f"hadukan_{i}.png")
-            for i in range(1, 11)
-        ]
 
     def take_hit(self, knockback_data: KnockBackDamage):
         """Trigger stun + knockback sequence."""

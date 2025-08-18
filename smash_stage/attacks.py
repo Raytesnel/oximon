@@ -90,12 +90,19 @@ class BlueFireBreath(Attack):
         logger.debug("it will rain fire!")
         super().__init__(attack_pattern=attack_patern)
         self.direction = (1,0)
+        self.counter =0
         # TODO: implement, self.is_hit so the ball can trigger effect when hit.
 
     def update(self,delta_time:float):
         self.animation_timer += delta_time
         idx = self.attack_textures.index(self.texture)
-        if idx < len(self.attack_textures) - 6:
+        if idx == 4 and not self.is_hit and self.counter < 3:
+            self.counter+=1
+            self.attack_flow = iter(self.attack_pattern)
+            self.current_frame = 0
+            idx = self.attack_textures.index(self.texture)
+            logger.debug(f"reset:{idx}")
+        if idx < len(self.attack_textures) - 6 and not self.is_hit:
             match self.direction:
                 case (1, 0):
                     self.center_x += 2
@@ -105,17 +112,16 @@ class BlueFireBreath(Attack):
                     self.center_y += 2
                 case (0,-1):
                     self.center_y -= 2
-
         else:
             match self.direction:
                 case (1, 0):
-                    self.center_x += 0.5
+                    self.center_x += 0.1
                 case (-1, 0):
-                    self.center_x -= 0.5
+                    self.center_x -= 0.1
                 case (0, 1):
-                    self.center_y += 0.5
+                    self.center_y += 0.1
                 case (0, -1):
-                    self.center_y -= 0.5
+                    self.center_y -= 0.1
         if self.animation_timer >= self.frame_duration:
             # width_last_frame = self.texture.width
             super().update(delta_time)

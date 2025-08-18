@@ -91,7 +91,8 @@ class SmashWorld(arcade.View):
             if arcade.key.LCTRL in self.held_keys:
                 self.character_1.change_x = move_speed * 2
                 self.character_1.animation_state = "run"
-
+        # TODO: add walking direction.
+        # TODO: move all animation_state setters to fighter class. 
         else:
             self.character_1.change_x = 0
             # self.character_1.animation_state = "idle"
