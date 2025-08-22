@@ -81,18 +81,23 @@ class SmashWorld(arcade.View):
 
         if arcade.key.LEFT in self.held_keys:
             self.character_1.change_x = -move_speed
+            self.character_1.reverse = True
             self.character_1.animation_state = "walk"
             if arcade.key.LCTRL in self.held_keys:
                 self.character_1.change_x = -move_speed * 2
+                self.character_1.reverse = True
                 self.character_1.animation_state = "run"
 
         elif arcade.key.RIGHT in self.held_keys:
             self.character_1.change_x = move_speed
+            self.character_1.reverse = False
             self.character_1.animation_state = "walk"
             if arcade.key.LCTRL in self.held_keys:
                 self.character_1.change_x = move_speed * 2
+                self.character_1.reverse = False
                 self.character_1.animation_state = "run"
-        # TODO: add walking direction.
+        elif not self.held_keys or self.held_keys == [arcade.key.LCTRL]:
+            self.character_1.animation_state = "idle"
         # TODO: move all animation_state setters to fighter class.
         else:
             self.character_1.change_x = 0

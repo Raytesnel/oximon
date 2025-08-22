@@ -2,7 +2,7 @@
 <map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="left-down" width="50" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="9">
  <tileset firstgid="1" source="../tiles/TilesetRelief.tsx"/>
  <tileset firstgid="241" source="../tiles/TilesetNature.tsx"/>
- <objectgroup id="2" name="death" visible="0">
+ <objectgroup id="2" name="death">
   <object id="4" name="Alive" x="-35" y="-233" width="870" height="652"/>
  </objectgroup>
  <objectgroup id="5" name="spawn" visible="0">
