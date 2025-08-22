@@ -101,7 +101,6 @@ class SmashWorld(arcade.View):
         # TODO: move all animation_state setters to fighter class.
         else:
             self.character_1.change_x = 0
-            # self.character_1.animation_state = "idle"
 
         # Attacks
         self.attack_hitboxes.update()
@@ -140,12 +139,26 @@ class SmashWorld(arcade.View):
     def on_key_press(self, key, modifiers):
         self.held_keys.add(key)
         if key == arcade.key.Z:
-            self.character_1.animation_state = "attack_2"
-            self.character_1.current_frame = 0
+            direction = "normal_neutral"
+            if arcade.key.UP in self.held_keys:
+                direction = "normal_up"
+            elif arcade.key.DOWN in self.held_keys:
+                direction = "normal_down"
+            elif arcade.key.LEFT in self.held_keys:
+                direction = "normal_left"
+            elif arcade.key.RIGHT in self.held_keys:
+                direction = "normal_right"
 
-            # hitbox = self.character_1.perform_attack("tackle", "neutral")
-            # if hitbox and hitbox not in self.attack_hitboxes:
-            #     self.attack_hitboxes.append(hitbox)
+            try:
+                hitbox = self.character_1.perform_attack(direction)
+            except ValueError:
+                logger.debug("stil doing a attack")
+            else:
+                logger.debug("tacle!")
+                self.attack_hitboxes.append(hitbox)
+                self.character_1.animation_state = "attack_2"
+                self.character_1.current_frame = 0
+
         elif key == arcade.key.X:
             direction = "special_neutral"
             if arcade.key.UP in self.held_keys:
@@ -158,7 +171,7 @@ class SmashWorld(arcade.View):
                 direction = "special_right"
 
             try:
-                hitbox = self.character_1.perform_attack(direction, direction)
+                hitbox = self.character_1.perform_attack(direction)
             except ValueError:
                 logger.debug("stil doing a attackx")
             else:
@@ -178,3 +191,8 @@ class SmashWorld(arcade.View):
         self.held_keys.discard(key)
         if key in (arcade.key.LEFT, arcade.key.RIGHT):
             self.character_1.change_x = 0
+if __name__ == "__main__":
+    from utils import SCREEN_WIDTH,SCREEN_HEIGHT,SCREEN_TITLE
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    window.show_view(SmashWorld(None))
+    arcade.run()

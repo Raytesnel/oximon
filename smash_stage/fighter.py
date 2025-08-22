@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from smash_stage.attacks import (
     FireBreath,
     BlueFireBreath,
-    ElectroBall,
+    ElectroBall, SimpleMelee,
 )
 from utils import ASSETS_PATH
 
@@ -132,7 +132,7 @@ class Character(arcade.Sprite):
         else:
             self.change_x = 0
 
-    def perform_attack(self, name, direction="neutral"):
+    def perform_attack(self, direction="neutral"):
         if not self.animation_state in ["run","walk","jump","idle"]:
             raise ValueError("already a attack animation is working.")
         match direction:
@@ -159,10 +159,16 @@ class Character(arcade.Sprite):
                 attack.angle = 90
                 attack.direction = (0, 1)
 
-            case _ :
+            case "special_down" :
                 offset_hand_x = 30
                 offset_hand_y = -15
                 attack = ElectroBall()
+                attack.direction = (1, 0)
+
+            case "normal_neutral" :
+                offset_hand_x = 30
+                offset_hand_y = -15
+                attack = SimpleMelee()
                 attack.direction = (1, 0)
 
         attack.new_attack()

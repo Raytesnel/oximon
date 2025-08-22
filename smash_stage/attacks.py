@@ -73,6 +73,27 @@ def collect_attack_sprites(attack_folder: Path) -> list[arcade.Texture]:
         arcade.load_texture(attack_folder / f"hadukan_{i}.png") for i in range(1, 11)
     ]
 
+class SimpleMelee(Attack):
+    def __init__(self) -> None:
+        box_texture = arcade.make_soft_square_texture(
+            size=64,
+            color=(255, 255, 255, 0),
+            center_alpha=0
+        )
+
+        attack_pattern = [
+            AttackPattern(
+                explosion_knock_back=0,
+                damage=1,
+                knockback_direction=Position(x_direction=2, y_direction=1),
+                knockback_strength=8,
+                texture=box_texture  # invisible box texture
+            )
+        ]
+        logger.debug("Simple melee invisible hitbox created")
+        super().__init__(attack_pattern=attack_pattern)
+
+
 class BlueFireBreath(Attack):
     def __init__(self)->None:
         file_name = ASSETS_PATH / "sprites" / "pokemon" /"atacks"/"Fire_2.png"
