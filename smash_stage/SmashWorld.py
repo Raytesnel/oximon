@@ -4,7 +4,29 @@ from loguru import logger
 from smash_stage.fighter import Character, KnockBackDamage, EnemyAI
 from smash_stage.stage import SmashStage
 from utils import SMASH_MAP_PATH, ASSETS_PATH
+from utils import SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE
 
+VIEWPORT_MARGIN = 200
+
+HORIZONTAL_BOUNDARY = SCREEN_WIDTH / 2.0 - VIEWPORT_MARGIN
+
+VERTICAL_BOUNDARY = SCREEN_HEIGHT / 2.0 - VIEWPORT_MARGIN
+
+# If the player moves further than this boundary away from the camera we use a
+
+# constraint to move the camera
+CAMERA_SPEED = 0.1
+CAMERA_BOUNDARY = arcade.LRBT(
+
+    -HORIZONTAL_BOUNDARY,
+
+      HORIZONTAL_BOUNDARY,
+
+      -VERTICAL_BOUNDARY,
+
+      VERTICAL_BOUNDARY,
+
+)
 
 class SmashWorld(arcade.View):
     def __init__(self, overworld_view):
@@ -135,6 +157,21 @@ class SmashWorld(arcade.View):
             print(f"{self.character_1.name} wins!")
             self.window.show_view(self.overworld_view)
         self.enemy_ai.update(delta_time)
+        self.scroll_to_player()
+
+    def scroll_to_player(self):
+
+        # --- Manage Scrolling ---
+
+        new_position = arcade.camera.grips.constrain_boundary_xy(
+            self.camera.view_data, CAMERA_BOUNDARY, self.character_1.position
+        )
+
+        self.camera.position = arcade.math.lerp_2d(
+            self.camera.position,
+            (new_position[0], new_position[1]),
+            CAMERA_SPEED,
+        )
 
     def on_key_press(self, key, modifiers):
         self.held_keys.add(key)
@@ -192,7 +229,6 @@ class SmashWorld(arcade.View):
         if key in (arcade.key.LEFT, arcade.key.RIGHT):
             self.character_1.change_x = 0
 if __name__ == "__main__":
-    from utils import SCREEN_WIDTH,SCREEN_HEIGHT,SCREEN_TITLE
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     window.show_view(SmashWorld(None))
     arcade.run()

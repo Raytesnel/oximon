@@ -180,6 +180,7 @@ class Character(arcade.Sprite):
 
 # TODO: while in recovery state,Character(PLAYER_PATH, "monster") movement in reduced ( terug lopen terwilj je weg wordt geschoten)
 # TODO: attack hit flashy things.
+# TODO: add velocity instead of channge, zo when hit it slowly stops and then you can return.
 
 
 class EnemyAI:
