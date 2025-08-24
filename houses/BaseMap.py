@@ -6,7 +6,7 @@ from loguru import logger
 
 from houses.helper_stuff import check_object_collision
 from lifeforms.characters import Player
-from utils import ASSETS_PATH, SCREEN_WIDTH
+from utils import ASSETS_PATH, SCREEN_WIDTH, save_state, load_state
 import yaml
 
 
@@ -31,15 +31,10 @@ class BaseMap(arcade.View):
         self.walls = self.scene["abandoned"]
         self.y_sorted_sprites = arcade.SpriteList()
         self.possible_gate_objects = None
-        self.player_state = {}
+        self.player_state = load_state()
         self.setup()
 
     def setup(self):
-        self.player_state = {
-            "starter_chosen": False,
-            "beat_gym_1": False,
-            "has_pokedex": True,
-        }
         try:
             start = next(
                 (
@@ -171,23 +166,21 @@ class BaseMap(arcade.View):
 class DialogPanel(arcade.Section):
     def __init__(self, npc_id: str, player_state: dict):
         super().__init__(0, 0, SCREEN_WIDTH, 120, enabled=True)
+        self.npc_id = npc_id
+        self.player_state = player_state
         self.current_line = 0
         self.active = True
+        self.choices_active = False
+        self.selected_choice = 0
 
-        # Load dialog data if not already loaded
         self._read_dialog_file()
-        self.lines = self.get_available_dialog(npc_id, player_state)
-
-        # Prepare a fast text object
+        self.current_node = self.get_available_node()
+        self.lines = self.current_node["lines"]
         self.text_obj = arcade.Text(
-            text=f'{self.lines[0]["speaker"]} :\t{self.lines[0]["text"]}',
+            text=self.lines[0]["text"],
             x=20,
             y=self.height // 2 - 20,
-            color=(
-                arcade.color.WHITE
-                if self.lines[0]["speaker"].startswith("npc")
-                else arcade.color.BLACK_LEATHER_JACKET
-            ),
+            color=self.get_color(self.lines[0]["speaker"]),
             font_size=16,
             width=self.width - 40,
         )
@@ -197,13 +190,56 @@ class DialogPanel(arcade.Section):
         with open(dialog_file, "r", encoding="utf-8") as f:
             self.dialog_data = yaml.safe_load(f)
 
-    def get_available_dialog(self, npc_id: str, player_state: dict):
-        npc_data = self.dialog_data[npc_id]["dialogs"]
-        for node_name, node in npc_data.items():
-            conditions = node.get("conditions", {})
-            if all(player_state.get(k) == v for k, v in conditions.items()):
-                return node["lines"]
-        return []
+    def get_available_node(self):
+        npc_data = self.dialog_data[self.npc_id]["dialogs"]
+        # Always start with 'intro' first
+        node = npc_data["intro"]
+        # Check conditions for other nodes if needed
+        for name, n in npc_data.items():
+            conds = n.get("conditions", {})
+            if all(self.player_state.get("quests").get(k) == v for k, v in conds.items()):
+                return n
+        return None
+
+    def get_color(self, speaker):
+        return arcade.color.WHITE if speaker.startswith("npc") else arcade.color.AZURE
+
+    def advance_line(self):
+        self.current_line += 1
+        if self.current_line >= len(self.lines):
+            # Node finished
+            self.check_next()
+        else:
+            line = self.lines[self.current_line]
+            self.text_obj.text = line["text"]
+            self.text_obj.color = self.get_color(line["speaker"])
+
+    def check_next(self):
+        if "quest_update" in self.current_node:
+            for key, val in self.current_node["quest_update"].items():
+                # Example: quests: starter_chosen = true
+                if key in self.player_state["quests"]:
+                    self.player_state["quests"][key] = val
+                else:
+                    self.player_state["quests"][key] = val
+            save_state(self.player_state)
+            self.player_state = load_state()
+
+        # Handle choices
+        if "choices" in self.current_node:
+            self.choices_active = True
+            self.selected_choice = 0
+        # Auto-next node
+        elif "next" in self.current_node:
+            next_node_name = self.current_node["next"]
+            self.current_node = self.dialog_data[self.npc_id]["dialogs"][next_node_name]
+            self.lines = self.current_node["lines"]
+            self.current_line = 0
+            line = self.lines[0]
+            self.text_obj.text = line["text"]
+            self.text_obj.color = self.get_color(line["speaker"])
+        else:
+            self.active = False  # Close dialog
 
     def on_draw(self):
         if not self.active:
@@ -211,18 +247,33 @@ class DialogPanel(arcade.Section):
         arcade.draw_lbwh_rectangle_filled(
             bottom=0, left=0, width=self.width, height=self.height, color=arcade.color.REDWOOD
         )
-        self.text_obj.draw()
+        if not self.choices_active:
+            self.text_obj.draw()
+        else:
+            # Draw choices
+            for i, choice in enumerate(self.current_node["choices"]):
+                color = arcade.color.YELLOW if i == self.selected_choice else arcade.color.WHITE
+                arcade.draw_text(choice["text"], 20, 80 - i * 30, color, 16)
 
     def on_key_press(self, key, modifiers):
         if not self.active:
             return
-        if key == arcade.key.SPACE:
-            self.current_line += 1
-            if self.current_line >= len(self.lines):
-                self.active = False
-            else:
-                next_line = self.lines[self.current_line]
-                self.text_obj.text = f'{next_line["speaker"]}:\t{next_line["text"]}'
-                self.text_obj.color = (
-                    arcade.color.WHITE if next_line["speaker"].startswith("npc") else arcade.color.AZURE
-                )
+        if self.choices_active:
+            if key == arcade.key.UP:
+                self.selected_choice = max(0, self.selected_choice - 1)
+            elif key == arcade.key.DOWN:
+                self.selected_choice = min(len(self.current_node["choices"]) - 1, self.selected_choice + 1)
+            elif key == arcade.key.SPACE:
+                # Player picked a choice
+                chosen = self.current_node["choices"][self.selected_choice]
+                next_node_name = chosen["next"]
+                self.current_node = self.dialog_data[self.npc_id]["dialogs"][next_node_name]
+                self.lines = self.current_node["lines"]
+                self.current_line = 0
+                line = self.lines[0]
+                self.text_obj.text = line["text"]
+                self.text_obj.color = self.get_color(line["speaker"])
+                self.choices_active = False
+        else:
+            if key == arcade.key.SPACE:
+                self.advance_line()

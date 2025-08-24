@@ -1,0 +1,9 @@
+player:
+  location: town01
+  money: 500
+  name: raytesnel
+pokemons:
+  party: []
+  pc: []
+quests:
+  starter_chosen: true

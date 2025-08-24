@@ -1,7 +1,8 @@
 npc_dude:
   dialogs:
     intro:
-      conditions: {}
+      conditions:
+        starter_chosen: false
       lines:
         - speaker: npc_dude
           text: "Hello there! Finally a human i can talk to!"
@@ -19,7 +20,8 @@ npc_dude:
       conditions:
         starter_chosen: false
       lines:
-        - "Huh,, noo, surely it is fine, hurry up and take one of these three monsters."
+        - speaker: npc_dude
+          text: "Huh,, noo, surely it is fine, hurry up and take one of these three monsters."
       choices:
         - text: "Charmander"
           next: got_charmander
@@ -29,22 +31,34 @@ npc_dude:
           next: got_bulbasaur
 
     got_charmander:
-      conditions: {}
+      conditions:
+        starter_chosen: false
       lines:
         - speaker: npc_dude
           text: "A fiery choice! Charmander."
-      quest_update: starter_chosen
+      quest_update:
+        starter_chosen: true
 
     got_squirtle:
-      conditions: {}
+      conditions:
+        starter_chosen: false
       lines:
         - speaker: npc_dude
           text: "A cool choice! Squirtle."
-      quest_update: starter_chosen
+      quest_update:
+        starter_chosen: true
 
     got_bulbasaur:
-      conditions: {}
+      conditions:
+        starter_chosen: false
       lines:
         - speaker: npc_dude
           text: "A wise choice! Bulbasaur."
-      quest_update: starter_chosen
+      quest_update:
+        starter_chosen: true
+
+    got_already:
+      conditions: {}
+      lines:
+        - speaker: npc_dude
+          text: "your still alive, great, now, i get the other two. bye bye"
