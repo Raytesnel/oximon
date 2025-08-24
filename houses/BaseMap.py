@@ -20,6 +20,8 @@ class BaseMap(arcade.View):
         self.possible_gates = possible_gates
         self.player_location_key  = player_location_key
         self.camera = arcade.Camera2D()
+        self.gui_camera = arcade.Camera2D()
+        self.dialog: DialogPanel | None = None
         self.player_list = arcade.SpriteList()
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
         self.player = Player(ASSETS_PATH/ "sprites/player")
@@ -53,8 +55,6 @@ class BaseMap(arcade.View):
                     if o.name == gate
                 ]
 
-
-
     def on_draw(self):
         self.clear()
         self.camera.use()
@@ -62,6 +62,9 @@ class BaseMap(arcade.View):
         self.player_list.draw()
         self.y_sorted_sprites.draw()
         self.scene.get_sprite_list("voorgrond").draw()
+        self.gui_camera.use()
+        if self.dialog and self.dialog.active:
+            self.dialog.on_draw()
 
     def on_update(self, delta_time):
         self.scene.update_animation(delta_time)
@@ -87,12 +90,35 @@ class BaseMap(arcade.View):
             self.player.center_y -= self.player.change_y
         else:
             self.player_list.update_animation(delta_time)
-        self.camera.position = arcade.Vec2(self.player.center_x, self.player.center_y)
+        # Calculate world size in pixels
+        map_width = (
+            self.tile_map.width * self.tile_map.tile_width * self.tile_map.scaling
+        )
+        map_height = (
+            self.tile_map.height * self.tile_map.tile_height * self.tile_map.scaling
+        )
+
+        screen_width, screen_height = self.window.width, self.window.height
+
+        # Clamp camera position so it doesn't scroll outside map boundaries
+        cam_x = max(
+            screen_width // 2, min(self.player.center_x, map_width - screen_width // 2)
+        )
+        cam_y = max(
+            screen_height // 2,
+            min(self.player.center_y, map_height - screen_height // 2),
+        )
+
+        self.camera.position = arcade.Vec2(cam_x, cam_y)
 
     def _read_all_entrances(self,):
         pass
 
     def on_key_press(self, key, modifiers):
+        if self.dialog and self.dialog.active:
+            self.dialog.on_key_press(key, modifiers)
+            return
+
         self.player.change_x = 0
         self.player.change_y = 0
         if key == arcade.key.UP:
@@ -113,3 +139,50 @@ class BaseMap(arcade.View):
             self.player.change_x = 0
         elif key == arcade.key.RIGHT and self.player.change_x > 0:
             self.player.change_x = 0
+
+
+class DialogPanel(arcade.Section):
+    def __init__(self, x, y, width, height, lines: list[str]):
+        super().__init__(x, y, width, height, enabled=True)
+        self.lines = lines
+        self.current_line = 0
+        self.active = True
+
+        # Create the first text object
+        self.text_obj = arcade.Text(
+            text=self.lines[0],
+            x=20,
+            y=height // 2 - 20,
+            color=arcade.color.WHITE,
+            font_size=16,
+            width=width - 40,
+        )
+
+    def on_draw(self):
+        if not self.active:
+            return
+
+        # Background box
+        arcade.draw_lbwh_rectangle_filled(
+            bottom=0,
+            left=0,
+            width=self.width,
+            height=self.height,
+            color=arcade.color.REDWOOD,
+        )
+
+        # Draw cached text
+        self.text_obj.draw()
+
+    def on_key_press(self, key, modifiers):
+        if not self.active:
+            return
+
+        if key == arcade.key.SPACE:
+            self.current_line += 1
+            if self.current_line >= len(self.lines):
+                self.active = False
+            else:
+                # Update text in place (fast)
+                self.text_obj.text = self.lines[self.current_line]
+
