@@ -80,6 +80,8 @@ class BaseMap(arcade.View):
             self.dialog.on_draw()
 
     def on_update(self, delta_time):
+        if self.dialog and self.dialog.active:
+            return
         self.scene.update_animation(delta_time)
         for sprite in self.y_sorted_sprites:
             if hasattr(sprite, "_hit_box") and sprite._hit_box:

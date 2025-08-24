@@ -27,6 +27,8 @@ class HouseMap(BaseMap):
 
     def on_update(self,delta_time):
         super().on_update(delta_time)
+        if self.dialog and self.dialog.active:
+            return
         self.npc_list.update()
         if arcade.check_for_collision_with_list(self.npc, self.walls):
             self.npc.center_x -= self.npc.change_x
