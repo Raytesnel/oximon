@@ -20,24 +20,11 @@ class OverworldView(BaseMap):
         self.wild_pokemon_list = arcade.SpriteList()
         super().__init__(player_location_key=player_location_key,map=map,possible_gates=possible_gates)
 
-    def on_show_view(self):
-        lines = [
-            "Welkom in de overworld!",
-            "Dit paneel is een Section.",
-            "Druk op SPACE om verder te gaan."
-        ]
-        self.dialog = DialogPanel(0, 0, SCREEN_WIDTH, 120, lines)
 
     def setup(self):
         super().setup()
         self.y_sorted_sprites.extend(self.scene["grass"])
         self.y_sorted_sprites.extend(self.wild_pokemon_list)
-        lines = [
-            "Hey there! Welcome to the world of pixel monsters!",
-            "This is a simple dialog box made with arcade.Section.",
-            "Press SPACE to continue through the lines.",
-        ]
-        self.dialog = DialogPanel(0, 0, SCREEN_WIDTH, 120, lines)
 
     def on_update(self, delta_time):
         super().on_update(delta_time)

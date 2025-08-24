@@ -6,34 +6,49 @@ from loguru import logger
 
 from houses.helper_stuff import check_object_collision
 from lifeforms.characters import Player
-from utils import ASSETS_PATH
+from utils import ASSETS_PATH, SCREEN_WIDTH
+import yaml
 
 
 class BaseMap(arcade.View):
-    def __init__(self,player_location_key:str,map:Path,possible_gates:list[str]):
+    def __init__(self, player_location_key: str, map: Path, possible_gates: list[str]):
         super().__init__()
         self.tile_map = load_tilemap(
             map,
             scaling=2.0,
             use_spatial_hash=True,
         )
+        self.npc_list = arcade.SpriteList()
         self.possible_gates = possible_gates
-        self.player_location_key  = player_location_key
+        self.player_location_key = player_location_key
         self.camera = arcade.Camera2D()
         self.gui_camera = arcade.Camera2D()
         self.dialog: DialogPanel | None = None
         self.player_list = arcade.SpriteList()
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
-        self.player = Player(ASSETS_PATH/ "sprites/player")
+        self.player = Player(ASSETS_PATH / "sprites/player")
         self.player_list.append(self.player)
         self.walls = self.scene["abandoned"]
         self.y_sorted_sprites = arcade.SpriteList()
-        self.possible_gate_objects=None
+        self.possible_gate_objects = None
+        self.player_state = {}
         self.setup()
 
     def setup(self):
+        self.player_state = {
+            "starter_chosen": False,
+            "beat_gym_1": False,
+            "has_pokedex": True,
+        }
         try:
-            start = next((o for o in self.tile_map.object_lists["objects"] if o.name == self.player_location_key), None)
+            start = next(
+                (
+                    o
+                    for o in self.tile_map.object_lists["objects"]
+                    if o.name == self.player_location_key
+                ),
+                None,
+            )
             print("found player start")
         except KeyError:
             print(" player start not found")
@@ -50,10 +65,8 @@ class BaseMap(arcade.View):
         for gate in self.possible_gates:
 
             self.possible_gate_objects = [
-                    o
-                    for o in self.tile_map.object_lists["objects"]
-                    if o.name == gate
-                ]
+                o for o in self.tile_map.object_lists["objects"] if o.name == gate
+            ]
 
     def on_draw(self):
         self.clear()
@@ -80,8 +93,11 @@ class BaseMap(arcade.View):
             if check_object_collision(self.player, gate):
                 logger.debug("going in the house.")
                 from houses.MapConfig import MapConfigs
+
                 mapchanger = MapConfigs()
-                view = mapchanger.load_map_by_id(mapchanger.get_shizzle(gate),gate.name)
+                view = mapchanger.load_map_by_id(
+                    mapchanger.get_shizzle(gate), gate.name
+                )
                 self.window.clear()
                 self.window.show_view(view)
         self.player_list.update()
@@ -111,10 +127,19 @@ class BaseMap(arcade.View):
 
         self.camera.position = arcade.Vec2(cam_x, cam_y)
 
-    def _read_all_entrances(self,):
+    def _read_all_entrances(
+        self,
+    ):
         pass
 
     def on_key_press(self, key, modifiers):
+        if key == arcade.key.SPACE:
+            for npc_sprite in self.npc_list:
+                if arcade.check_for_collision(self.player, npc_sprite):
+                    if not self.dialog or not self.dialog.active:
+                        self.dialog = DialogPanel(npc_sprite.name, self.player_state)
+                        return
+
         if self.dialog and self.dialog.active:
             self.dialog.on_key_press(key, modifiers)
             return
@@ -142,47 +167,60 @@ class BaseMap(arcade.View):
 
 
 class DialogPanel(arcade.Section):
-    def __init__(self, x, y, width, height, lines: list[str]):
-        super().__init__(x, y, width, height, enabled=True)
-        self.lines = lines
+    def __init__(self, npc_id: str, player_state: dict):
+        super().__init__(0, 0, SCREEN_WIDTH, 120, enabled=True)
         self.current_line = 0
         self.active = True
 
-        # Create the first text object
+        # Load dialog data if not already loaded
+        self._read_dialog_file()
+        self.lines = self.get_available_dialog(npc_id, player_state)
+
+        # Prepare a fast text object
         self.text_obj = arcade.Text(
-            text=self.lines[0],
+            text=f'{self.lines[0]["speaker"]} :\t{self.lines[0]["text"]}',
             x=20,
-            y=height // 2 - 20,
-            color=arcade.color.WHITE,
+            y=self.height // 2 - 20,
+            color=(
+                arcade.color.WHITE
+                if self.lines[0]["speaker"].startswith("npc")
+                else arcade.color.BLACK_LEATHER_JACKET
+            ),
             font_size=16,
-            width=width - 40,
+            width=self.width - 40,
         )
+
+    def _read_dialog_file(self):
+        dialog_file = ASSETS_PATH / "map" / "dialog.yaml"
+        with open(dialog_file, "r", encoding="utf-8") as f:
+            self.dialog_data = yaml.safe_load(f)
+
+    def get_available_dialog(self, npc_id: str, player_state: dict):
+        npc_data = self.dialog_data[npc_id]["dialogs"]
+        for node_name, node in npc_data.items():
+            conditions = node.get("conditions", {})
+            if all(player_state.get(k) == v for k, v in conditions.items()):
+                return node["lines"]
+        return []
 
     def on_draw(self):
         if not self.active:
             return
-
-        # Background box
         arcade.draw_lbwh_rectangle_filled(
-            bottom=0,
-            left=0,
-            width=self.width,
-            height=self.height,
-            color=arcade.color.REDWOOD,
+            bottom=0, left=0, width=self.width, height=self.height, color=arcade.color.REDWOOD
         )
-
-        # Draw cached text
         self.text_obj.draw()
 
     def on_key_press(self, key, modifiers):
         if not self.active:
             return
-
         if key == arcade.key.SPACE:
             self.current_line += 1
             if self.current_line >= len(self.lines):
                 self.active = False
             else:
-                # Update text in place (fast)
-                self.text_obj.text = self.lines[self.current_line]
-
+                next_line = self.lines[self.current_line]
+                self.text_obj.text = f'{next_line["speaker"]}:\t{next_line["text"]}'
+                self.text_obj.color = (
+                    arcade.color.WHITE if next_line["speaker"].startswith("npc") else arcade.color.AZURE
+                )

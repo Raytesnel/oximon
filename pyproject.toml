@@ -11,4 +11,5 @@ dependencies = [
     "pycairo>=1.28.0",
     "pydantic>=2.11.7",
     "pytiled-parser[zstd]>=2.2.9",
+    "pyyaml>=6.0.2",
 ]

@@ -11,9 +11,7 @@ from utils import ASSETS_PATH
 class HouseMap(BaseMap):
     def __init__(self,player_location_key:str,map:Path,possible_gates:list[str]):
         super().__init__(player_location_key=player_location_key,map=map,possible_gates=possible_gates)
-        self.npc_list = arcade.SpriteList()
-        self.npc = NPC(sheet_path=ASSETS_PATH/"sprites"/"npcs"/"SpriteSheet.png")
-        self.npc.scale = 2.0
+        self.npc = NPC(sheet_path=ASSETS_PATH/"sprites"/"npcs"/"SpriteSheet.png", name="npc_dude")
         self.npc_list.append(self.npc)
         try:
             npc_start = next((o for o in self.tile_map.object_lists["objects"] if o.name == "npc_dude"), None)
@@ -24,6 +22,7 @@ class HouseMap(BaseMap):
 
     def on_draw(self):
         super().on_draw()
+        self.camera.use()
         self.npc_list.draw()
 
     def on_update(self,delta_time):

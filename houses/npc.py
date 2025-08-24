@@ -5,9 +5,9 @@ from arcade import Texture
 
 
 class NPC(arcade.Sprite):
-    def __init__(self, sheet_path: str, scale: float = 1.0):
+    def __init__(self, sheet_path: str,name:str, scale: float = 2.0, ):
         super().__init__(scale=scale)
-
+        self.name = name
         sprite_sheet = arcade.load_spritesheet(sheet_path)
         textures = sprite_sheet.get_texture_grid(size=(16, 16), columns=4, count=28)
         self.animations = {
