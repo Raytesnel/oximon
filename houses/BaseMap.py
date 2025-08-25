@@ -217,13 +217,16 @@ class DialogPanel(arcade.Section):
     def check_next(self):
         if "quest_update" in self.current_node:
             for key, val in self.current_node["quest_update"].items():
-                # Example: quests: starter_chosen = true
-                if key in self.player_state["quests"]:
-                    self.player_state["quests"][key] = val
-                else:
-                    self.player_state["quests"][key] = val
-            save_state(self.player_state)
+                self.player_state["quests"][key] = val
             self.player_state = load_state()
+            save_state(self.player_state)
+        if "pokemons" in self.current_node:
+            for key, val in self.current_node["pokemons"].items():
+                if key in self.player_state["pokemons"]:
+                    self.player_state["pokemons"][key] = val
+                else:
+                    self.player_state["pokemons"][key] = val
+            save_state(self.player_state)
 
         # Handle choices
         if "choices" in self.current_node:

@@ -38,6 +38,16 @@ npc_dude:
           text: "A fiery choice! Charmander."
       quest_update:
         starter_chosen: true
+      pokemons:
+        charmander:
+          attacks:
+            - ember
+            - smokescreen
+          stats:
+            health: 100
+            defense: 20
+            speed: 10
+            attack: 50
 
     got_squirtle:
       conditions:
@@ -47,6 +57,16 @@ npc_dude:
           text: "A cool choice! Squirtle."
       quest_update:
         starter_chosen: true
+      pokemons:
+        squirtle:
+          attacks:
+            - water gun
+            - defense curl
+          stats:
+            health: 120
+            defense: 50
+            speed: 10
+            attack: 10
 
     got_bulbasaur:
       conditions:
@@ -56,6 +76,16 @@ npc_dude:
           text: "A wise choice! Bulbasaur."
       quest_update:
         starter_chosen: true
+      pokemons:
+        bulbasaur:
+          attacks:
+            - magic leaf
+            - absorb
+          stats:
+            health: 120
+            defense: 25
+            speed: 25
+            attack: 25
 
     got_already:
       conditions: {}
