@@ -1,6 +1,6 @@
 import arcade
 from smash_stage.SmashWorld import SmashWorld
-from utils import POKEMON_SPRITES_PATH
+from utils import POKEMON_SPRITES_PATH, load_state
 
 
 class Monster:
@@ -19,22 +19,22 @@ class BattleSplashView(arcade.View):
         self.game_view = overworld_view
         self.selected_index = 0
         self.camera = arcade.Camera2D()
-
-        self.team_monsters = [
-            Monster(
-                "Firefox",
-                40,
-                10,
-                POKEMON_SPRITES_PATH / "Bulbasaur" / "banner.png",
-                0.1,
-            ),
-            Monster(
-                "Pengu", 35, 8, POKEMON_SPRITES_PATH / "Charmander" / "banner.png", 0.03
-            ),
-            Monster(
-                "Snaky", 50, 6, POKEMON_SPRITES_PATH / "Bulbasaur" / "banner.png", 0.1
-            ),
-        ]
+        self.character_stats = load_state()
+        self.team_monsters = []
+        counter = 0
+        for character_monster_name, values in self.character_stats["pokemons"].items():
+            self.team_monsters.append(
+                Monster(
+                    name=character_monster_name,
+                    hp=values["stats"]["health"],
+                    atk=values["stats"]["attack"],
+                    image_path=POKEMON_SPRITES_PATH / character_monster_name.title() / "banner.png",
+                    scale=1
+                )
+            )
+            counter +=1
+            if counter ==3:
+                break
 
         # Pre-create enemy text labels
         self.enemy_labels = [
