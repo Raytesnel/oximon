@@ -146,16 +146,18 @@ class SmashWorld(arcade.View):
         self.p1_lives_text.text = f"P1 Lives: {self.character_1.lives}"
         self.p2_lives_text.text = f"P2 Lives: {self.character_2.lives}"
 
-        self.stage.check_death_zones(self.player_list)
+        if self.stage.check_death_zones(self.player_list):
+            if self.character_1.lives <= 0:
+                self.overworld_view.player_lost()
+            elif self.character_2.lives <= 0:
+                self.overworld_view.enemy_out_of_bounds()
 
         self.physics_engine_1.update()
         self.physics_engine_2.update()
         if self.character_1.lives <= 0:
-            print(f"{self.character_2.name} wins!")
-            self.window.show_view(self.overworld_view)
+            self.overworld_view.player_lost()
         elif self.character_2.lives <= 0:
-            print(f"{self.character_1.name} wins!")
-            self.window.show_view(self.overworld_view)
+            self.overworld_view.enemy_defeated()
         self.enemy_ai.update(delta_time)
         self.scroll_to_player()
 

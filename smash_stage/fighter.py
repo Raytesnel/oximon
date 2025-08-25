@@ -104,7 +104,6 @@ class Character(arcade.Sprite):
             )
             self.texture = self.animations[self.animation_state][self.current_frame]
             if self.reverse:
-                logger.debug("going left!")
                 self.texture = self.texture.flip_horizontally()
             self.frame_timer = 0
 

@@ -20,7 +20,6 @@ class OverworldView(BaseMap):
         self.wild_pokemon_list = arcade.SpriteList()
         super().__init__(player_location_key=player_location_key,map=map,possible_gates=possible_gates)
 
-
     def setup(self):
         super().setup()
         self.y_sorted_sprites.extend(self.scene["grass"])
@@ -83,3 +82,12 @@ class OverworldView(BaseMap):
             self.y_sorted_sprites.append(pokemon_sprite)
 
         self.counter_pokemon =0
+
+    def player_lost(self):
+        self.window.show_view(self)
+
+    def enemy_out_of_bounds(self):
+        self.window.show_view(self)
+
+    def enemy_defeated(self):
+        self.window.show_view(self)

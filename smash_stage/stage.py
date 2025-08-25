@@ -1,5 +1,6 @@
 import arcade
 from arcade import load_tilemap
+from loguru import logger
 
 
 class SmashStage:
@@ -24,7 +25,7 @@ class SmashStage:
     def update(self):
         pass
 
-    def check_death_zones(self, player_list):
+    def check_death_zones(self, player_list)->bool:
         left_top, right_top, right_bottom, left_bottom = self.death_field.shape
         left, right = left_top[0], right_top[0]
         bottom, top = right_bottom[1], right_top[1]
@@ -33,4 +34,6 @@ class SmashStage:
             x, y = character.center_x, character.center_y
             if not (left <= x <= right and bottom <= y <= top):
                 character.lives = 0
-                print(f"{character.name} viel uit het speelveld!")
+                logger.debug(f"{character.name} viel uit het speelveld!")
+                return True
+        return False
