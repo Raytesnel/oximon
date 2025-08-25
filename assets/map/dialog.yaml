@@ -14,12 +14,6 @@ npc_dude:
           text: "I found these 3 but im scared, can you take one to see what happens?"
         - speaker: player
           text: "uhm,, so you want me to be your guinny pig?"
-      next: choose_pokemon
-
-    choose_pokemon:
-      conditions:
-        starter_chosen: false
-      lines:
         - speaker: npc_dude
           text: "Huh,, noo, surely it is fine, hurry up and take one of these three monsters."
       choices:

@@ -172,15 +172,19 @@ class DialogPanel(arcade.Section):
         self.active = True
         self.choices_active = False
         self.selected_choice = 0
+        self.text_color=arcade.color.WHITE
 
         self._read_dialog_file()
-        self.current_node = self.get_available_node()
+        try:
+            self.current_node = self.get_available_node()
+        except Exception:
+            logger.error("tacle this problem!, we have somthing when we have no available lines.")
         self.lines = self.current_node["lines"]
         self.text_obj = arcade.Text(
             text=self.lines[0]["text"],
             x=20,
             y=self.height // 2 - 20,
-            color=self.get_color(self.lines[0]["speaker"]),
+            color=self.text_color,
             font_size=16,
             width=self.width - 40,
         )
@@ -192,17 +196,10 @@ class DialogPanel(arcade.Section):
 
     def get_available_node(self):
         npc_data = self.dialog_data[self.npc_id]["dialogs"]
-        # Always start with 'intro' first
-        node = npc_data["intro"]
-        # Check conditions for other nodes if needed
         for name, n in npc_data.items():
             conds = n.get("conditions", {})
             if all(self.player_state.get("quests").get(k) == v for k, v in conds.items()):
                 return n
-        return None
-
-    def get_color(self, speaker):
-        return arcade.color.WHITE if speaker.startswith("npc") else arcade.color.AZURE
 
     def advance_line(self):
         self.current_line += 1
@@ -212,14 +209,14 @@ class DialogPanel(arcade.Section):
         else:
             line = self.lines[self.current_line]
             self.text_obj.text = line["text"]
-            self.text_obj.color = self.get_color(line["speaker"])
+            self.text_obj.color = self.text_color
 
     def check_next(self):
         if "quest_update" in self.current_node:
             for key, val in self.current_node["quest_update"].items():
                 self.player_state["quests"][key] = val
-            self.player_state = load_state()
             save_state(self.player_state)
+            self.player_state = load_state()
         if "pokemons" in self.current_node:
             for key, val in self.current_node["pokemons"].items():
                 if key in self.player_state["pokemons"]:
@@ -240,7 +237,7 @@ class DialogPanel(arcade.Section):
             self.current_line = 0
             line = self.lines[0]
             self.text_obj.text = line["text"]
-            self.text_obj.color = self.get_color(line["speaker"])
+            self.text_obj.color = self.text_color
         else:
             self.active = False  # Close dialog
 
@@ -253,7 +250,6 @@ class DialogPanel(arcade.Section):
         if not self.choices_active:
             self.text_obj.draw()
         else:
-            # Draw choices
             for i, choice in enumerate(self.current_node["choices"]):
                 color = arcade.color.YELLOW if i == self.selected_choice else arcade.color.WHITE
                 arcade.draw_text(choice["text"], 20, 80 - i * 30, color, 16)
@@ -267,7 +263,6 @@ class DialogPanel(arcade.Section):
             elif key == arcade.key.DOWN:
                 self.selected_choice = min(len(self.current_node["choices"]) - 1, self.selected_choice + 1)
             elif key == arcade.key.SPACE:
-                # Player picked a choice
                 chosen = self.current_node["choices"][self.selected_choice]
                 next_node_name = chosen["next"]
                 self.current_node = self.dialog_data[self.npc_id]["dialogs"][next_node_name]
@@ -275,7 +270,7 @@ class DialogPanel(arcade.Section):
                 self.current_line = 0
                 line = self.lines[0]
                 self.text_obj.text = line["text"]
-                self.text_obj.color = self.get_color(line["speaker"])
+                self.text_obj.color = self.text_color
                 self.choices_active = False
         else:
             if key == arcade.key.SPACE:
