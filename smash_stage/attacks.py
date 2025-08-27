@@ -101,8 +101,8 @@ class BlueFireBreath(Attack):
         attack_patern =  [
             AttackPattern(
                 explosion_knock_back=0,
-                damage=10,
-                knockback_direction=Position(x_direction=3, y_direction=2),
+                damage=60,
+                knockback_direction=Position(x_direction=4, y_direction=2),
                 knockback_strength=10,
                 texture=attack_texture
             )
@@ -122,7 +122,6 @@ class BlueFireBreath(Attack):
             self.attack_flow = iter(self.attack_pattern)
             self.current_frame = 0
             idx = self.attack_textures.index(self.texture)
-            logger.debug(f"reset:{idx}")
         if idx < len(self.attack_textures) - 6 and not self.is_hit:
             match self.direction:
                 case (1, 0):
@@ -144,7 +143,6 @@ class BlueFireBreath(Attack):
                 case (0, -1):
                     self.center_y -= 0.1
         if self.animation_timer >= self.frame_duration:
-            # width_last_frame = self.texture.width
             super().update(delta_time)
 
             self.animation_timer = 0

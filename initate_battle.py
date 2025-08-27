@@ -22,13 +22,14 @@ class BattleSplashView(arcade.View):
         self.character_stats = load_state()
         self.team_monsters = []
         counter = 0
-        for character_monster_name, values in self.character_stats["pokemons"].items():
+        for character_monster in self.character_stats["pokemons"]:
+            monster_name = list(character_monster.keys())[0]
             self.team_monsters.append(
                 Monster(
-                    name=character_monster_name,
-                    hp=values["stats"]["health"],
-                    atk=values["stats"]["attack"],
-                    image_path=POKEMON_SPRITES_PATH / character_monster_name.title() / "banner.png",
+                    name=monster_name,
+                    hp=character_monster[monster_name]["stats"]["health"],
+                    atk=character_monster[monster_name]["stats"]["attack"],
+                    image_path=POKEMON_SPRITES_PATH / monster_name.title() / "banner.png",
                     scale=1
                 )
             )
@@ -84,4 +85,4 @@ class BattleSplashView(arcade.View):
         elif key == arcade.key.SPACE:
             selected = self.team_monsters[self.selected_index]
             print(f"You chose: {selected.name}")
-            self.window.show_view(SmashWorld(self.game_view))
+            self.window.show_view(SmashWorld(self.game_view,self.wild_pokemon))

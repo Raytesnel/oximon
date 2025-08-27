@@ -1,6 +1,7 @@
 import arcade
 from loguru import logger
 
+from lifeforms.pokemons import WildPokemon
 from smash_stage.fighter import Character, KnockBackDamage, EnemyAI
 from smash_stage.stage import SmashStage
 from utils import SMASH_MAP_PATH, ASSETS_PATH
@@ -29,8 +30,9 @@ CAMERA_BOUNDARY = arcade.LRBT(
 )
 
 class SmashWorld(arcade.View):
-    def __init__(self, overworld_view):
+    def __init__(self, overworld_view,wild_monster:WildPokemon):
         super().__init__()
+        self.wild_monster = wild_monster
         self.overworld_view = overworld_view
         self.camera = arcade.Camera2D()
         self.held_keys = set()
@@ -150,14 +152,14 @@ class SmashWorld(arcade.View):
             if self.character_1.lives <= 0:
                 self.overworld_view.player_lost()
             elif self.character_2.lives <= 0:
-                self.overworld_view.enemy_out_of_bounds()
+                self.overworld_view.enemy_out_of_bounds(self.wild_monster)
 
         self.physics_engine_1.update()
         self.physics_engine_2.update()
         if self.character_1.lives <= 0:
             self.overworld_view.player_lost()
         elif self.character_2.lives <= 0:
-            self.overworld_view.enemy_defeated()
+            self.overworld_view.enemy_defeated(self.wild_monster)
         self.enemy_ai.update(delta_time)
         self.scroll_to_player()
 

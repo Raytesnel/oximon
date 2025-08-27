@@ -1,13 +1,13 @@
 from pathlib import Path
 
 import arcade
+import yaml
 from arcade import load_tilemap
 from loguru import logger
 
 from houses.helper_stuff import check_object_collision
 from lifeforms.characters import Player
 from utils import ASSETS_PATH, SCREEN_WIDTH, save_state, load_state
-import yaml
 
 
 class BaseMap(arcade.View):
@@ -164,7 +164,11 @@ class BaseMap(arcade.View):
 
 
 class DialogPanel(arcade.Section):
-    def __init__(self, npc_id: str, player_state: dict):
+    def __init__(
+        self,
+        npc_id: str,
+        player_state: dict,
+    ):
         super().__init__(0, 0, SCREEN_WIDTH, 120, enabled=True)
         self.npc_id = npc_id
         self.player_state = player_state
@@ -172,13 +176,16 @@ class DialogPanel(arcade.Section):
         self.active = True
         self.choices_active = False
         self.selected_choice = 0
-        self.text_color=arcade.color.WHITE
-
+        self.text_color = arcade.color.WHITE
+        self.download_monster = False
+        self.kill_monster = False
         self._read_dialog_file()
         try:
             self.current_node = self.get_available_node()
         except Exception:
-            logger.error("tacle this problem!, we have somthing when we have no available lines.")
+            logger.error(
+                "tacle this problem!, we have somthing when we have no available lines."
+            )
         self.lines = self.current_node["lines"]
         self.text_obj = arcade.Text(
             text=self.lines[0]["text"],
@@ -198,7 +205,9 @@ class DialogPanel(arcade.Section):
         npc_data = self.dialog_data[self.npc_id]["dialogs"]
         for name, n in npc_data.items():
             conds = n.get("conditions", {})
-            if all(self.player_state.get("quests").get(k) == v for k, v in conds.items()):
+            if all(
+                self.player_state.get("quests").get(k) == v for k, v in conds.items()
+            ):
                 return n
 
     def advance_line(self):
@@ -218,11 +227,8 @@ class DialogPanel(arcade.Section):
             save_state(self.player_state)
             self.player_state = load_state()
         if "pokemons" in self.current_node:
-            for key, val in self.current_node["pokemons"].items():
-                if key in self.player_state["pokemons"]:
-                    self.player_state["pokemons"][key] = val
-                else:
-                    self.player_state["pokemons"][key] = val
+            for pokemon in self.current_node["pokemons"]:
+                self.player_state["pokemons"].append(pokemon)
             save_state(self.player_state)
 
         # Handle choices
@@ -245,13 +251,21 @@ class DialogPanel(arcade.Section):
         if not self.active:
             return
         arcade.draw_lbwh_rectangle_filled(
-            bottom=0, left=0, width=self.width, height=self.height, color=arcade.color.REDWOOD
+            bottom=0,
+            left=0,
+            width=self.width,
+            height=self.height,
+            color=arcade.color.REDWOOD,
         )
         if not self.choices_active:
             self.text_obj.draw()
         else:
             for i, choice in enumerate(self.current_node["choices"]):
-                color = arcade.color.YELLOW if i == self.selected_choice else arcade.color.WHITE
+                color = (
+                    arcade.color.YELLOW
+                    if i == self.selected_choice
+                    else arcade.color.WHITE
+                )
                 arcade.draw_text(choice["text"], 20, 80 - i * 30, color, 16)
 
     def on_key_press(self, key, modifiers):
@@ -261,11 +275,20 @@ class DialogPanel(arcade.Section):
             if key == arcade.key.UP:
                 self.selected_choice = max(0, self.selected_choice - 1)
             elif key == arcade.key.DOWN:
-                self.selected_choice = min(len(self.current_node["choices"]) - 1, self.selected_choice + 1)
+                self.selected_choice = min(
+                    len(self.current_node["choices"]) - 1, self.selected_choice + 1
+                )
             elif key == arcade.key.SPACE:
                 chosen = self.current_node["choices"][self.selected_choice]
                 next_node_name = chosen["next"]
-                self.current_node = self.dialog_data[self.npc_id]["dialogs"][next_node_name]
+                if next_node_name == "download_monster":
+                    self.download_monster = True
+                elif next_node_name == "kill_monster":
+                    logger.debug("pokemon needs to be removed.")
+                    self.kill_monster = True
+                self.current_node = self.dialog_data[self.npc_id]["dialogs"][
+                    next_node_name
+                ]
                 self.lines = self.current_node["lines"]
                 self.current_line = 0
                 line = self.lines[0]

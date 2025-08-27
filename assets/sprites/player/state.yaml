@@ -1,7 +1,6 @@
 player:
   location: town01
-  money: 500
   name: raytesnel
-pokemons: {}
+pokemons: []
 quests:
   starter_chosen: false

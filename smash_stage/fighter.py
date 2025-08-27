@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Optional
 
 import arcade
-from loguru import logger
 from pydantic import BaseModel
 
 from smash_stage.attacks import (
@@ -10,7 +9,6 @@ from smash_stage.attacks import (
     BlueFireBreath,
     ElectroBall, SimpleMelee,
 )
-from utils import ASSETS_PATH
 
 
 class KnockBackDamage(BaseModel):
@@ -169,6 +167,8 @@ class Character(arcade.Sprite):
                 offset_hand_y = -15
                 attack = SimpleMelee()
                 attack.direction = (1, 0)
+            case _:
+                raise ValueError("unknown button for attack.")
 
         attack.new_attack()
         attack.owner = self
@@ -202,4 +202,3 @@ class EnemyAI:
             else:
                 self.character.change_x = 0
                 self.character.animation_state = "idle"
-

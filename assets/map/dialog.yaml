@@ -33,15 +33,15 @@ npc_dude:
       quest_update:
         starter_chosen: true
       pokemons:
-        charmander:
-          attacks:
-            - ember
-            - smokescreen
-          stats:
-            health: 100
-            defense: 20
-            speed: 10
-            attack: 50
+        - charmander:
+            attacks:
+              - ember
+              - smokescreen
+            stats:
+              health: 100
+              defense: 20
+              speed: 10
+              attack: 50
 
     got_squirtle:
       conditions:
@@ -52,15 +52,15 @@ npc_dude:
       quest_update:
         starter_chosen: true
       pokemons:
-        squirtle:
-          attacks:
-            - water gun
-            - defense curl
-          stats:
-            health: 120
-            defense: 50
-            speed: 10
-            attack: 10
+        - squirtle:
+            attacks:
+              - water gun
+              - defense curl
+            stats:
+              health: 120
+              defense: 50
+              speed: 10
+              attack: 10
 
     got_bulbasaur:
       conditions:
@@ -71,18 +71,40 @@ npc_dude:
       quest_update:
         starter_chosen: true
       pokemons:
-        bulbasaur:
-          attacks:
-            - magic leaf
-            - absorb
-          stats:
-            health: 120
-            defense: 25
-            speed: 25
-            attack: 25
+        - bulbasaur:
+            attacks:
+              - magic leaf
+              - absorb
+            stats:
+              health: 120
+              defense: 25
+              speed: 25
+              attack: 25
 
     got_already:
       conditions: {}
       lines:
         - speaker: npc_dude
           text: "your still alive, great, now, i get the other two. bye bye"
+monster_capture:
+  dialogs:
+    intro:
+      conditions: {}
+      lines:
+        - speaker: "monster-watch"
+          text: "Monster is fainted, do you want to download the monster to the watch?"
+      choices:
+        - text: "yes"
+          next: download_monster
+        - text: "no"
+          next: kill_monster
+    download_monster:
+      conditions: {}
+      lines:
+        - speaker: "monster-watch"
+          text: "monster downloaded succesvol to watch."
+    kill_monster:
+      conditions: {}
+      lines:
+        - speaker: "monster-watch"
+          text: "disentegrated monster.... jamjam"

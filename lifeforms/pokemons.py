@@ -8,6 +8,7 @@ from arcade.hitbox import HitBox
 class WildPokemon(arcade.Sprite):
     def __init__(self, image_path, maggots_bounds, name:str, field:str,scale=2.0,):
         self.path_ding = Path(image_path)
+        self.alive = True
         self.sprite_file_location = Path(image_path)/"banner.png"
         self.name = name
         self.field = field
@@ -52,6 +53,8 @@ class WildPokemon(arcade.Sprite):
             self.frame_timer = 0
 
     def update(self, delta_time: float):
+        if not self.alive:
+            return
         self.direction_timer += delta_time
         if self.direction_timer >= self.change_interval:
             self.direction_timer = 0
