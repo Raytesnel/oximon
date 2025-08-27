@@ -191,13 +191,19 @@ class EnemyAI:
     def update(self, delta_time: float):
         """Beweeg richting midden of richting target."""
         # voorbeeld: altijd naar midden stage bewegen
-        stage_middle_x = (self.stage.width // 2)  # of gebruik spawnpoint / camera
+        target_position = self.target.center_x
         if not self.character.is_stunned:
-            if self.character.center_x < stage_middle_x - 10:
-                self.character.change_x = self.character.MOVE_SPEED
+            if self.character.center_x < target_position - 10:
+                if self.character.change_x <0 :
+                    self.character.change_x += self.character.MOVE_SPEED
+                else:
+                    self.character.change_x = self.character.MOVE_SPEED
                 self.character.animation_state = "walk"
-            elif self.character.center_x > stage_middle_x + 10:
-                self.character.change_x = -self.character.MOVE_SPEED
+            elif self.character.center_x > target_position + 10:
+                if self.character.change_x >0:
+                    self.character.change_x -= self.character.MOVE_SPEED
+                else:
+                    self.character.change_x = -self.character.MOVE_SPEED
                 self.character.animation_state = "walk"
             else:
                 self.character.change_x = 0

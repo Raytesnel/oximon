@@ -35,9 +35,9 @@ class OverworldView(BaseMap):
         super().on_update(delta_time)
         if self.dialog:
             if not self.dialog.active:
-                pokemon_defeated = next(
+                pokemon_defeated = [
                     pokemon for pokemon in self.wild_pokemon_list if not pokemon.alive
-                )
+                ][0]
                 if self.dialog.download_monster:
                     logger.debug("downloading...")
                     self.player_state["pokemons"].append(

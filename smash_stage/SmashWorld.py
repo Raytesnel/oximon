@@ -4,8 +4,8 @@ from loguru import logger
 from lifeforms.pokemons import WildPokemon
 from smash_stage.fighter import Character, KnockBackDamage, EnemyAI
 from smash_stage.stage import SmashStage
-from utils import SMASH_MAP_PATH, ASSETS_PATH
 from utils import SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE
+from utils import SMASH_MAP_PATH, ASSETS_PATH
 
 VIEWPORT_MARGIN = 200
 
@@ -148,15 +148,15 @@ class SmashWorld(arcade.View):
         self.p1_lives_text.text = f"P1 Lives: {self.character_1.lives}"
         self.p2_lives_text.text = f"P2 Lives: {self.character_2.lives}"
 
+        self.physics_engine_1.update()
+        self.physics_engine_2.update()
         if self.stage.check_death_zones(self.player_list):
             if self.character_1.lives <= 0:
                 self.overworld_view.player_lost()
             elif self.character_2.lives <= 0:
                 self.overworld_view.enemy_out_of_bounds(self.wild_monster)
 
-        self.physics_engine_1.update()
-        self.physics_engine_2.update()
-        if self.character_1.lives <= 0:
+        elif self.character_1.lives <= 0:
             self.overworld_view.player_lost()
         elif self.character_2.lives <= 0:
             self.overworld_view.enemy_defeated(self.wild_monster)
