@@ -7,6 +7,7 @@ from loguru import logger
 
 from houses.helper_stuff import check_object_collision
 from lifeforms.characters import Player
+from over_world.menu import TeamMenuView
 from utils import ASSETS_PATH, SCREEN_WIDTH, save_state, load_state
 
 
@@ -151,6 +152,9 @@ class BaseMap(arcade.View):
             self.player.change_x = -3
         elif key == arcade.key.RIGHT:
             self.player.change_x = 3
+        elif key == arcade.key.BACKSPACE:
+            menu = TeamMenuView(self, self.player_state)
+            self.window.show_view(menu)
 
     def on_key_release(self, key, modifiers):
         if key == arcade.key.UP and self.player.change_y > 0:
