@@ -270,7 +270,14 @@ class DialogPanel(arcade.Section):
                     if i == self.selected_choice
                     else arcade.color.WHITE
                 )
-                arcade.draw_text(choice["text"], 20, 80 - i * 30, color, 16)
+                choice = arcade.Text(
+                    choice["text"],
+                    20,
+                    80 - i * 30,
+                    color,
+                    font_size=16,
+                )
+                choice.draw()
 
     def on_key_press(self, key, modifiers):
         if not self.active:
