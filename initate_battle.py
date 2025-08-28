@@ -1,6 +1,8 @@
 import arcade
+
 from smash_stage.SmashWorld import SmashWorld
-from utils import POKEMON_SPRITES_PATH, load_state
+from smash_stage.fighter import Character
+from utils import POKEMON_SPRITES_PATH, load_state, ASSETS_PATH
 
 
 class Monster:
@@ -29,12 +31,14 @@ class BattleSplashView(arcade.View):
                     name=monster_name,
                     hp=character_monster[monster_name]["stats"]["health"],
                     atk=character_monster[monster_name]["stats"]["attack"],
-                    image_path=POKEMON_SPRITES_PATH / monster_name.title() / "banner.png",
-                    scale=1
+                    image_path=POKEMON_SPRITES_PATH
+                    / monster_name.title()
+                    / "banner.png",
+                    scale=1,
                 )
             )
-            counter +=1
-            if counter ==3:
+            counter += 1
+            if counter == 3:
                 break
 
         # Pre-create enemy text labels
@@ -84,5 +88,12 @@ class BattleSplashView(arcade.View):
             self.selected_index = (self.selected_index + 1) % len(self.team_monsters)
         elif key == arcade.key.SPACE:
             selected = self.team_monsters[self.selected_index]
-            print(f"You chose: {selected.name}")
-            self.window.show_view(SmashWorld(self.game_view,self.wild_pokemon))
+            self.window.show_view(
+                SmashWorld(
+                    self.game_view,
+                    self.wild_pokemon,
+                    Character(
+                        ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"
+                    ),  # TODO: move Character object instantion to a the self.team_monsters or so.
+                )
+            )

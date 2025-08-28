@@ -18,19 +18,18 @@ VERTICAL_BOUNDARY = SCREEN_HEIGHT / 2.0 - VIEWPORT_MARGIN
 # constraint to move the camera
 CAMERA_SPEED = 0.1
 CAMERA_BOUNDARY = arcade.LRBT(
-
     -HORIZONTAL_BOUNDARY,
-
-      HORIZONTAL_BOUNDARY,
-
-      -VERTICAL_BOUNDARY,
-
-      VERTICAL_BOUNDARY,
-
+    HORIZONTAL_BOUNDARY,
+    -VERTICAL_BOUNDARY,
+    VERTICAL_BOUNDARY,
 )
 
+
 class SmashWorld(arcade.View):
-    def __init__(self, overworld_view,wild_monster:WildPokemon):
+
+    def __init__(
+        self, overworld_view, wild_monster: WildPokemon, chosen_monster: Character
+    ):
         super().__init__()
         self.wild_monster = wild_monster
         self.overworld_view = overworld_view
@@ -38,12 +37,8 @@ class SmashWorld(arcade.View):
         self.held_keys = set()
         self.attack_hitboxes = arcade.SpriteList()
         self.timer = 0
-        self.character_1 = Character(
-            ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"
-        )
-        self.character_2 = Character(
-            ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"
-        )
+        self.character_1 = chosen_monster
+        self.character_2 = wild_monster.fighter
         self.stage = SmashStage(SMASH_MAP_PATH)
         self.physics_engine_1 = arcade.PhysicsEnginePlatformer(
             self.character_1, platforms=self.stage.platforms, gravity_constant=1
@@ -132,9 +127,11 @@ class SmashWorld(arcade.View):
             hitbox.update(delta_time)
             for target in self.player_list:
                 target: Character = target
-                if target is not hitbox.owner and arcade.check_for_collision(
-                    hitbox, target
-                ) and not hitbox.is_hit:
+                if (
+                    target is not hitbox.owner
+                    and arcade.check_for_collision(hitbox, target)
+                    and not hitbox.is_hit
+                ):
                     target.take_hit(
                         KnockBackDamage(
                             x_position=hitbox.knockback_direction.x_direction,
@@ -232,7 +229,23 @@ class SmashWorld(arcade.View):
         self.held_keys.discard(key)
         if key in (arcade.key.LEFT, arcade.key.RIGHT):
             self.character_1.change_x = 0
+
+
 if __name__ == "__main__":
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    window.show_view(SmashWorld(None))
+    window.show_view(
+        SmashWorld(
+            None,
+            wild_monster=WildPokemon(
+                image_path=ASSETS_PATH / f"sprites/pokemon/Bulbasaur",
+                maggots_bounds=(0, 0),
+                scale=2.0,
+                name="",
+                field="",
+            ),
+            chosen_monster=Character(
+                ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"
+            ),
+        )
+    )
     arcade.run()

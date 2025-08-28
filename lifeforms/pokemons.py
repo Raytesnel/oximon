@@ -4,6 +4,9 @@ from pathlib import Path
 import arcade
 from arcade.hitbox import HitBox
 
+from smash_stage.fighter import Character
+from utils import ASSETS_PATH
+
 
 class WildPokemon(arcade.Sprite):
     def __init__(self, image_path, maggots_bounds, name:str, field:str,scale=2.0,):
@@ -19,6 +22,9 @@ class WildPokemon(arcade.Sprite):
             "left": [arcade.load_texture(self.path_ding / f"over_world_{i}.png") for i in range(6, 9)],
             "right": [arcade.load_texture(self.path_ding / f"over_world_{i}.png") for i in range(9, 12)],
         }
+        self.fighter = Character(
+            ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"
+        )
         super().__init__(self.path_ding / "over_world_0.png", scale)
         self.direction = "down"
         self.texture = self.animations[self.direction][0]
