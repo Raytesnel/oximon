@@ -18,114 +18,127 @@ class TeamMenuView(arcade.View):
         self.loaded_textures = {
             name: arcade.load_texture(path)
             for name, path in self.pokemon_images.items()
-        }
+        }  # TODO: make this path into the monster class. all image related stuff needs to be in one place.
 
     def _collect_team(self):
         return self.player_state.get("pokemons", [])
 
+    def _draw_list_of_mosters(self, x_start, y_start):
+        for i, pokemon in enumerate(self.team):
+            pokemon_name = list(pokemon.keys())[0]
+            y = y_start - i * 50
+            color = (
+                arcade.color.YELLOW
+                if i == self.selected_index
+                else arcade.color.LIGHT_GRAY
+            )
+            arcade.Text(
+                pokemon_name,
+                x_start,
+                y,
+                color,
+                font_size=18,
+            ).draw()
+
+    def _draw_monster_profile(self, pokemon_name: str, center_x, center_y):
+        if not pokemon_name in self.loaded_textures:
+            raise ValueError("pokemon not found for profile")
+        tex = self.loaded_textures[pokemon_name]
+        width = tex.width * 3  # TODO: remove *3 when bigger profile picture is made
+        height = tex.height * 3  # TODO: remove *3 when bigger profile picture is made
+        rect = XYWH(center_x, center_y, width, height)
+        arcade.draw_texture_rect(
+            texture=tex,
+            rect=rect,
+            color=arcade.color.WHITE,
+            angle=0,
+            alpha=255,
+            pixelated=False,
+        )
+        return center_y - height / 2
+
+    @staticmethod
+    def _draw_monster_stats(
+        stats_monster: dict[str, dict[str, str]], y_start: int, start_x: int
+    ) -> int:
+        for stat_name, value in stats_monster.items():
+            stats = arcade.Text(
+                f"{stat_name.capitalize()}: {value}",
+                start_x,
+                y_start,
+                arcade.color.WHITE,
+                font_size=16,
+            )
+            stats.draw()
+            y_start -= 30
+        return y_start
+
+    @staticmethod
+    def _draw_moves_monster(moves: dict[str, str], start_y: int, start_x: int):
+        INDENT_SPACE = 30
+        arcade.Text(
+            "Moves:",
+            start_x,
+            start_y - 10,
+            arcade.color.WHITE,
+            font_size=16,
+        ).draw()
+        for j, move in enumerate(moves):
+            arcade.Text(
+                f"- {move}",
+                start_x + INDENT_SPACE,
+                start_y - 40 - j * 25,
+                arcade.color.WHITE,
+                font_size=12,
+            ).draw()
+
+    def draw_monster_info(self, x_start: int, width: int, y_start: int) -> None:
+        PROFILE_MONSTER = 64 * 3
+        try:
+            selected = self.team[self.selected_index]
+        except IndexError:
+            raise ValueError(
+                "No pokemon is pressent in team! no info to see!"
+            )  # TODO: make custom exceptions.
+        pokemon_name = next(iter(selected))
+        data = selected[pokemon_name]
+        self._draw_monster_profile(
+            pokemon_name=pokemon_name,
+            center_x=x_start + width - PROFILE_MONSTER / 2,
+            center_y=y_start - PROFILE_MONSTER / 2,
+        )
+        end_y = self._draw_monster_stats(
+            stats_monster=data.get("stats", {}), y_start=y_start, start_x=x_start
+        )
+        self._draw_moves_monster(
+            moves=data.get("attacks", []), start_y=end_y, start_x=x_start
+        )
+
     def on_draw(self):
         self.clear()
-        # Titel
-        title = arcade.Text(
+        arcade.Text(
             "Your Pokémon Team",
             self.window.width // 2,
             self.window.height - 50,
             arcade.color.WHITE,
             font_size=24,
             anchor_x="center",
+        ).draw()
+        self._draw_list_of_mosters(100, self.window.height - 200)
+        self.draw_monster_info(
+            x_start=self.window.width // 2,
+            width=self.window.width // 2,
+            y_start=self.window.height - 200,
         )
-        title.draw()
 
-        # ---- LINKS: lijst van teamleden ----
-        start_y = self.window.height - 150
-        for i, pokemon in enumerate(self.team):
-            pokemon_name = list(pokemon.keys())[0]
-            y = start_y - i * 50
-            color = (
-                arcade.color.YELLOW
-                if i == self.selected_index
-                else arcade.color.LIGHT_GRAY
-            )
-            pokemon = arcade.Text(
-                pokemon_name,
-                100,
-                y,
-                color,
-                font_size=18,
-            )
-            pokemon.draw()
-
-        # ---- RECHTS: details van geselecteerde Pokémon ----
-        if self.team:
-            selected = self.team[self.selected_index]
-            pokemon_name = list(selected.keys())[0]
-            data = selected[pokemon_name]
-
-            # Portrait
-            if pokemon_name in self.loaded_textures:
-                tex = self.loaded_textures[pokemon_name]
-                scale = 3.0
-                width = tex.width * scale
-                height = tex.height * scale
-
-                # Positie: rechts, gecentreerd
-                center_x = self.window.width - width / 2 - 50
-                center_y = self.window.height - height / 2 - 100
-
-                rect = XYWH(center_x, center_y, width, height)
-
-                arcade.draw_texture_rect(
-                    texture=tex,
-                    rect=rect,
-                    color=arcade.color.WHITE,
-                    angle=0,
-                    alpha=255,
-                    pixelated=False,
-                )
-            # Stats
-            stats = data.get("stats", {})
-            y_stats = self.window.height - 200
-            for stat_name, value in stats.items():
-                stats = arcade.Text(
-                    f"{stat_name.capitalize()}: {value}",
-                    self.window.width - 350,
-                    y_stats,
-                    arcade.color.WHITE,
-                    font_size=16,
-                )
-                stats.draw()
-                y_stats -= 30
-
-            # Moves
-            moves = data.get("attacks", [])
-            move_text = arcade.Text(
-                "Moves:",
-                self.window.width - 350,
-                y_stats - 10,
-                arcade.color.WHITE,
-                font_size=16,
-            )
-            move_text.draw()
-            for j, move in enumerate(moves):
-                moves = arcade.Text(
-                    f"- {move}",
-                    self.window.width - 320,
-                    y_stats - 40 - j * 25,
-                    arcade.color.WHITE,
-                    font_size=12,
-                )
-                moves.draw()
-
-        # Hint
-        signs = arcade.Text(
+        arcade.Text(
             "ESC = Return  < | > = Navigate",
             self.window.width // 2,
             50,
             arcade.color.LIGHT_BLUE,
             font_size=14,
             anchor_x="center",
-        )
-        signs.draw()
+        ).draw()
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.ESCAPE:
