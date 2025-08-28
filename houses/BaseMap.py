@@ -152,7 +152,7 @@ class BaseMap(arcade.View):
             self.player.change_x = -3
         elif key == arcade.key.RIGHT:
             self.player.change_x = 3
-        elif key == arcade.key.BACKSPACE:
+        elif key == arcade.key.ESCAPE:
             menu = TeamMenuView(self, self.player_state)
             self.window.show_view(menu)
 
