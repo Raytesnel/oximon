@@ -12,16 +12,18 @@ from utils import ASSETS_PATH, SCREEN_WIDTH, save_state, load_state
 
 
 class BaseMap(arcade.View):
-    def __init__(self, player_location_key: str, map: Path, possible_gates: list[str]):
+
+    def __init__(self, map: Path, possible_gates: list[str]):
         super().__init__()
         self.tile_map = load_tilemap(
             map,
             scaling=2.0,
             use_spatial_hash=True,
         )
+        self.load_in = False
+        self.map_name = map.stem
         self.npc_list = arcade.SpriteList()
         self.possible_gates = possible_gates
-        self.player_location_key = player_location_key
         self.camera = arcade.Camera2D()
         self.gui_camera = arcade.Camera2D()
         self.dialog: DialogPanel | None = None
@@ -36,27 +38,6 @@ class BaseMap(arcade.View):
         self.setup()
 
     def setup(self):
-        try:
-            start = next(
-                (
-                    o
-                    for o in self.tile_map.object_lists["objects"]
-                    if o.name == self.player_location_key
-                ),
-                None,
-            )
-            print("found player start")
-        except KeyError:
-            print(" player start not found")
-            start = None
-        if start:
-            self.player.center_x = start.shape[0]
-            self.player.center_y = start.shape[1]
-            logger.debug("player start set")
-        else:
-            self.player.center_x = 400
-            self.player.center_y = 400
-            logger.debug("player start set on default")
         self.y_sorted_sprites.append(self.player)
         for gate in self.possible_gates:
 
@@ -74,8 +55,17 @@ class BaseMap(arcade.View):
         self.gui_camera.use()
         if self.dialog and self.dialog.active:
             self.dialog.on_draw()
+        if not self.load_in:
+            logger.debug("jup lets save stuff")
+            self.player_state["player"]["location"]["map"] = self.map_name
+            self.player_state["player"]["location"]["x"] = self.player.center_x
+            self.player_state["player"]["location"]["y"] = self.player.center_y
+            logger.debug("save state")
+            save_state(self.player_state)
+            self.load_in = True
 
     def on_update(self, delta_time):
+
         if self.dialog and self.dialog.active:
             return
         self.scene.update_animation(delta_time)

@@ -5,7 +5,7 @@
     "entrance_1": { "map": "house_1", "spawn": "entrance_2" }
   },
   "house_1": {
-    "_file": "map/inside_house.tmx",
+    "_file": "map/house_1.tmx",
     "_type": "house",
     "exit_1": { "map": "graveyard", "spawn": "exit_house_1" }
   }

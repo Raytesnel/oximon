@@ -9,8 +9,9 @@ from utils import ASSETS_PATH
 
 
 class HouseMap(BaseMap):
-    def __init__(self,player_location_key:str,map:Path,possible_gates:list[str]):
-        super().__init__(player_location_key=player_location_key,map=map,possible_gates=possible_gates)
+
+    def __init__(self, map: Path, possible_gates: list[str]):
+        super().__init__(map=map, possible_gates=possible_gates)
         self.npc = NPC(sheet_path=ASSETS_PATH/"sprites"/"npcs"/"SpriteSheet.png", name="npc_dude")
         self.npc_list.append(self.npc)
         try:

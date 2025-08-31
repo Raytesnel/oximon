@@ -1,5 +1,8 @@
 player:
-  location: town01
+  location:
+    map: graveyard
+    x: 912.046
+    y: 932.4200000000001
   name: raytesnel
 pokemons: []
 quests:

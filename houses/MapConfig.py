@@ -1,13 +1,16 @@
 import json
-from pathlib import Path
 
 import arcade
 from loguru import logger
 
 from houses.BaseMap import BaseMap
-from houses.MapLoader import HouseMap
+from houses.House import HouseMap
 from houses.overworld import OverworldView
-from utils import SCREEN_HEIGHT, SCREEN_TITLE, SCREEN_WIDTH, ASSETS_PATH, ROOT_DIR
+from utils import (
+    ASSETS_PATH,
+    ROOT_DIR,
+    load_state,
+)
 
 
 class MapConfigs:
@@ -30,7 +33,6 @@ class MapConfigs:
         type_class = self.map_connections[transfer_to_map_class]["_type"]
         map_class = self.MAP_REGISTRY[type_class]
         map_to_travel = map_class(
-            player_location_key=locations["spawn"],
             map=ASSETS_PATH / self.map_connections[transfer_to_map_class]["_file"],
             possible_gates=[
                 gate
@@ -38,6 +40,43 @@ class MapConfigs:
                 if gate not in ["_type", "_file"]
             ],
         )
+        try:
+            start = next(
+                (
+                    o
+                    for o in map_to_travel.tile_map.object_lists["objects"]
+                    if o.name == locations["spawn"]
+                ),
+                None,
+            )
+            print("found player start")
+        except KeyError:
+            print(" player start not found")
+            start = None
+        if start:
+            map_to_travel.player.center_x = start.shape[0]
+            map_to_travel.player.center_y = start.shape[1]
+        return map_to_travel
+
+    def load_save(self):
+
+        logger.debug("going to load a map")
+        state = load_state()
+        player_state_location = state["player"]["location"]
+        map_class = self.MAP_REGISTRY[
+            self.map_connections[player_state_location["map"]]["_type"]
+        ]
+        map_to_travel = map_class(
+            map=ASSETS_PATH
+            / self.map_connections[player_state_location["map"]]["_file"],
+            possible_gates=[
+                gate
+                for gate in self.map_connections[player_state_location["map"]].keys()
+                if gate not in ["_type", "_file"]
+            ],
+        )
+        map_to_travel.player.center_x = player_state_location["x"]
+        map_to_travel.player.center_y = player_state_location["y"]
         return map_to_travel
 
     def get_shizzle(self,gate_object:arcade.types.TiledObject)->str:
