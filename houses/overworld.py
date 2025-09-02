@@ -117,9 +117,7 @@ class OverworldView(BaseMap):
         pokemon_sprite = WildPokemon(
             image_path=ASSETS_PATH / f"sprites/pokemon/{pokemon.name}",
             maggots_bounds=bounds,
-            scale=2.0,
             name=pokemon.name,
-            field=pokemon_field.name,
         )
         pokemon_sprite.position = (
             random.uniform(bounds[0], bounds[1]),

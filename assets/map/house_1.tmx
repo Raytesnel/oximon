@@ -17,8 +17,13 @@
  </layer>
  <objectgroup id="5" name="objects">
   <object id="6" name="exit_1" x="223.791" y="296.069" width="15.387" height="12.711"/>
-  <object id="9" name="npc_dude" x="263.333" y="199.333"/>
-  <object id="11" name="entrance_2" x="231" y="265.333"/>
+  <object id="9" name="npc_dude" x="253.298" y="199.333" width="10.035" height="10.704"/>
+  <object id="11" name="entrance_2" x="224.979" y="266.002" width="12.711" height="14.718">
+   <properties>
+    <property name="map" value=""/>
+    <property name="spawn" value=""/>
+   </properties>
+  </object>
  </objectgroup>
  <layer id="2" name="abandoned" width="40" height="40">
   <data encoding="base64" compression="zstd">

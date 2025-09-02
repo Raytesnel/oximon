@@ -1,9 +1,10 @@
 import os
-from enum import Enum
 from pathlib import Path
-from typing import Literal
 
 from pydantic import BaseModel
+
+from lifeforms.pokemons import WildPokemon
+from smash_stage.fighter import Character
 
 ASSETS_PATH = Path(os.path.dirname(__file__)) / "assets"
 
@@ -22,42 +23,57 @@ class Pokemon(BaseModel):
     areas: list[str]
 
 
-poke_data: dict[int, Pokemon] = {
-    1: Pokemon(
-        name="Pikachu",
-        level=5,
-        sprite=PokemonSprite(
-            left=[Path("sprites/pikachu/left1.png"), Path("sprites/pikachu/left2.png")],
-            right=[
-                Path("sprites/pikachu/right1.png"),
-                Path("sprites/pikachu/right2.png"),
-            ],
-            up=[Path("sprites/pikachu/up1.png"), Path("sprites/pikachu/up2.png")],
-            down=[Path("sprites/pikachu/down1.png"), Path("sprites/pikachu/down2.png")],
-        ),
-        areas=["forest", "plains"],
-    ),
-    2: Pokemon(
-        name="Charmander",
-        level=5,
-        sprite=PokemonSprite(
-            left=[
-                Path("sprites/charmander/left1.png"),
-                Path("sprites/charmander/left2.png"),
-            ],
-            right=[
-                Path("sprites/charmander/right1.png"),
-                Path("sprites/charmander/right2.png"),
-            ],
-            up=[Path("sprites/charmander/up1.png"), Path("sprites/charmander/up2.png")],
-            down=[
-                Path("sprites/charmander/down1.png"),
-                Path("sprites/charmander/down2.png"),
-            ],
-        ),
-        areas=["mountain", "cave"],
-    ),
-}
+# TODO make the fighter and overworld pokemon a sub class of a Monsterclass
+
+
+class FighterSprites(BaseModel):
+    light_attack_melee: Path
+    light_attack_range: Path
+    heavy_attack_range: Path
+    heavy_attack_melee: Path
+    dead: Path
+    hurt: Path
+    idle: Path
+    jump: Path
+    run: Path
+    walk: Path
+
+
+class OverWorldMonsterSprites(BaseModel):
+    up: Path
+    down: Path
+    left: Path
+    right: Path
+    dead: Path
+
+
+class EncounterMonster(BaseModel):
+    field: int
+    chance: float
+
+
+class Monster(BaseModel):
+    name: str
+    fighter_sprites: FighterSprites
+    over_world_sprites: OverWorldMonsterSprites
+    encounter_fields: list[EncounterMonster]
+    speed: int
+    health: int
+    defense: int
+    attack: int
+
+    @property
+    def over_world(self) -> WildPokemon:
+        return WildPokemon(
+            name=self.name, maggots_bounds=None, image_path=self.over_world_sprites
+        )
+
+    @property
+    def fighter(self) -> Character:
+        return Character(
+            name=self.name, asset_path=ASSETS_PATH / "sprites/pokemon/Lightning Mage"
+        )
+
 
 Pokemons = {
     1: Pokemon(
