@@ -1,10 +1,12 @@
 import os
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel
 
 from lifeforms.characters import FighterSprites
 from lifeforms.pokemons import WildPokemon, OverWorldMonsterSprites
+from smash_stage.attacks import Attack
 from smash_stage.fighter import Character
 from utils import ASSETS_PATH
 
@@ -33,6 +35,20 @@ class EncounterMonster(BaseModel):
     chance: float
 
 
+class QuestLineMove(BaseModel):
+    quest: str
+    finised: bool
+    objective_count: int
+    achieved_count: int
+
+
+class Moves(BaseModel, arbitrary_types_allowed=True):
+    name: str
+    attack_mode: Literal["heavy", "light"]
+    move: Attack
+    quest_line: QuestLineMove
+
+
 class Monster(BaseModel):
     name: str
     fighter_sprites: FighterSprites
@@ -42,6 +58,7 @@ class Monster(BaseModel):
     health: int
     defense: int
     attack: int
+    # moves:list[Moves]
 
     @property
     def over_world(self) -> WildPokemon:
@@ -50,7 +67,9 @@ class Monster(BaseModel):
     @property
     def fighter(self) -> Character:
         return Character(
-            name=self.name, asset_path=ASSETS_PATH / "sprites/pokemon/Lightning Mage"
+            name=self.name,
+            asset_path=ASSETS_PATH
+            / "sprites/pokemon/Lightning Mage",  # TODO: make path to FighterSprites
         )
 
     @property
@@ -94,7 +113,7 @@ Monsters = [
             right=ASSETS_PATH / "sprites" / "pokemon" / "Bulbasaur" / "right.png",
             up=ASSETS_PATH / "sprites" / "pokemon" / "Bulbasaur" / "up.png",
             down=ASSETS_PATH / "sprites" / "pokemon" / "Bulbasaur" / "down.png",
-            dead=ASSETS_PATH / "sprites" / "pokemon" / "Bulbasaur" / "left.png",
+            dead=ASSETS_PATH / "sprites" / "pokemon" / "Bulbasaur" / "dead.png",
             banner=ASSETS_PATH / "sprites" / "pokemon" / "Bulbasaur" / "banner.png",
         ),
         encounter_fields=[
@@ -105,6 +124,7 @@ Monsters = [
         health=50,
         defense=20,
         attack=80,
+        # moves=[]
     ),
     Monster(
         name="Charmander",
@@ -141,7 +161,7 @@ Monsters = [
             right=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "right.png",
             up=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "up.png",
             down=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "down.png",
-            dead=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "left.png",
+            dead=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "dead.png",
             banner=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "banner.png",
         ),
         encounter_fields=[
@@ -152,5 +172,6 @@ Monsters = [
         health=50,
         defense=20,
         attack=80,
+        # moves=[]
     ),
 ]

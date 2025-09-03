@@ -34,12 +34,15 @@ class OverworldView(BaseMap):
     def on_update(self, delta_time):
         super().on_update(delta_time)
         if self.dialog:
+            pokemon_defeated = [
+                pokemon for pokemon in self.wild_pokemon_list if not pokemon.alive
+            ][0]
+            pokemon_defeated.update(delta_time)
             if not self.dialog.active:
-                pokemon_defeated = [
-                    pokemon for pokemon in self.wild_pokemon_list if not pokemon.alive
-                ][0]
                 if self.dialog.download_monster:
                     logger.debug("downloading...")
+                    self.wild_pokemon_list.remove(pokemon_defeated)
+                    self.y_sorted_sprites.remove(pokemon_defeated)
                     self.player_state["pokemons"].append(
                         {
                             pokemon_defeated.name.lower(): {
@@ -56,13 +59,10 @@ class OverworldView(BaseMap):
                     save_state(self.player_state)
 
                 if self.dialog.kill_monster:
-                    logger.debug("kill that monster")
-                self.wild_pokemon_list.remove(pokemon_defeated)
-                self.y_sorted_sprites.remove(pokemon_defeated)
+                    self.wild_pokemon_list.remove(pokemon_defeated)
+                    self.y_sorted_sprites.remove(pokemon_defeated)
                 self.dialog = None
             return
-        if self.dialog:
-            self.dialog.on_update(delta_time)
         self.wild_pokemon_list.update()
         pokemon_fields = self.tile_map.object_lists["pokemonFields"]
         player_in_pokemon_field = next(
@@ -131,7 +131,6 @@ class OverworldView(BaseMap):
         self.window.show_view(self)
 
     def enemy_out_of_bounds(self, wild_pokemon: WildPokemon):
-        wild_pokemon.alive
         self.wild_pokemon_list.remove(wild_pokemon)
         self.y_sorted_sprites.remove(wild_pokemon)
         self.window.show_view(self)

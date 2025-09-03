@@ -63,8 +63,10 @@ class WildPokemon(arcade.Sprite):
             self.current_frame = 0
             self.texture = self.animations[self.direction][0]
             return
+        if not self.alive:
+            self.direction = "dead"
 
-        if abs(self.change_x) > abs(self.change_y):
+        elif abs(self.change_x) > abs(self.change_y):
             self.direction = "right" if self.change_x > 0 else "left"
         else:
             self.direction = "up" if self.change_y > 0 else "down"

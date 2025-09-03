@@ -92,15 +92,16 @@ class BattleSplashView(arcade.View):
                 self.selected_index
             ]  # TODO: emplement attacks and monster from state
             wild_monster_fighter = next(
-                pokemon.fighter
+                pokemon
                 for pokemon in Monsters
                 if pokemon.name == self.wild_pokemon.name
             )
             self.window.show_view(
                 SmashWorld(
-                    self.game_view,
-                    wild_monster_fighter,
-                    Character(
+                    overworld_view=self.game_view,
+                    wild_monster=wild_monster_fighter.fighter,
+                    wild_monster_overworld=self.wild_pokemon,
+                    chosen_monster=Character(
                         ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"
                     ),  # TODO: move Character object instantion to a the self.team_monsters or so.
                 )

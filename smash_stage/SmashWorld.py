@@ -28,9 +28,14 @@ CAMERA_BOUNDARY = arcade.LRBT(
 class SmashWorld(arcade.View):
 
     def __init__(
-        self, overworld_view, wild_monster: Character, chosen_monster: Character
+        self,
+        overworld_view,
+        wild_monster: Character,
+        wild_monster_overworld: WildPokemon,
+        chosen_monster: Character,
     ):
         super().__init__()
+        self.wild_monster_overworld = wild_monster_overworld
         self.wild_monster = wild_monster
         self.overworld_view = overworld_view
         self.camera = arcade.Camera2D()
@@ -151,19 +156,16 @@ class SmashWorld(arcade.View):
             if self.character_1.lives <= 0:
                 self.overworld_view.player_lost()
             elif self.character_2.lives <= 0:
-                self.overworld_view.enemy_out_of_bounds(self.wild_monster)
+                self.overworld_view.enemy_out_of_bounds(self.wild_monster_overworld)
 
         elif self.character_1.lives <= 0:
             self.overworld_view.player_lost()
         elif self.character_2.lives <= 0:
-            self.overworld_view.enemy_defeated(self.wild_monster)
+            self.overworld_view.enemy_defeated(self.wild_monster_overworld)
         self.enemy_ai.update(delta_time)
         self.scroll_to_player()
 
     def scroll_to_player(self):
-
-        # --- Manage Scrolling ---
-
         new_position = arcade.camera.grips.constrain_boundary_xy(
             self.camera.view_data, CAMERA_BOUNDARY, self.character_1.position
         )
