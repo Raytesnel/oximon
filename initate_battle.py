@@ -1,5 +1,6 @@
 import arcade
 
+from pokemon import Monsters
 from smash_stage.SmashWorld import SmashWorld
 from smash_stage.fighter import Character
 from utils import POKEMON_SPRITES_PATH, load_state, ASSETS_PATH
@@ -87,11 +88,18 @@ class BattleSplashView(arcade.View):
         elif key == arcade.key.DOWN:
             self.selected_index = (self.selected_index + 1) % len(self.team_monsters)
         elif key == arcade.key.SPACE:
-            selected = self.team_monsters[self.selected_index]
+            selected = self.team_monsters[
+                self.selected_index
+            ]  # TODO: emplement attacks and monster from state
+            wild_monster_fighter = next(
+                pokemon.fighter
+                for pokemon in Monsters
+                if pokemon.name == self.wild_pokemon.name
+            )
             self.window.show_view(
                 SmashWorld(
                     self.game_view,
-                    self.wild_pokemon,
+                    wild_monster_fighter,
                     Character(
                         ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"
                     ),  # TODO: move Character object instantion to a the self.team_monsters or so.

@@ -9,8 +9,8 @@ from houses.BaseMap import BaseMap, DialogPanel
 from houses.helper_stuff import check_object_collision
 from initate_battle import BattleSplashView
 from lifeforms.pokemons import WildPokemon
-from pokemon import Pokemons
-from utils import ASSETS_PATH, load_state, save_state
+from pokemon import Monsters
+from utils import load_state, save_state
 
 
 class OverworldView(BaseMap):
@@ -85,7 +85,9 @@ class OverworldView(BaseMap):
             self.wild_pokemon_list.clear()
             self.y_sorted_sprites.clear()
         for pokemon in self.wild_pokemon_list:
-            if arcade.check_for_collision_with_list(pokemon, self.walls):
+            if arcade.check_for_collision_with_list(
+                pokemon, self.walls
+            ) or not arcade.check_for_collision_with_list(pokemon, self.scene["grass"]):
                 pokemon.center_x -= pokemon.change_x
                 pokemon.center_y -= pokemon.change_y
             else:
@@ -108,17 +110,11 @@ class OverworldView(BaseMap):
         left_top, right_top, right_bottom, left_bottom = pokemon_field.shape
         bounds = (left_top[0], right_top[0], left_bottom[1], left_top[1])
         pokemons_allowed_in_field = [
-            pokemon
-            for pokemon in Pokemons.values()
-            if pokemon_field.name in pokemon.areas
+            pokemon for pokemon in Monsters if int(pokemon_field.name) in pokemon.fields
         ]
         pokemon = random.choice(pokemons_allowed_in_field)
 
-        pokemon_sprite = WildPokemon(
-            image_path=ASSETS_PATH / f"sprites/pokemon/{pokemon.name}",
-            maggots_bounds=bounds,
-            name=pokemon.name,
-        )
+        pokemon_sprite = pokemon.over_world
         pokemon_sprite.position = (
             random.uniform(bounds[0], bounds[1]),
             random.uniform(bounds[2], bounds[3]),
@@ -135,6 +131,7 @@ class OverworldView(BaseMap):
         self.window.show_view(self)
 
     def enemy_out_of_bounds(self, wild_pokemon: WildPokemon):
+        wild_pokemon.alive
         self.wild_pokemon_list.remove(wild_pokemon)
         self.y_sorted_sprites.remove(wild_pokemon)
         self.window.show_view(self)

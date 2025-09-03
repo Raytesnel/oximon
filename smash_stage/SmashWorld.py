@@ -28,7 +28,7 @@ CAMERA_BOUNDARY = arcade.LRBT(
 class SmashWorld(arcade.View):
 
     def __init__(
-        self, overworld_view, wild_monster: WildPokemon, chosen_monster: Character
+        self, overworld_view, wild_monster: Character, chosen_monster: Character
     ):
         super().__init__()
         self.wild_monster = wild_monster
@@ -38,7 +38,7 @@ class SmashWorld(arcade.View):
         self.attack_hitboxes = arcade.SpriteList()
         self.timer = 0
         self.character_1 = chosen_monster
-        self.character_2 = wild_monster.fighter
+        self.character_2 = wild_monster
         self.stage = SmashStage(SMASH_MAP_PATH)
         self.physics_engine_1 = arcade.PhysicsEnginePlatformer(
             self.character_1, platforms=self.stage.platforms, gravity_constant=1
@@ -238,10 +238,8 @@ if __name__ == "__main__":
             None,
             wild_monster=WildPokemon(
                 image_path=ASSETS_PATH / f"sprites/pokemon/Bulbasaur",
-                maggots_bounds=(0, 0),
                 scale=2.0,
                 name="",
-                field="",
             ),
             chosen_monster=Character(
                 ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"

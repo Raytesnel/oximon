@@ -1,7 +1,9 @@
 import os
+from pathlib import Path
 
 import arcade
 from arcade.hitbox import HitBox
+from pydantic import BaseModel
 
 
 class Player(arcade.Sprite):
@@ -41,3 +43,16 @@ class Player(arcade.Sprite):
             self.current_frame = (self.current_frame + 1) % len(self.animations[self.direction])
             self.texture = self.animations[self.direction][self.current_frame]
             self.frame_timer = 0
+
+
+class FighterSprites(BaseModel):
+    light_attack_melee: Path
+    light_attack_range: Path
+    heavy_attack_range: Path
+    heavy_attack_melee: Path
+    dead: Path
+    hurt: Path
+    idle: Path
+    jump: Path
+    run: Path
+    walk: Path

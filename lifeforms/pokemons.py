@@ -3,40 +3,49 @@ from pathlib import Path
 
 import arcade
 from arcade.hitbox import HitBox
-
-from smash_stage.fighter import Character
-from utils import ASSETS_PATH
+from pydantic import BaseModel
 
 
-# TODO make all animations from a sprite sheet instead of indiviidual images.
+class OverWorldMonsterSprites(BaseModel):
+    up: Path
+    down: Path
+    left: Path
+    right: Path
+    dead: Path
+    banner: Path
 
 
 class WildPokemon(arcade.Sprite):
 
     def __init__(
         self,
-        image_path,
-        maggots_bounds,
+        image_path: OverWorldMonsterSprites,
         name: str,
         scale=2.0,
     ):
-        self.path_ding = Path(image_path)
         self.alive = True
-        self.sprite_file_location = Path(image_path)/"banner.png"
+        self.sprite_file_location = image_path.banner
         self.name = name
         self.animations = {
-            "down": [arcade.load_texture(self.path_ding / f"over_world_{i}.png") for i in range(0, 3)],
-            "up": [arcade.load_texture(self.path_ding / f"over_world_{i}.png") for i in range(3, 6)],
-            "left": [arcade.load_texture(self.path_ding / f"over_world_{i}.png") for i in range(6, 9)],
-            "right": [arcade.load_texture(self.path_ding / f"over_world_{i}.png") for i in range(9, 12)],
+            "down": arcade.load_spritesheet(image_path.down).get_texture_grid(
+                (32, 32), 3, 3
+            ),
+            "up": arcade.load_spritesheet(image_path.up).get_texture_grid(
+                (32, 32), 3, 3
+            ),
+            "left": arcade.load_spritesheet(image_path.left).get_texture_grid(
+                (32, 32), 3, 3
+            ),
+            "right": arcade.load_spritesheet(image_path.right).get_texture_grid(
+                (32, 32), 3, 3
+            ),
+            "dead": arcade.load_spritesheet(image_path.dead).get_texture_grid(
+                (32, 32), 3, 3
+            ),
         }
-        self.fighter = Character(
-            ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"
-        )
-        super().__init__(self.path_ding / "over_world_0.png", scale)
+        super().__init__(self.animations["down"][0], scale)
         self.direction = "down"
         self.texture = self.animations[self.direction][0]
-        self.maggots_bounds = maggots_bounds
         self.direction_timer = 0
         self.change_interval = 0.6
         self.current_frame = 0
@@ -68,6 +77,8 @@ class WildPokemon(arcade.Sprite):
 
     def update(self, delta_time: float):
         if not self.alive:
+            self.direction = "dead"
+            self.update_animation(delta_time)
             return
         self.direction_timer += delta_time
         if self.direction_timer >= self.change_interval:
@@ -92,10 +103,6 @@ class WildPokemon(arcade.Sprite):
 
         self.center_x += self.change_x
         self.center_y += self.change_y
-
-        left, right, bottom, top = self.maggots_bounds
-        self.center_x = max(left, min(self.center_x, right))
-        self.center_y = max(bottom, min(self.center_y, top))
 
         self.overlay_visible = False
 
