@@ -165,8 +165,8 @@ Monsters = [
             banner=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "banner.png",
         ),
         encounter_fields=[
-            EncounterMonster(field=1, chance=0.8),
-            EncounterMonster(field=2, chance=0.3),
+            EncounterMonster(field=2, chance=0.8),
+            EncounterMonster(field=3, chance=0.3),
         ],
         speed=60,
         health=50,
