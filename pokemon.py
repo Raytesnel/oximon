@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from lifeforms.characters import FighterSprites
 from lifeforms.pokemons import WildPokemon, OverWorldMonsterSprites
-from smash_stage.attacks import Attack
+from smash_stage.attacks import Attack, BlueFireBreath, SimpleMelee, FireBreath
 from smash_stage.fighter import Character
 from utils import ASSETS_PATH
 
@@ -45,7 +45,8 @@ class QuestLineMove(BaseModel):
 class Moves(BaseModel, arbitrary_types_allowed=True):
     name: str
     attack_mode: Literal["heavy", "light"]
-    move: Attack
+    range: bool
+    move: type[Attack]
     quest_line: QuestLineMove
 
 
@@ -58,7 +59,7 @@ class Monster(BaseModel):
     health: int
     defense: int
     attack: int
-    # moves:list[Moves]
+    moves: list[Moves]
 
     @property
     def over_world(self) -> WildPokemon:
@@ -124,10 +125,35 @@ Monsters = [
         health=50,
         defense=20,
         attack=80,
-        # moves=[]
+        moves=[
+            Moves(
+                name="blue fire",
+                attack_mode="heavy",
+                range=True,
+                move=BlueFireBreath,
+                quest_line=QuestLineMove(
+                    quest="kill 20 characters with fire",
+                    finised=True,
+                    objective_count=20,
+                    achieved_count=20,
+                ),
+            ),
+            Moves(
+                name="tacle",
+                attack_mode="light",
+                range=False,
+                move=SimpleMelee,
+                quest_line=QuestLineMove(
+                    quest="run 100 meter",
+                    finised=True,
+                    objective_count=100,
+                    achieved_count=100,
+                ),
+            ),
+        ],
     ),
     Monster(
-        name="Charmander",
+        name="charmander",
         fighter_sprites=FighterSprites(
             light_attack_melee=ASSETS_PATH
             / "sprites"
@@ -172,6 +198,116 @@ Monsters = [
         health=50,
         defense=20,
         attack=80,
-        # moves=[]
+        moves=[
+            Moves(
+                name="fire blast",
+                attack_mode="heavy",
+                range=True,
+                move=FireBreath,
+                quest_line=QuestLineMove(
+                    quest="withstand 10 fire within in game",
+                    finised=True,
+                    objective_count=1,
+                    achieved_count=0,
+                ),
+            ),
+            Moves(
+                name="tacle",
+                attack_mode="light",
+                range=False,
+                move=SimpleMelee,
+                quest_line=QuestLineMove(
+                    quest="run 100 meter",
+                    finised=True,
+                    objective_count=100,
+                    achieved_count=100,
+                ),
+            ),
+        ],
+    ),
+    Monster(
+        name="Mew",
+        fighter_sprites=FighterSprites(
+            light_attack_melee=ASSETS_PATH
+            / "sprites"
+            / "pokemon"
+            / "Lightning Mage"
+            / "Attack_2.png",
+            light_attack_range=ASSETS_PATH
+            / "sprites"
+            / "pokemon"
+            / "Lightning Mage"
+            / "light_ball.png",
+            heavy_attack_range=ASSETS_PATH
+            / "sprites"
+            / "pokemon"
+            / "Lightning Mage"
+            / "charge_attack.png",
+            heavy_attack_melee=ASSETS_PATH
+            / "sprites"
+            / "pokemon"
+            / "Lightning Mage"
+            / "Attack_1.png",
+            dead=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Dead.png",
+            hurt=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Hurt.png",
+            idle=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Idle.png",
+            jump=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Jump.png",
+            run=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Run.png",
+            walk=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Walk.png",
+        ),
+        over_world_sprites=OverWorldMonsterSprites(
+            left=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "left.png",
+            right=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "right.png",
+            up=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "up.png",
+            down=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "down.png",
+            dead=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "dead.png",
+            banner=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "banner.png",
+        ),
+        encounter_fields=[
+            EncounterMonster(field=2, chance=0.8),
+            EncounterMonster(field=3, chance=0.3),
+        ],
+        speed=60,
+        health=50,
+        defense=20,
+        attack=80,
+        moves=[
+            Moves(
+                name="fire blast",
+                attack_mode="heavy",
+                range=True,
+                move=FireBreath,
+                quest_line=QuestLineMove(
+                    quest="withstand 10 fire within in game",
+                    finised=True,
+                    objective_count=1,
+                    achieved_count=0,
+                ),
+            ),
+            Moves(
+                name="tacle",
+                attack_mode="light",
+                range=False,
+                move=SimpleMelee,
+                quest_line=QuestLineMove(
+                    quest="run 100 meter",
+                    finised=True,
+                    objective_count=100,
+                    achieved_count=100,
+                ),
+            ),
+        ],
     ),
 ]
+
+"""
+Lucy lijstje:
+   - achtergrond muziek
+   - gevecht muziek
+   - meer monsters rapidash
+   - grot
+   - monster in gevecht
+   - poef of downloading animation when pokemon defeated
+   - pokemon achter je lopen.
+   
+"""
