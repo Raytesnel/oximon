@@ -1,9 +1,30 @@
 import arcade
+from arcade import Texture
 from arcade.types import XYWH
 from loguru import logger
 
 from pokemon import Monsters
 from utils import POKEMON_SPRITES_PATH
+
+
+def draw_monster_profile(
+    pokemon_name: str, center_x, center_y, textures: dict[str, Texture]
+):
+    if not pokemon_name in textures:
+        raise ValueError("pokemon not found for profile")
+    tex = textures[pokemon_name]
+    width = tex.width * 3  # TODO: remove *3 when bigger profile picture is made
+    height = tex.height * 3  # TODO: remove *3 when bigger profile picture is made
+    rect = XYWH(center_x, center_y, width, height)
+    arcade.draw_texture_rect(
+        texture=tex,
+        rect=rect,
+        color=arcade.color.WHITE,
+        angle=0,
+        alpha=255,
+        pixelated=False,
+    )
+    return center_y - height / 2
 
 
 class Menu(arcade.View):
@@ -77,7 +98,11 @@ class Pokedex(arcade.View):
     def _collect_team(self):
         return self.player_state.get("pokemons", {})
 
-    def _draw_list_of_mosters(self, x_start, y_start):
+    def _draw_list_of_mosters(
+        self,
+        x_start,
+        y_start,
+    ):
         names = [list(monster_member.keys())[0].lower() for monster_member in self.team]
         for i, pokemon in enumerate(Monsters):
             pokemon_name = pokemon.name
@@ -106,25 +131,8 @@ class Pokedex(arcade.View):
                     font_size=18,
                 ).draw()
 
-    def _draw_monster_profile(self, pokemon_name: str, center_x, center_y):
-        if not pokemon_name in self.loaded_textures:
-            raise ValueError("pokemon not found for profile")
-        tex = self.loaded_textures[pokemon_name]
-        width = tex.width * 3  # TODO: remove *3 when bigger profile picture is made
-        height = tex.height * 3  # TODO: remove *3 when bigger profile picture is made
-        rect = XYWH(center_x, center_y, width, height)
-        arcade.draw_texture_rect(
-            texture=tex,
-            rect=rect,
-            color=arcade.color.WHITE,
-            angle=0,
-            alpha=255,
-            pixelated=False,
-        )
-        return center_y - height / 2
-
     def draw_monster_info(self, x_start: int, width: int, y_start: int) -> None:
-        PROFILE_MONSTER = 64 * 3
+        profile_monster = 64 * 3
         try:
             selected = self.team[self.selected_index]
         except IndexError:
@@ -132,16 +140,16 @@ class Pokedex(arcade.View):
                 "No pokemon is pressent in team! no info to see!"
             )  # TODO: make custom exceptions.
         pokemon_name = next(iter(selected))
-        data = selected[pokemon_name]
-        self._draw_monster_profile(
+        draw_monster_profile(
             pokemon_name=pokemon_name,
-            center_x=x_start + width - PROFILE_MONSTER / 2,
-            center_y=y_start - PROFILE_MONSTER / 2,
+            center_x=x_start + width - profile_monster / 2,
+            center_y=y_start - profile_monster / 2,
+            textures=self.loaded_textures,
         )
         arcade.Text(
             "monster found of zo",
             x_start,
-            y_start - PROFILE_MONSTER,
+            y_start - profile_monster,
             arcade.color.WHITE,
             font_size=24,
             anchor_x="center",
@@ -214,23 +222,6 @@ class TeamMenuView(arcade.View):
                 font_size=18,
             ).draw()
 
-    def _draw_monster_profile(self, pokemon_name: str, center_x, center_y):
-        if not pokemon_name in self.loaded_textures:
-            raise ValueError("pokemon not found for profile")
-        tex = self.loaded_textures[pokemon_name]
-        width = tex.width * 3  # TODO: remove *3 when bigger profile picture is made
-        height = tex.height * 3  # TODO: remove *3 when bigger profile picture is made
-        rect = XYWH(center_x, center_y, width, height)
-        arcade.draw_texture_rect(
-            texture=tex,
-            rect=rect,
-            color=arcade.color.WHITE,
-            angle=0,
-            alpha=255,
-            pixelated=False,
-        )
-        return center_y - height / 2
-
     @staticmethod
     def _draw_monster_stats(
         stats_monster: dict[str, dict[str, str]], y_start: int, start_x: int
@@ -276,10 +267,11 @@ class TeamMenuView(arcade.View):
             )  # TODO: make custom exceptions.
         pokemon_name = next(iter(selected))
         data = selected[pokemon_name]
-        self._draw_monster_profile(
+        draw_monster_profile(
             pokemon_name=pokemon_name,
             center_x=x_start + width - PROFILE_MONSTER / 2,
             center_y=y_start - PROFILE_MONSTER / 2,
+            textures=self.loaded_textures,
         )
         end_y = self._draw_monster_stats(
             stats_monster=data.get("stats", {}), y_start=y_start, start_x=x_start
