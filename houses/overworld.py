@@ -127,6 +127,8 @@ class OverworldView(BaseMap):
 
     def player_lost(self):
         logger.debug("dood!")
+        self.wild_pokemon_list.clear()
+        self.y_sorted_sprites.clear()
         load_state()
         self.window.show_view(self)
 
