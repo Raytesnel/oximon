@@ -120,6 +120,9 @@ class OverworldView(BaseMap):
             random.uniform(bounds[2], bounds[3]),
         )
         if not arcade.check_for_collision_with_list(pokemon_sprite, self.walls):
+            if not pokemon.name in self.player_state["pokedex"]:
+                self.player_state["pokedex"].append(pokemon.name)
+                save_state(self.player_state)
             self.wild_pokemon_list.append(pokemon_sprite)
             self.y_sorted_sprites.append(pokemon_sprite)
 
