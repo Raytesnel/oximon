@@ -10,17 +10,8 @@ from utils import ASSETS_PATH
 
 class HouseMap(BaseMap):
 
-    def __init__(self, map: Path, possible_gates: list[str]):
-        self.music = arcade.Sound(
-            "/home/raymond/Downloads/The Offspring - Pretty Fly for a White Guy HD.mp3",
-            streaming=True,
-        )
-        self.current_player = self.music.play(0.8)
-        super().__init__(
-            map=map,
-            possible_gates=possible_gates,
-            current_player=self.current_player,
-        )
+    def __init__(self, map: Path, possible_gates: list[str], music: Path):
+        super().__init__(map=map, possible_gates=possible_gates, music=music)
         self.npc = NPC(
             sheet_path=ASSETS_PATH / "sprites" / "npcs" / "SpriteSheet.png",
             name="npc_dude",

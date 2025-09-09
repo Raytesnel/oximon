@@ -15,15 +15,14 @@ from utils import load_state, save_state
 
 class OverworldView(BaseMap):
 
-    def __init__(self, map: Path, possible_gates: list[str]):
+    def __init__(self, map: Path, possible_gates: list[str], music: Path):
         self.max_pokemon_per_bush = (
             3  # TODO: calculate this with surface area of the field.
         )
         self.counter_pokemon = 0
         self.wild_pokemon_list = arcade.SpriteList()
         super().__init__(
-            map=map,
-            possible_gates=possible_gates,
+            map=map, possible_gates=possible_gates, music=music, current_player=0.2
         )
 
     def setup(self):

@@ -38,6 +38,7 @@ class MapConfigs:
                 for gate in self.map_connections[transfer_to_map_class].keys()
                 if gate not in ["_type", "_file"]
             ],
+            music=ASSETS_PATH / self.map_connections[transfer_to_map_class]["_music"],
         )
         try:
             start = next(
@@ -73,6 +74,8 @@ class MapConfigs:
                 for gate in self.map_connections[player_state_location["map"]].keys()
                 if gate not in ["_type", "_file"]
             ],
+            music=ASSETS_PATH
+            / self.map_connections[player_state_location["map"]]["_music"],
         )
         map_to_travel.player.center_x = player_state_location["x"]
         map_to_travel.player.center_y = player_state_location["y"]

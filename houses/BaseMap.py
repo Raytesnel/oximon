@@ -13,7 +13,13 @@ from utils import ASSETS_PATH, SCREEN_WIDTH, save_state, load_state
 
 class BaseMap(arcade.View):
 
-    def __init__(self, map: Path, possible_gates: list[str], current_player=None):
+    def __init__(
+        self,
+        map: Path,
+        possible_gates: list[str],
+        music: Path,
+        current_player=1,
+    ):
         super().__init__()
         self.tile_map = load_tilemap(
             map,
@@ -36,10 +42,10 @@ class BaseMap(arcade.View):
         self.possible_gate_objects = None
         self.player_state = load_state()
         self.music = arcade.Sound(
-            "/home/raymond/Downloads/The Offspring - Pretty Fly for a White Guy HD.mp3",
+            music,
             streaming=True,
         )
-        self.current_player = current_player
+        self.current_player = self.music.play(current_player)
         self.setup()
 
     def setup(self):
