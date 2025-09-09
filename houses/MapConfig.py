@@ -8,7 +8,6 @@ from houses.House import HouseMap
 from houses.overworld import OverworldView
 from utils import (
     ASSETS_PATH,
-    ROOT_DIR,
     load_state,
 )
 
@@ -21,7 +20,7 @@ class MapConfigs:
     }
 
     def __init__(self):
-        with open(ROOT_DIR/"houses"/"map_config.json") as f:
+        with open(ASSETS_PATH / "map" / "map_config.json") as f:
             self.map_connections = json.load(f)
 
     def load_map_by_id(self, map_id, spawn_point_id):

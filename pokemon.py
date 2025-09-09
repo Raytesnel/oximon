@@ -249,5 +249,4 @@ Lucy lijstje:
    - monster in gevecht
    - poef of downloading animation when pokemon defeated
    - pokemon achter je lopen.
-   
 """

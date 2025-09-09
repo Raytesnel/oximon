@@ -13,7 +13,7 @@ from utils import ASSETS_PATH, SCREEN_WIDTH, save_state, load_state
 
 class BaseMap(arcade.View):
 
-    def __init__(self, map: Path, possible_gates: list[str]):
+    def __init__(self, map: Path, possible_gates: list[str], current_player=None):
         super().__init__()
         self.tile_map = load_tilemap(
             map,
@@ -35,6 +35,11 @@ class BaseMap(arcade.View):
         self.y_sorted_sprites = arcade.SpriteList()
         self.possible_gate_objects = None
         self.player_state = load_state()
+        self.music = arcade.Sound(
+            "/home/raymond/Downloads/The Offspring - Pretty Fly for a White Guy HD.mp3",
+            streaming=True,
+        )
+        self.current_player = current_player
         self.setup()
 
     def setup(self):
@@ -87,6 +92,8 @@ class BaseMap(arcade.View):
                     mapchanger.get_shizzle(gate), gate.name
                 )
                 self.window.clear()
+                if self.current_player:
+                    self.music.stop(self.current_player)
                 self.window.show_view(view)
         self.player_list.update()
         if arcade.check_for_collision_with_list(self.player, self.walls):

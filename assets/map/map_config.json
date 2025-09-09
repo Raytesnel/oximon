@@ -2,11 +2,13 @@
   "graveyard": {
     "_file": "map/graveyard.tmx",
     "_type": "overworld",
+    "_music": "/home/raymond/Downloads/The Offspring - Pretty Fly for a White Guy HD.mp3",
     "entrance_1": { "map": "house_1", "spawn": "entrance_2" }
   },
   "house_1": {
     "_file": "map/house_1.tmx",
     "_type": "house",
+    "_music": "/home/raymond/Downloads/The Offspring - Pretty Fly for a White Guy HD.mp3",
     "exit_1": { "map": "graveyard", "spawn": "exit_house_1" }
   }
 }
