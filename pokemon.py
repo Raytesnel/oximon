@@ -50,11 +50,17 @@ class Moves(BaseModel, arbitrary_types_allowed=True):
     quest_line: QuestLineMove
 
 
+class DescriptionMonster(BaseModel):
+    description: str
+    type: Literal["Fire", "Water", "Void", "Life", "Air", "Stone", "Tech"]
+
+
 class Monster(BaseModel):
     name: str
     fighter_sprites: FighterSprites
     over_world_sprites: OverWorldMonsterSprites
     encounter_fields: list[EncounterMonster]
+    description: DescriptionMonster
     speed: int
     health: int
     defense: int
@@ -81,6 +87,9 @@ class Monster(BaseModel):
 Monsters = [
     Monster(
         name="Bulbasaur",
+        description=DescriptionMonster(
+            description="een monster met een groene puist", type="Life"
+        ),
         fighter_sprites=FighterSprites(
             light_attack_melee=ASSETS_PATH
             / "sprites"
@@ -154,6 +163,10 @@ Monsters = [
     ),
     Monster(
         name="Charmander",
+        description=DescriptionMonster(
+            description="fire dino, bruhahaha",
+            type="Fire",
+        ),
         fighter_sprites=FighterSprites(
             light_attack_melee=ASSETS_PATH
             / "sprites"
@@ -193,78 +206,6 @@ Monsters = [
         encounter_fields=[
             EncounterMonster(field=2, chance=0.8),
             EncounterMonster(field=3, chance=0.3),
-        ],
-        speed=60,
-        health=50,
-        defense=20,
-        attack=80,
-        moves=[
-            Moves(
-                name="fire blast",
-                attack_mode="heavy",
-                range=True,
-                move=FireBreath,
-                quest_line=QuestLineMove(
-                    quest="withstand 10 fire within in game",
-                    finised=True,
-                    objective_count=1,
-                    achieved_count=0,
-                ),
-            ),
-            Moves(
-                name="tacle",
-                attack_mode="light",
-                range=False,
-                move=SimpleMelee,
-                quest_line=QuestLineMove(
-                    quest="run 100 meter",
-                    finised=True,
-                    objective_count=100,
-                    achieved_count=100,
-                ),
-            ),
-        ],
-    ),
-    Monster(
-        name="Mew",
-        fighter_sprites=FighterSprites(
-            light_attack_melee=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "Attack_2.png",
-            light_attack_range=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "light_ball.png",
-            heavy_attack_range=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "charge_attack.png",
-            heavy_attack_melee=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "Attack_1.png",
-            dead=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Dead.png",
-            hurt=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Hurt.png",
-            idle=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Idle.png",
-            jump=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Jump.png",
-            run=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Run.png",
-            walk=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Walk.png",
-        ),
-        over_world_sprites=OverWorldMonsterSprites(
-            left=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "left.png",
-            right=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "right.png",
-            up=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "up.png",
-            down=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "down.png",
-            dead=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "dead.png",
-            banner=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "banner.png",
-        ),
-        encounter_fields=[
-            EncounterMonster(field=60, chance=0.1),
         ],
         speed=60,
         health=50,

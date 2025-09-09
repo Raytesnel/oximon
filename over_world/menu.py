@@ -10,9 +10,9 @@ from utils import POKEMON_SPRITES_PATH
 def draw_monster_profile(
     pokemon_name: str, center_x, center_y, textures: dict[str, Texture]
 ):
-    if not pokemon_name.lower() in textures:
+    if not pokemon_name in textures:
         raise ValueError("pokemon not found for profile")
-    tex = textures[pokemon_name.lower()]
+    tex = textures[pokemon_name]
     width = tex.width * 3  # TODO: remove *3 when bigger profile picture is made
     height = tex.height * 3  # TODO: remove *3 when bigger profile picture is made
     rect = XYWH(center_x, center_y, width, height)
@@ -85,12 +85,19 @@ class Pokedex(arcade.View):
         self.selected_index = 0
         self.pokedex_monsters = Monsters
         self.monster_list = []
-        seen_names = [monster_member.lower() for monster_member in self.player_state["pokedex"]]
+        self.seen_names = [
+            monster_member.lower() for monster_member in self.player_state["pokedex"]
+        ]
+        self.team_names = [
+            list(monster_member.keys())[0].lower() for monster_member in self.team
+        ]
 
         self.pokemon_images = {
-            team_monster.name.lower(): POKEMON_SPRITES_PATH / team_monster.name.title() / "banner.png"
+            team_monster.name.lower(): POKEMON_SPRITES_PATH
+            / team_monster.name.title()
+            / "banner.png"
             for team_monster in self.pokedex_monsters
-            if team_monster.name.lower() in seen_names
+            if team_monster.name.lower() in self.seen_names
         }
         self.loaded_textures = {
             name: arcade.load_texture(path)
@@ -105,8 +112,6 @@ class Pokedex(arcade.View):
         x_start,
         y_start,
     ):
-        team_names = [list(monster_member.keys())[0].lower() for monster_member in self.team]
-        seen_names = [monster_member.lower() for monster_member in self.player_state["pokedex"]]
         for i, pokemon in enumerate(self.pokedex_monsters):
             pokemon_name = pokemon.name.lower()
             y = y_start - i * 50
@@ -115,7 +120,7 @@ class Pokedex(arcade.View):
                 if i == self.selected_index
                 else arcade.color.LIGHT_GRAY
             )
-            if pokemon_name in team_names or pokemon_name in seen_names:
+            if pokemon_name in self.team_names or pokemon_name in self.seen_names:
                 self.monster_list.append(pokemon_name)
                 arcade.Text(
                     f"{i}:\t{pokemon_name}",
@@ -139,27 +144,37 @@ class Pokedex(arcade.View):
         try:
             selected = self.pokedex_monsters[self.selected_index]
         except IndexError:
-            logger.debug(f"index:{self.selected_index}")
-            logger.debug(f"team:{self.team}")
-            logger.debug(f"len team:{len(self.team)}")
-            raise ValueError(
-                "No pokemon is pressent in team! no info to see!"
-            )
-        pokemon_name = selected.name
+            raise ValueError("No pokemon is pressent in team! no info to see!")
+        pokemon_name = selected.name.lower()
         draw_monster_profile(
             pokemon_name=pokemon_name,
             center_x=x_start + width - profile_monster / 2,
             center_y=y_start - profile_monster / 2,
             textures=self.loaded_textures,
         )
-        arcade.Text(
-            "monster found of zo",
-            x_start,
-            y_start - profile_monster,
-            arcade.color.WHITE,
-            font_size=24,
-            anchor_x="center",
-        ).draw()
+        if pokemon_name in self.team_names:
+            texts = [
+                f"monster seen in route: {selected.fields}",
+                f"description:{selected.description.description}",
+                f"type:{selected.description.type}",
+            ]
+            for i, text in enumerate(texts):
+                arcade.Text(
+                    text,
+                    x_start + 20,
+                    y_start - profile_monster + 20 * i,
+                    arcade.color.WHITE,
+                    font_size=16,
+                ).draw()
+        elif pokemon_name in self.seen_names:
+            arcade.Text(
+                f"more info at route:{selected.fields}",
+                x_start + 20,
+                y_start - profile_monster,
+                arcade.color.WHITE,
+                font_size=16,
+                anchor_x="center",
+            ).draw()
 
     def on_draw(self):
         self.clear()
@@ -228,49 +243,12 @@ class TeamMenuView(arcade.View):
                 font_size=18,
             ).draw()
 
-    @staticmethod
-    def _draw_monster_stats(
-        stats_monster: dict[str, dict[str, str]], y_start: int, start_x: int
-    ) -> int:
-        for stat_name, value in stats_monster.items():
-            stats = arcade.Text(
-                f"{stat_name.capitalize()}: {value}",
-                start_x,
-                y_start,
-                arcade.color.WHITE,
-                font_size=16,
-            )
-            stats.draw()
-            y_start -= 30
-        return y_start
-
-    @staticmethod
-    def _draw_moves_monster(moves: dict[str, str], start_y: int, start_x: int):
-        INDENT_SPACE = 30
-        arcade.Text(
-            "Moves:",
-            start_x,
-            start_y - 10,
-            arcade.color.WHITE,
-            font_size=16,
-        ).draw()
-        for j, move in enumerate(moves):
-            arcade.Text(
-                f"- {move}",
-                start_x + INDENT_SPACE,
-                start_y - 40 - j * 25,
-                arcade.color.WHITE,
-                font_size=12,
-            ).draw()
-
     def draw_monster_info(self, x_start: int, width: int, y_start: int) -> None:
         PROFILE_MONSTER = 64 * 3
         try:
             selected = self.team[self.selected_index]
         except IndexError:
-            raise ValueError(
-                "No pokemon is pressent in team! no info to see!"
-            )  # TODO: make custom exceptions.
+            raise ValueError("No pokemon is pressent in team! no info to see!")
         pokemon_name = next(iter(selected))
         data = selected[pokemon_name]
         draw_monster_profile(
@@ -279,10 +257,10 @@ class TeamMenuView(arcade.View):
             center_y=y_start - PROFILE_MONSTER / 2,
             textures=self.loaded_textures,
         )
-        end_y = self._draw_monster_stats(
+        end_y = draw_monster_stats(
             stats_monster=data.get("stats", {}), y_start=y_start, start_x=x_start
         )
-        self._draw_moves_monster(
+        draw_moves_monster(
             moves=data.get("attacks", []), start_y=end_y, start_x=x_start
         )
 
@@ -310,4 +288,39 @@ class TeamMenuView(arcade.View):
             arcade.color.LIGHT_BLUE,
             font_size=14,
             anchor_x="center",
+        ).draw()
+
+
+def draw_monster_stats(
+    stats_monster: dict[str, dict[str, str]], y_start: int, start_x: int
+) -> int:
+    for stat_name, value in stats_monster.items():
+        stats = arcade.Text(
+            f"{stat_name.capitalize()}: {value}",
+            start_x,
+            y_start,
+            arcade.color.WHITE,
+            font_size=16,
+        )
+        stats.draw()
+        y_start -= 30
+    return y_start
+
+
+def draw_moves_monster(moves: dict[str, str], start_y: int, start_x: int):
+    indent_space = 30
+    arcade.Text(
+        "Moves:",
+        start_x,
+        start_y - 10,
+        arcade.color.WHITE,
+        font_size=16,
+    ).draw()
+    for j, move in enumerate(moves):
+        arcade.Text(
+            f"- {move}",
+            start_x + indent_space,
+            start_y - 40 - j * 25,
+            arcade.color.WHITE,
+            font_size=12,
         ).draw()
