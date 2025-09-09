@@ -10,9 +10,9 @@ from utils import POKEMON_SPRITES_PATH
 def draw_monster_profile(
     pokemon_name: str, center_x, center_y, textures: dict[str, Texture]
 ):
-    if not pokemon_name in textures:
+    if not pokemon_name.lower() in textures:
         raise ValueError("pokemon not found for profile")
-    tex = textures[pokemon_name]
+    tex = textures[pokemon_name.lower()]
     width = tex.width * 3  # TODO: remove *3 when bigger profile picture is made
     height = tex.height * 3  # TODO: remove *3 when bigger profile picture is made
     rect = XYWH(center_x, center_y, width, height)
@@ -83,12 +83,14 @@ class Pokedex(arcade.View):
         monster_name_list = [monster.name.lower() for monster in Monsters]
         self.index = len(monster_name_list)
         self.selected_index = 0
+        self.pokedex_monsters = Monsters
         self.monster_list = []
+        seen_names = [monster_member.lower() for monster_member in self.player_state["pokedex"]]
+
         self.pokemon_images = {
-            name.lower(): POKEMON_SPRITES_PATH / name.title() / "banner.png"
-            for team_monster in self.team
-            for (name,) in [team_monster.keys()]
-            if name.lower() in self.monster_name_list
+            team_monster.name.lower(): POKEMON_SPRITES_PATH / team_monster.name.title() / "banner.png"
+            for team_monster in self.pokedex_monsters
+            if team_monster.name.lower() in seen_names
         }
         self.loaded_textures = {
             name: arcade.load_texture(path)
@@ -103,16 +105,17 @@ class Pokedex(arcade.View):
         x_start,
         y_start,
     ):
-        names = [list(monster_member.keys())[0].lower() for monster_member in self.team]
-        for i, pokemon in enumerate(Monsters):
-            pokemon_name = pokemon.name
+        team_names = [list(monster_member.keys())[0].lower() for monster_member in self.team]
+        seen_names = [monster_member.lower() for monster_member in self.player_state["pokedex"]]
+        for i, pokemon in enumerate(self.pokedex_monsters):
+            pokemon_name = pokemon.name.lower()
             y = y_start - i * 50
             color = (
                 arcade.color.YELLOW
                 if i == self.selected_index
                 else arcade.color.LIGHT_GRAY
             )
-            if pokemon_name in names:
+            if pokemon_name in team_names or pokemon_name in seen_names:
                 self.monster_list.append(pokemon_name)
                 arcade.Text(
                     f"{i}:\t{pokemon_name}",
@@ -134,12 +137,15 @@ class Pokedex(arcade.View):
     def draw_monster_info(self, x_start: int, width: int, y_start: int) -> None:
         profile_monster = 64 * 3
         try:
-            selected = self.team[self.selected_index]
+            selected = self.pokedex_monsters[self.selected_index]
         except IndexError:
+            logger.debug(f"index:{self.selected_index}")
+            logger.debug(f"team:{self.team}")
+            logger.debug(f"len team:{len(self.team)}")
             raise ValueError(
                 "No pokemon is pressent in team! no info to see!"
-            )  # TODO: make custom exceptions.
-        pokemon_name = next(iter(selected))
+            )
+        pokemon_name = selected.name
         draw_monster_profile(
             pokemon_name=pokemon_name,
             center_x=x_start + width - profile_monster / 2,
