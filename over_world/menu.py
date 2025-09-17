@@ -380,7 +380,7 @@ class MonsterMenu(arcade.View):
     def _collect_team(self):
         return self.player_state.get("pokemons", {})
 
-    def draw_monster_info(self, x_start: int, width: int, y_start: int) -> None:
+    def draw_monster_info(self) -> None:
         try:
             selected = self.team[self.selected_index]
         except IndexError:
@@ -428,12 +428,7 @@ class MonsterMenu(arcade.View):
             font_size=24,
             anchor_x="center",
         ).draw()
-        self.draw_monster_info(
-            x_start=self.window.width // 2,
-            width=self.window.width // 2,
-            y_start=self.window.height - 200,
-        )
-
+        self.draw_monster_info()
         arcade.Text(
             "ESC = Return  < | > = Navigate",
             self.window.width // 2,
