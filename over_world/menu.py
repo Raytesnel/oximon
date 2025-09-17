@@ -3,7 +3,6 @@ from typing import Literal
 import arcade
 from arcade import Texture
 from arcade.types import XYWH
-from loguru import logger
 
 from pokemon import Monsters, Moves
 from utils import POKEMON_SPRITES_PATH
@@ -29,6 +28,29 @@ def draw_monster_profile(
     return center_y - height / 2
 
 
+class BaseMenu(arcade.View):
+    def __init__(self, overworld_view: arcade.View, player_state: dict, selected_index):
+        super().__init__()
+        self.overworld_view = overworld_view
+        self.player_state = player_state
+        monster_name_list = {monster.name.lower() for monster in Monsters}
+        self.team = self._collect_team()
+        pokemon_images = {
+            name.lower(): POKEMON_SPRITES_PATH / name.title() / "banner.png"
+            for team_monster in self.team
+            for (name,) in [team_monster.keys()]
+            if name.lower() in monster_name_list
+        }
+        self.loaded_textures = {
+            name: arcade.load_texture(path) for name, path in pokemon_images.items()
+        }
+        self.index = len(self.team)
+        self.selected_index = selected_index
+
+    def _collect_team(self):
+        return self.player_state.get("pokemons", {})
+
+
 class Menu(arcade.View):
 
     def __init__(self, overworld_view: arcade.View, player_state: dict):
@@ -46,65 +68,58 @@ class Menu(arcade.View):
             player_state=self.player_state,
             selected_index=0,
         )
-        self.menu = [
+        self.menus = [
             self.pokdex,
             self.team_menu,
         ]
-        self.current_menu = 0
+        self.current_menu_index = 0
+        self.current_menu_view: BaseMenu = self.pokdex
         self.team = self.player_state.get("pokemons", {})
         self.view_mode: Literal["menu", "monster_info"] = "menu"
 
     def on_key_press(self, key, modifiers):
-        menu_selected = self.menu[self.current_menu]
-        length_menu = menu_selected.index
-        logger.debug(f"length list menu:{length_menu}")
-        if key == arcade.key.ESCAPE:
-            if self.view_mode == "menu":
+        length_menu = self.current_menu_view.index
+        if self.current_menu_view in self.menus:
+            if key == arcade.key.ESCAPE:
                 self.window.show_view(self.overworld_view)
-            elif self.view_mode == "monster_info":
-                self.view_mode = "menu"
-        if key == arcade.key.SPACE:
-            if menu_selected == self.team_menu:
-                self.monster_info.index = menu_selected.index
-                self.monster_info.selected_index = menu_selected.selected_index
-                self.view_mode = "monster_info"
-
-        elif key == arcade.key.UP:
-            menu_selected.selected_index = (
-                menu_selected.selected_index - 1
-            ) % length_menu
-            logger.debug(f"index=:{menu_selected.selected_index}")
-
-        elif key == arcade.key.DOWN:
-            menu_selected.selected_index = (
-                menu_selected.selected_index + 1
-            ) % length_menu
-            logger.debug(f"index=:{menu_selected.selected_index}")
-
-        elif key == arcade.key.RIGHT:
-            self.current_menu = (self.current_menu - 1) % len(self.menu)
-
-        elif key == arcade.key.LEFT:
-            self.current_menu = (self.current_menu + 1) % len(self.menu)
+            if key == arcade.key.SPACE:
+                if self.current_menu_view == self.team_menu:
+                    self.monster_info.index = self.current_menu_view.index
+                    self.monster_info.selected_index = (
+                        self.current_menu_view.selected_index
+                    )
+                    self.current_menu_view = self.monster_info
+            elif key == arcade.key.UP:
+                self.current_menu_view.selected_index = (
+                    self.current_menu_view.selected_index - 1
+                ) % length_menu
+            elif key == arcade.key.DOWN:
+                self.current_menu_view.selected_index = (
+                    self.current_menu_view.selected_index + 1
+                ) % length_menu
+            elif key == arcade.key.RIGHT:
+                self.current_menu_index = (self.current_menu_index - 1) % len(
+                    self.menus
+                )
+                self.current_menu_view = self.menus[self.current_menu_index]
+            elif key == arcade.key.LEFT:
+                self.current_menu_index = (self.current_menu_index + 1) % len(
+                    self.menus
+                )
+                self.current_menu_view = self.menus[self.current_menu_index]
+        elif self.current_menu_view == self.monster_info:
+            if key == arcade.key.ESCAPE:
+                self.current_menu_view = self.team_menu
 
     def on_draw(self):
         self.clear()
-        if self.view_mode == "menu":
-            self.menu[self.current_menu].on_draw()
-        elif self.view_mode == "monster_info":
-            self.monster_info.on_draw()
+        self.current_menu_view.on_draw()
 
 
-class Pokedex(arcade.View):
+class Pokedex(BaseMenu):
     def __init__(self, overworld_view: arcade.View, player_state: dict):
-        super().__init__()
-        self.overworld_view = overworld_view
-        self.player_state = player_state
+        super().__init__(overworld_view, player_state, selected_index=0)
         self.monster_name_list = {monster.name.lower() for monster in Monsters}
-        self.team = self._collect_team()
-        monster_name_list = [monster.name.lower() for monster in Monsters]
-        self.index = len(monster_name_list)
-        self.selected_index = 0
         self.pokedex_monsters = Monsters
         self.monster_list = []
         self.seen_names = [
@@ -225,16 +240,10 @@ class Pokedex(arcade.View):
         ).draw()
 
 
-class TeamMenuView(arcade.View):
+class TeamMenuView(BaseMenu):
     def __init__(self, overworld_view: arcade.View, player_state: dict):
-        super().__init__()
-        self.overworld_view = overworld_view
-        self.player_state = player_state
-        self.team = self._collect_team()
-        self.index = len(self.team)
-        self.selected_index = 0
+        super().__init__(overworld_view, player_state, selected_index=0)
         monster_name_list = {monster.name.lower() for monster in Monsters}
-
         pokemon_images = {
             name.lower(): POKEMON_SPRITES_PATH / name.title() / "banner.png"
             for team_monster in self.team
@@ -349,24 +358,9 @@ def draw_moves_monster(moves: list[str], start_y: int, start_x: int, title: str)
     return start_y - 40 - j * 25
 
 
-class MonsterMenu(arcade.View):
+class MonsterMenu(BaseMenu):
     def __init__(self, overworld_view: arcade.View, player_state: dict, selected_index):
-        super().__init__()
-        self.overworld_view = overworld_view
-        self.player_state = player_state
-        monster_name_list = {monster.name.lower() for monster in Monsters}
-        self.team = self._collect_team()
-        pokemon_images = {
-            name.lower(): POKEMON_SPRITES_PATH / name.title() / "banner.png"
-            for team_monster in self.team
-            for (name,) in [team_monster.keys()]
-            if name.lower() in monster_name_list
-        }
-        self.loaded_textures = {
-            name: arcade.load_texture(path) for name, path in pokemon_images.items()
-        }
-        self.index = len(self.team)
-        self.selected_index = selected_index
+        super().__init__(overworld_view, player_state, selected_index)
         self.location_drawings: dict[
             Literal["monster banner", "quest list", "description", "known moves"],
             tuple[int, int],
@@ -376,9 +370,6 @@ class MonsterMenu(arcade.View):
             "description": (350, self.window.height - 200),
             "known moves": (400, self.window.height / 2),
         }
-
-    def _collect_team(self):
-        return self.player_state.get("pokemons", {})
 
     def draw_monster_info(self) -> None:
         try:
