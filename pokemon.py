@@ -218,10 +218,10 @@ Monsters = [
                 range=True,
                 move=FireBreath,
                 quest_line=QuestLineMove(
-                    quest="withstand 10 fire within in game",
-                    finised=True,
-                    objective_count=1,
-                    achieved_count=0,
+                    quest="Survive 10 fire attacks",
+                    finised=False,
+                    objective_count=10,
+                    achieved_count=4,
                 ),
             ),
             Moves(
