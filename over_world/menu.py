@@ -35,6 +35,7 @@ class BaseMenu(arcade.View):
         self.player_state = player_state
         monster_name_list = {monster.name.lower() for monster in Monsters}
         self.team = self._collect_team()
+        self.main_menu = None
         pokemon_images = {
             name.lower(): POKEMON_SPRITES_PATH / name.title() / "banner.png"
             for team_monster in self.team
@@ -63,11 +64,8 @@ class Menu(arcade.View):
         self.team_menu = TeamMenuView(
             overworld_view=self.overworld_view, player_state=self.player_state
         )
-        self.monster_info = MonsterMenu(
-            overworld_view=self.overworld_view,
-            player_state=self.player_state,
-            selected_index=0,
-        )
+        self.team_menu.main_menu = self
+        self.pokdex.main_menu = self
         self.menus = [
             self.pokdex,
             self.team_menu,
@@ -75,50 +73,20 @@ class Menu(arcade.View):
         self.current_menu_index = 0
         self.current_menu_view: BaseMenu = self.pokdex
         self.team = self.player_state.get("pokemons", {})
-        self.view_mode: Literal["menu", "monster_info"] = "menu"
 
     def on_key_press(self, key, modifiers):
-        length_menu = self.current_menu_view.index
-        if self.current_menu_view in self.menus:
-            if key == arcade.key.ESCAPE:
-                self.window.show_view(self.overworld_view)
-            if key == arcade.key.SPACE:
-                if self.current_menu_view == self.team_menu:
-                    self.monster_info.index = self.current_menu_view.index
-                    self.monster_info.selected_index = (
-                        self.current_menu_view.selected_index
-                    )
-                    self.current_menu_view = self.monster_info
-            elif key == arcade.key.UP:
-                self.current_menu_view.selected_index = (
-                    self.current_menu_view.selected_index - 1
-                ) % length_menu
-            elif key == arcade.key.DOWN:
-                self.current_menu_view.selected_index = (
-                    self.current_menu_view.selected_index + 1
-                ) % length_menu
-            elif key == arcade.key.LCTRL:
-                self.current_menu_index = (self.current_menu_index - 1) % len(
-                    self.menus
-                )
-                self.current_menu_view = self.menus[self.current_menu_index]
-            elif key == arcade.key.LSHIFT:
-                self.current_menu_index = (self.current_menu_index + 1) % len(
-                    self.menus
-                )
-                self.current_menu_view = self.menus[self.current_menu_index]
-        elif self.current_menu_view == self.monster_info:
-            if key == arcade.key.ESCAPE:
-                self.current_menu_view = self.team_menu
-            if key == arcade.key.DOWN:
-                self.current_menu_view.index = (self.current_menu_view.index - 1) % len(
-                    self.current_menu_view.monster.moves
-                )
-            if key == arcade.key.UP:
-                self.current_menu_view.index = (self.current_menu_view.index + 1) % len(
-                    self.current_menu_view.monster.moves
-                )
-            # TODO: instead of on_draw(). just make the view, and move key logic to the menu itself.
+        """Controls to move between menus / go back to overworld. spicific controls are in the menu itself"""
+        if key == arcade.key.ESCAPE:
+            self.window.show_view(self.overworld_view)
+        elif key == arcade.key.LCTRL:
+            self.current_menu_index = (self.current_menu_index - 1) % len(self.menus)
+            self.current_menu_view = self.menus[self.current_menu_index]
+        elif key == arcade.key.LSHIFT:
+            self.current_menu_index = (self.current_menu_index + 1) % len(self.menus)
+            self.current_menu_view = self.menus[self.current_menu_index]
+        else:
+            self.current_menu_view.on_key_press(key, modifiers)
+
     def on_draw(self):
         self.clear()
         self.current_menu_view.on_draw()
@@ -183,6 +151,13 @@ class Pokedex(BaseMenu):
                     color,
                     font_size=18,
                 ).draw()
+
+    def on_key_press(self, key, modifiers):
+        length_menu = self.index
+        if key == arcade.key.UP:
+            self.selected_index = (self.selected_index - 1) % length_menu
+        elif key == arcade.key.DOWN:
+            self.selected_index = (self.selected_index + 1) % length_menu
 
     def draw_monster_info(self, x_start: int, width: int, y_start: int) -> None:
         profile_monster = 64 * 3
@@ -282,6 +257,16 @@ class TeamMenuView(BaseMenu):
                 font_size=18,
             ).draw()
 
+    def on_key_press(self, key, modifiers):
+        length_menu = self.index
+        if key == arcade.key.UP:
+            self.selected_index = (self.selected_index - 1) % length_menu
+        elif key == arcade.key.DOWN:
+            self.selected_index = (self.selected_index + 1) % length_menu
+        elif key == arcade.key.SPACE:
+            menu = MonsterMenu(self, self.player_state, self.selected_index)
+            self.window.show_view(menu)
+
     def draw_monster_info(self, x_start: int, width: int, y_start: int) -> None:
         PROFILE_MONSTER = 64 * 3
         try:
@@ -369,7 +354,8 @@ def draw_moves_monster(
 
 
 class MonsterMenu(BaseMenu):
-    def __init__(self, overworld_view: arcade.View, player_state: dict, selected_index):
+
+    def __init__(self, overworld_view: Menu, player_state: dict, selected_index):
         super().__init__(overworld_view, player_state, selected_index)
         self.location_drawings: dict[
             Literal["monster banner", "quest list", "description", "known moves"],
@@ -440,6 +426,14 @@ class MonsterMenu(BaseMenu):
             font_size=14,
             anchor_x="center",
         ).draw()
+
+    def on_key_press(self, key, modifiers):
+        if key == arcade.key.ESCAPE:
+            self.window.show_view(self.overworld_view.main_menu)
+        elif key == arcade.key.DOWN:
+            self.index = (self.index - 1) % len(self.monster.moves)
+        elif key == arcade.key.UP:
+            self.index = (self.index + 1) % len(self.monster.moves)
 
 
 def draw_quest_line(
