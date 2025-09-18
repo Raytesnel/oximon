@@ -45,7 +45,13 @@ class OverworldView(BaseMap):
                     self.player_state["pokemons"].append(
                         {
                             pokemon_defeated.name.lower(): {
-                                "attacks": ["ember", "smokescreen"],
+                                "attacks": {
+                                    "base": "tacle",
+                                    "down": None,
+                                    "left": None,
+                                    "right": None,
+                                    "up": None,
+                                },
                                 "stats": {
                                     "attack": 50,
                                     "defense": 20,

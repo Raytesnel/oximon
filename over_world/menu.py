@@ -97,12 +97,12 @@ class Menu(arcade.View):
                 self.current_menu_view.selected_index = (
                     self.current_menu_view.selected_index + 1
                 ) % length_menu
-            elif key == arcade.key.RIGHT:
+            elif key == arcade.key.LCTRL:
                 self.current_menu_index = (self.current_menu_index - 1) % len(
                     self.menus
                 )
                 self.current_menu_view = self.menus[self.current_menu_index]
-            elif key == arcade.key.LEFT:
+            elif key == arcade.key.LSHIFT:
                 self.current_menu_index = (self.current_menu_index + 1) % len(
                     self.menus
                 )
@@ -110,7 +110,15 @@ class Menu(arcade.View):
         elif self.current_menu_view == self.monster_info:
             if key == arcade.key.ESCAPE:
                 self.current_menu_view = self.team_menu
-
+            if key == arcade.key.DOWN:
+                self.current_menu_view.index = (self.current_menu_view.index - 1) % len(
+                    self.current_menu_view.monster.moves
+                )
+            if key == arcade.key.UP:
+                self.current_menu_view.index = (self.current_menu_view.index + 1) % len(
+                    self.current_menu_view.monster.moves
+                )
+            # TODO: instead of on_draw(). just make the view, and move key logic to the menu itself.
     def on_draw(self):
         self.clear()
         self.current_menu_view.on_draw()
@@ -338,7 +346,9 @@ def draw_monster_stats(
     return y_start
 
 
-def draw_moves_monster(moves: list[str], start_y: int, start_x: int, title: str) -> int:
+def draw_moves_monster(
+    moves: dict[str, str], start_y: int, start_x: int, title: str
+) -> int:
     indent_space = 30
     arcade.Text(
         f"{title}:",
@@ -347,7 +357,7 @@ def draw_moves_monster(moves: list[str], start_y: int, start_x: int, title: str)
         arcade.color.WHITE,
         font_size=16,
     ).draw()
-    for j, move in enumerate(moves):
+    for j, move in enumerate(moves.values()):
         arcade.Text(
             f"- {move}",
             start_x + indent_space,
@@ -370,19 +380,20 @@ class MonsterMenu(BaseMenu):
             "description": (350, self.window.height - 200),
             "known moves": (400, self.window.height / 2),
         }
-
-    def draw_monster_info(self) -> None:
         try:
-            selected = self.team[self.selected_index]
+            self.selected = self.team[self.selected_index]
         except IndexError:
             raise ValueError("No pokemon is pressent in team! no info to see!")
-        pokemon_name = next(iter(selected))
-        monster = [
-            monster for monster in Monsters if monster.name.lower() == pokemon_name
+        self.pokemon_name = next(iter(self.selected))
+        self.monster = [
+            monster for monster in Monsters if monster.name.lower() == self.pokemon_name
         ][0]
-        data = selected[pokemon_name]
+
+    def draw_monster_info(self) -> None:
+
+        data = self.selected[self.pokemon_name]
         draw_monster_profile(
-            pokemon_name=pokemon_name,
+            pokemon_name=self.pokemon_name,
             center_x=self.location_drawings["monster banner"][0],
             center_y=self.location_drawings["monster banner"][1],
             textures=self.loaded_textures,
@@ -400,13 +411,14 @@ class MonsterMenu(BaseMenu):
         )
         row_height = self.location_drawings["quest list"][1]
         colum_width = self.location_drawings["quest list"][0]
-        arcade.Text(f"Move list of {monster.name}", colum_width, row_height)
-        for move in monster.moves:
+        arcade.Text(f"Move list of {self.monster.name}", colum_width, row_height)
+        for i, move in enumerate(self.monster.moves):
             row_height -= 40
             draw_quest_line(
                 move=move,
                 start_x=colum_width,
                 start_y=row_height,
+                color=(arcade.color.YELLOW if i == self.index else arcade.color.WHITE),
             )
 
     def on_draw(self):
@@ -430,12 +442,14 @@ class MonsterMenu(BaseMenu):
         ).draw()
 
 
-def draw_quest_line(move: Moves, start_y: int, start_x: int):
+def draw_quest_line(
+    move: Moves, start_y: int, start_x: int, color: arcade.color = arcade.color.WHITE
+):
     arcade.Text(
         f"{move.name}",
         start_x,
         start_y,
-        arcade.color.WHITE,
+        color,
         font_size=10,
     ).draw()
     if move.quest_line.finised:
@@ -443,7 +457,7 @@ def draw_quest_line(move: Moves, start_y: int, start_x: int):
             f"{move.quest_line.quest} COMPLETED",
             start_x,
             start_y - 12,
-            arcade.color.WHITE,
+            color,
             font_size=12,
         ).draw()
     else:
@@ -451,6 +465,6 @@ def draw_quest_line(move: Moves, start_y: int, start_x: int):
             f"{move.quest_line.quest}: {move.quest_line.achieved_count}/{move.quest_line.objective_count}",
             start_x,
             start_y - 12,
-            arcade.color.WHITE,
+            color,
             font_size=12,
         ).draw()
