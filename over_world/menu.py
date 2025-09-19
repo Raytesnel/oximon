@@ -3,9 +3,10 @@ from typing import Literal
 import arcade
 from arcade import Texture
 from arcade.types import XYWH
+from loguru import logger
 
 from pokemon import Monsters, Moves
-from utils import POKEMON_SPRITES_PATH
+from utils import POKEMON_SPRITES_PATH, save_state
 
 
 def draw_monster_profile(
@@ -357,6 +358,9 @@ class MonsterMenu(BaseMenu):
 
     def __init__(self, overworld_view: Menu, player_state: dict, selected_index):
         super().__init__(overworld_view, player_state, selected_index)
+        self.mode: Literal["browse", "assign"] = "browse"
+        self.move_slot_index = 0
+        self.index = 0
         self.location_drawings: dict[
             Literal["monster banner", "quest list", "description", "known moves"],
             tuple[int, int],
@@ -389,22 +393,29 @@ class MonsterMenu(BaseMenu):
             y_start=self.location_drawings["description"][1],
             start_x=self.location_drawings["description"][0],
         )
-        draw_moves_monster(
-            moves=data.get("attacks", []),
-            start_y=self.location_drawings["known moves"][1],
-            start_x=self.location_drawings["known moves"][0],
-            title="Moves",
-        )
+        for j, (location, move) in enumerate(data.get("attacks", []).items()):
+            color = arcade.color.WHITE
+            if self.mode == "assign" and j == self.move_slot_index:
+                color = arcade.color.YELLOW
+            text_input = f"{location}: {move}"
+            arcade.Text(
+                text_input,
+                self.location_drawings["known moves"][0],
+                self.location_drawings["known moves"][1] - 40 - j * 25,
+                color,
+                font_size=12,
+            ).draw()
         row_height = self.location_drawings["quest list"][1]
         colum_width = self.location_drawings["quest list"][0]
         arcade.Text(f"Move list of {self.monster.name}", colum_width, row_height)
         for i, move in enumerate(self.monster.moves):
-            row_height -= 40
+            row_height = self.location_drawings["quest list"][1] - i * 40
+            color = arcade.color.YELLOW if i == self.index else arcade.color.LIGHT_GRAY
             draw_quest_line(
-                move=move,
-                start_x=colum_width,
+                move,
+                start_x=self.location_drawings["quest list"][0],
                 start_y=row_height,
-                color=(arcade.color.YELLOW if i == self.index else arcade.color.WHITE),
+                color=color,
             )
 
     def on_draw(self):
@@ -428,12 +439,45 @@ class MonsterMenu(BaseMenu):
         ).draw()
 
     def on_key_press(self, key, modifiers):
-        if key == arcade.key.ESCAPE:
-            self.window.show_view(self.overworld_view.main_menu)
-        elif key == arcade.key.DOWN:
-            self.index = (self.index - 1) % len(self.monster.moves)
-        elif key == arcade.key.UP:
-            self.index = (self.index + 1) % len(self.monster.moves)
+        if self.mode == "browse":
+            if key == arcade.key.ESCAPE:
+                save_state(self.player_state)
+                logger.debug(
+                    f"attacks: {self.player_state['pokemons'][1][self.pokemon_name]['attacks']}"
+                )
+                self.window.show_view(self.overworld_view.main_menu)
+            elif key == arcade.key.DOWN:
+                self.index = (self.index - 1) % len(self.monster.moves)
+            elif key == arcade.key.UP:
+                self.index = (self.index + 1) % len(self.monster.moves)
+            elif key == arcade.key.SPACE:
+                if self.monster.moves[self.index].quest_line.finised:
+                    self.mode = "assign"
+                    self.move_slot_index = 0
+                else:
+                    logger.debug("jammer man, quest nog niet complete")
+        elif self.mode == "assign":
+            if key == arcade.key.ESCAPE:
+                self.mode = "browse"
+            elif key == arcade.key.UP:
+                self.move_slot_index = (self.move_slot_index - 1) % len(
+                    self.selected[self.pokemon_name]["attacks"]
+                )
+            elif key == arcade.key.DOWN:
+                self.move_slot_index = (self.move_slot_index + 1) % len(
+                    self.selected[self.pokemon_name]["attacks"]
+                )
+            elif key == arcade.key.SPACE:
+                chosen_move = self.monster.moves[self.index]
+                key_attack = list(self.selected[self.pokemon_name]["attacks"].keys())[
+                    self.move_slot_index
+                ]
+                self.selected[self.pokemon_name]["attacks"][
+                    key_attack
+                ] = chosen_move.name
+                logger.debug(f"local:{self.selected}")
+                logger.debug(f"player state:{self.player_state}")
+                self.mode = "browse"
 
 
 def draw_quest_line(
