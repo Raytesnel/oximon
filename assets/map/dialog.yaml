@@ -19,8 +19,6 @@ npc_dude:
       choices:
         - text: "Charmander"
           next: got_charmander
-        - text: "Squirtle"
-          next: got_squirtle
         - text: "Bulbasaur"
           next: got_bulbasaur
 
@@ -33,7 +31,7 @@ npc_dude:
       quest_update:
         starter_chosen: true
       pokemons:
-        - charmander:
+        charmander:
             attacks:
               - ember
               - smokescreen
@@ -42,25 +40,6 @@ npc_dude:
               defense: 20
               speed: 10
               attack: 50
-
-    got_squirtle:
-      conditions:
-        starter_chosen: false
-      lines:
-        - speaker: npc_dude
-          text: "A cool choice! Squirtle."
-      quest_update:
-        starter_chosen: true
-      pokemons:
-        - squirtle:
-            attacks:
-              - water gun
-              - defense curl
-            stats:
-              health: 120
-              defense: 50
-              speed: 10
-              attack: 10
 
     got_bulbasaur:
       conditions:
@@ -71,7 +50,7 @@ npc_dude:
       quest_update:
         starter_chosen: true
       pokemons:
-        - bulbasaur:
+        bulbasaur:
             attacks:
               - magic leaf
               - absorb

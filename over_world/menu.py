@@ -30,17 +30,17 @@ def draw_monster_profile(
 
 
 class BaseMenu(arcade.View):
-    def __init__(self, overworld_view: arcade.View, player_state: dict, selected_index):
+
+    def __init__(self, previous_scene: arcade.View, player_state: dict, selected_index):
         super().__init__()
-        self.overworld_view = overworld_view
+        self.previous_scene = previous_scene
         self.player_state = player_state
         monster_name_list = {monster.name.lower() for monster in Monsters}
         self.team = self._collect_team()
         self.main_menu = None
         pokemon_images = {
             name.lower(): POKEMON_SPRITES_PATH / name.title() / "banner.png"
-            for team_monster in self.team
-            for (name,) in [team_monster.keys()]
+            for name in self.team.keys()
             if name.lower() in monster_name_list
         }
         self.loaded_textures = {
@@ -60,10 +60,10 @@ class Menu(arcade.View):
         self.overworld_view = overworld_view
         self.player_state = player_state
         self.pokdex = Pokedex(
-            overworld_view=self.overworld_view, player_state=self.player_state
+            previous_scene=self.overworld_view, player_state=self.player_state
         )
         self.team_menu = TeamMenuView(
-            overworld_view=self.overworld_view, player_state=self.player_state
+            previous_scene=self.overworld_view, player_state=self.player_state
         )
         self.team_menu.main_menu = self
         self.pokdex.main_menu = self
@@ -94,17 +94,16 @@ class Menu(arcade.View):
 
 
 class Pokedex(BaseMenu):
-    def __init__(self, overworld_view: arcade.View, player_state: dict):
-        super().__init__(overworld_view, player_state, selected_index=0)
+
+    def __init__(self, previous_scene: arcade.View, player_state: dict):
+        super().__init__(previous_scene, player_state, selected_index=0)
         self.monster_name_list = {monster.name.lower() for monster in Monsters}
         self.pokedex_monsters = Monsters
         self.monster_list = []
         self.seen_names = [
             monster_member.lower() for monster_member in self.player_state["pokedex"]
         ]
-        self.team_names = [
-            list(monster_member.keys())[0].lower() for monster_member in self.team
-        ]
+        self.team_names = [monster_member for monster_member in self.team.keys()]
 
         self.pokemon_images = {
             team_monster.name.lower(): POKEMON_SPRITES_PATH
@@ -225,25 +224,27 @@ class Pokedex(BaseMenu):
 
 
 class TeamMenuView(BaseMenu):
-    def __init__(self, overworld_view: arcade.View, player_state: dict):
-        super().__init__(overworld_view, player_state, selected_index=0)
+
+    def __init__(self, previous_scene: arcade.View, player_state: dict):
+        super().__init__(previous_scene, player_state, selected_index=0)
         monster_name_list = {monster.name.lower() for monster in Monsters}
         pokemon_images = {
             name.lower(): POKEMON_SPRITES_PATH / name.title() / "banner.png"
-            for team_monster in self.team
-            for (name,) in [team_monster.keys()]
+            for name in self.team.keys()
             if name.lower() in monster_name_list
         }
         self.loaded_textures = {
             name: arcade.load_texture(path) for name, path in pokemon_images.items()
         }
+        self.selected_monster = None
 
     def _collect_team(self):
         return self.player_state.get("pokemons", {})
 
     def _draw_list_of_mosters(self, x_start, y_start):
-        for i, pokemon in enumerate(self.team):
-            pokemon_name = list(pokemon.keys())[0]
+        for i, pokemon_name in enumerate(self.team):
+            if i == self.selected_index:
+                self.selected_monster = pokemon_name
             y = y_start - i * 50
             color = (
                 arcade.color.YELLOW
@@ -265,17 +266,16 @@ class TeamMenuView(BaseMenu):
         elif key == arcade.key.DOWN:
             self.selected_index = (self.selected_index + 1) % length_menu
         elif key == arcade.key.SPACE:
-            menu = MonsterMenu(self, self.player_state, self.selected_index)
+            menu = MonsterMenu(self.main_menu, self.player_state, self.selected_index)
             self.window.show_view(menu)
 
     def draw_monster_info(self, x_start: int, width: int, y_start: int) -> None:
         PROFILE_MONSTER = 64 * 3
         try:
-            selected = self.team[self.selected_index]
+            data = self.team[self.selected_monster]
         except IndexError:
             raise ValueError("No pokemon is pressent in team! no info to see!")
-        pokemon_name = next(iter(selected))
-        data = selected[pokemon_name]
+        pokemon_name = self.selected_monster
         draw_monster_profile(
             pokemon_name=pokemon_name,
             center_x=x_start + width - PROFILE_MONSTER / 2,
@@ -356,8 +356,8 @@ def draw_moves_monster(
 
 class MonsterMenu(BaseMenu):
 
-    def __init__(self, overworld_view: Menu, player_state: dict, selected_index):
-        super().__init__(overworld_view, player_state, selected_index)
+    def __init__(self, previous_menu: Menu, player_state: dict, selected_index):
+        super().__init__(previous_menu, player_state, selected_index)
         self.mode: Literal["browse", "assign"] = "browse"
         self.move_slot_index = 0
         self.index = 0
@@ -370,18 +370,18 @@ class MonsterMenu(BaseMenu):
             "description": (350, self.window.height - 200),
             "known moves": (400, self.window.height / 2),
         }
-        try:
-            self.selected = self.team[self.selected_index]
-        except IndexError:
-            raise ValueError("No pokemon is pressent in team! no info to see!")
-        self.pokemon_name = next(iter(self.selected))
+        for i, monster in enumerate(self.team.keys()):
+            if i == self.selected_index:
+                self.selected = monster
+                break
+
+        self.pokemon_name = self.selected
+        self.data = self.team[self.pokemon_name]
         self.monster = [
             monster for monster in Monsters if monster.name.lower() == self.pokemon_name
         ][0]
 
     def draw_monster_info(self) -> None:
-
-        data = self.selected[self.pokemon_name]
         draw_monster_profile(
             pokemon_name=self.pokemon_name,
             center_x=self.location_drawings["monster banner"][0],
@@ -389,15 +389,15 @@ class MonsterMenu(BaseMenu):
             textures=self.loaded_textures,
         )
         draw_monster_stats(
-            stats_monster=data.get("stats", {}),
+            stats_monster=self.data.get("stats", {}),
             y_start=self.location_drawings["description"][1],
             start_x=self.location_drawings["description"][0],
         )
-        for j, (location, move) in enumerate(data.get("attacks", []).items()):
+        for j, (location, move) in enumerate(self.data.get("attacks", []).items()):
             color = arcade.color.WHITE
             if self.mode == "assign" and j == self.move_slot_index:
                 color = arcade.color.YELLOW
-            text_input = f"{location}: {move}"
+            text_input = f"{location}: {move}" if move else f"{location}: not used"
             arcade.Text(
                 text_input,
                 self.location_drawings["known moves"][0],
@@ -443,9 +443,9 @@ class MonsterMenu(BaseMenu):
             if key == arcade.key.ESCAPE:
                 save_state(self.player_state)
                 logger.debug(
-                    f"attacks: {self.player_state['pokemons'][1][self.pokemon_name]['attacks']}"
+                    f"attacks: {self.player_state['pokemons'][self.pokemon_name]['attacks']}"
                 )
-                self.window.show_view(self.overworld_view.main_menu)
+                self.window.show_view(self.previous_scene)
             elif key == arcade.key.DOWN:
                 self.index = (self.index - 1) % len(self.monster.moves)
             elif key == arcade.key.UP:
@@ -461,20 +461,16 @@ class MonsterMenu(BaseMenu):
                 self.mode = "browse"
             elif key == arcade.key.UP:
                 self.move_slot_index = (self.move_slot_index - 1) % len(
-                    self.selected[self.pokemon_name]["attacks"]
+                    self.data["attacks"]
                 )
             elif key == arcade.key.DOWN:
                 self.move_slot_index = (self.move_slot_index + 1) % len(
-                    self.selected[self.pokemon_name]["attacks"]
+                    self.data["attacks"]
                 )
             elif key == arcade.key.SPACE:
                 chosen_move = self.monster.moves[self.index]
-                key_attack = list(self.selected[self.pokemon_name]["attacks"].keys())[
-                    self.move_slot_index
-                ]
-                self.selected[self.pokemon_name]["attacks"][
-                    key_attack
-                ] = chosen_move.name
+                key_attack = list(self.data["attacks"].keys())[self.move_slot_index]
+                self.data["attacks"][key_attack] = chosen_move.name
                 logger.debug(f"local:{self.selected}")
                 logger.debug(f"player state:{self.player_state}")
                 self.mode = "browse"

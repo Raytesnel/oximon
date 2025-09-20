@@ -1,9 +1,10 @@
 player:
   location:
     map: graveyard
-    x: 912.046
-    y: 932.4200000000001
+    x: 900.712
+    y: 927.086
   name: raytesnel
-pokemons: []
+pokedex: [ ]
+pokemons: { }
 quests:
   starter_chosen: false

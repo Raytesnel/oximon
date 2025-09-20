@@ -42,25 +42,22 @@ class OverworldView(BaseMap):
                     logger.debug("downloading...")
                     self.wild_pokemon_list.remove(pokemon_defeated)
                     self.y_sorted_sprites.remove(pokemon_defeated)
-                    self.player_state["pokemons"].append(
-                        {
-                            pokemon_defeated.name.lower(): {
-                                "attacks": {
-                                    "base": "tacle",
-                                    "down": None,
-                                    "left": None,
-                                    "right": None,
-                                    "up": None,
-                                },
-                                "stats": {
-                                    "attack": 50,
-                                    "defense": 20,
-                                    "health": 100,
-                                    "speed": 10,
-                                },
-                            }
-                        }
-                    )
+                    self.player_state["pokemons"][pokemon_defeated.name.lower()] = {
+                        "attacks": {
+                            "base": "tacle",
+                            "down": None,
+                            "left": None,
+                            "right": None,
+                            "up": None,
+                        },
+                        "stats": {
+                            "attack": 50,
+                            "defense": 20,
+                            "health": 100,
+                            "speed": 10,
+                        },
+                    }
+
                     save_state(self.player_state)
 
                 if self.dialog.kill_monster:

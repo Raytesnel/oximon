@@ -234,8 +234,8 @@ class DialogPanel(arcade.Section):
             save_state(self.player_state)
             self.player_state = load_state()
         if "pokemons" in self.current_node:
-            for pokemon in self.current_node["pokemons"]:
-                self.player_state["pokemons"].append(pokemon)
+            for monster_name, monster_data in self.current_node["pokemons"].items():
+                self.player_state["pokemons"][monster_name] = monster_data
             save_state(self.player_state)
 
         # Handle choices

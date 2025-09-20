@@ -25,13 +25,12 @@ class BattleSplashView(arcade.View):
         self.character_stats = load_state()
         self.team_monsters = []
         counter = 0
-        for character_monster in self.character_stats["pokemons"]:
-            monster_name = list(character_monster.keys())[0]
+        for monster_name, monster_data in self.character_stats["pokemons"].items():
             self.team_monsters.append(
                 Monster(
                     name=monster_name,
-                    hp=character_monster[monster_name]["stats"]["health"],
-                    atk=character_monster[monster_name]["stats"]["attack"],
+                    hp=monster_data["stats"]["health"],
+                    atk=monster_data["stats"]["attack"],
                     image_path=POKEMON_SPRITES_PATH
                     / monster_name.title()
                     / "banner.png",
