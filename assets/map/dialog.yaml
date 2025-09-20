@@ -33,8 +33,11 @@ npc_dude:
       pokemons:
         charmander:
             attacks:
-              - ember
-              - smokescreen
+              - down: blue fire
+              - up: null
+              - left: null
+              - right: null
+              - base: tacle
             stats:
               health: 100
               defense: 20
@@ -52,8 +55,11 @@ npc_dude:
       pokemons:
         bulbasaur:
             attacks:
-              - magic leaf
-              - absorb
+              up: absorb
+              down: null
+              left: null
+              right: null
+              base: tacle
             stats:
               health: 120
               defense: 25

@@ -110,7 +110,7 @@ class Pokedex(BaseMenu):
             / team_monster.name.title()
             / "banner.png"
             for team_monster in self.pokedex_monsters
-            if team_monster.name.lower() in self.seen_names
+            # if team_monster.name.lower() in self.seen_names
         }
         self.loaded_textures = {
             name: arcade.load_texture(path)
