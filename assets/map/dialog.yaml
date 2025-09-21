@@ -55,7 +55,7 @@ npc_dude:
       pokemons:
         bulbasaur:
             attacks:
-              up: absorb
+              up: null
               down: null
               left: null
               right: null

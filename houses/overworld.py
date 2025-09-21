@@ -57,7 +57,7 @@ class OverworldView(BaseMap):
                             "speed": 10,
                         },
                     }
-
+                    # TODO select random setup of Monsters
                     save_state(self.player_state)
 
                 if self.dialog.kill_monster:
@@ -123,6 +123,7 @@ class OverworldView(BaseMap):
         )
         if not arcade.check_for_collision_with_list(pokemon_sprite, self.walls):
             if not pokemon.name in self.player_state["pokedex"]:
+                logger.debug("found a new pokemon!")
                 self.player_state["pokedex"].append(pokemon.name)
                 save_state(self.player_state)
             self.wild_pokemon_list.append(pokemon_sprite)

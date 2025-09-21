@@ -39,7 +39,7 @@ class Attack(arcade.Sprite):
         self.frame_duration = frame_duration
         self.damage = 0
         self.knockback_direction = Position(x_direction=0, y_direction=0)
-        self.direction = (0,0) # (1,0) right, (-1,0) left, (0,1) up, (0,-1) down
+        self.direction = (0, 0)  # (1,0) right, (-1,0) left, (0,1) up, (0,-1) down
 
     def new_attack(self):
         self.attack_flow = iter(self.attack_pattern)
@@ -73,12 +73,11 @@ def collect_attack_sprites(attack_folder: Path) -> list[arcade.Texture]:
         arcade.load_texture(attack_folder / f"hadukan_{i}.png") for i in range(1, 11)
     ]
 
+
 class SimpleMelee(Attack):
     def __init__(self) -> None:
         box_texture = arcade.make_soft_square_texture(
-            size=64,
-            color=(255, 255, 255, 0),
-            center_alpha=0
+            size=64, color=(255, 255, 255, 0), center_alpha=0
         )
 
         attack_pattern = [
@@ -87,7 +86,7 @@ class SimpleMelee(Attack):
                 damage=1,
                 knockback_direction=Position(x_direction=2, y_direction=1),
                 knockback_strength=8,
-                texture=box_texture  # invisible box texture
+                texture=box_texture,  # invisible box texture
             )
         ]
         logger.debug("Simple melee invisible hitbox created")
@@ -95,30 +94,33 @@ class SimpleMelee(Attack):
 
 
 class BlueFireBreath(Attack):
-    def __init__(self)->None:
-        file_name = ASSETS_PATH / "sprites" / "pokemon" /"atacks"/"Fire_2.png"
-        self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(size=(64, 64), columns=11, count=11)
-        attack_patern =  [
+
+    def __init__(self) -> None:
+        file_name = ASSETS_PATH / "sprites" / "pokemon" / "atacks" / "Fire_2.png"
+        self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(
+            size=(64, 64), columns=11, count=11
+        )
+        attack_patern = [
             AttackPattern(
                 explosion_knock_back=0,
                 damage=60,
                 knockback_direction=Position(x_direction=4, y_direction=2),
                 knockback_strength=10,
-                texture=attack_texture
+                texture=attack_texture,
             )
             for attack_texture in self.attack_textures
         ]
         logger.debug("it will rain fire!")
         super().__init__(attack_pattern=attack_patern)
-        self.direction = (1,0)
-        self.counter =0
+        self.direction = (1, 0)
+        self.counter = 0
         # TODO: implement, self.is_hit so the ball can trigger effect when hit.
 
-    def update(self,delta_time:float):
+    def update(self, delta_time: float):
         self.animation_timer += delta_time
         idx = self.attack_textures.index(self.texture)
         if idx == 4 and not self.is_hit and self.counter < 3:
-            self.counter+=1
+            self.counter += 1
             self.attack_flow = iter(self.attack_pattern)
             self.current_frame = 0
             idx = self.attack_textures.index(self.texture)
@@ -126,11 +128,11 @@ class BlueFireBreath(Attack):
             match self.direction:
                 case (1, 0):
                     self.center_x += 2
-                case (-1,0):
+                case (-1, 0):
                     self.center_x -= 2
-                case (0,1):
+                case (0, 1):
                     self.center_y += 2
-                case (0,-1):
+                case (0, -1):
                     self.center_y -= 2
         else:
             match self.direction:
@@ -149,58 +151,65 @@ class BlueFireBreath(Attack):
 
 
 class FireBreath(Attack):
-    def __init__(self)->None:
-        file_name = ASSETS_PATH / "sprites" / "pokemon" /"atacks"/"Flame_jet.png"
-        self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(size=(88, 79), columns=12, count=12)
-        attack_patern =  [
+
+    def __init__(self) -> None:
+        file_name = ASSETS_PATH / "sprites" / "pokemon" / "atacks" / "Flame_jet.png"
+        self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(
+            size=(88, 79), columns=12, count=12
+        )
+        attack_patern = [
             AttackPattern(
                 explosion_knock_back=-5,
                 damage=2,
                 knockback_direction=Position(x_direction=0, y_direction=2),
                 knockback_strength=0,
-                texture=attack_texture
+                texture=attack_texture,
             )
             for attack_texture in self.attack_textures
         ]
         logger.debug("it will rain fire!")
         super().__init__(attack_pattern=attack_patern)
 
-    def update(self,delta_time:float):
+    def update(self, delta_time: float):
         self.animation_timer += delta_time
         if self.animation_timer >= self.frame_duration:
             # width_last_frame = self.texture.width
             super().update(delta_time)
             self.animation_timer = 0
 
+
 class ElectroBall(Attack):
-    def __init__(self)->None:
-        file_name = ASSETS_PATH / "sprites" / "pokemon" /"atacks"/"Charge.png"
-        self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(size=(64, 64), columns=10, count=10)
-        attack_patern =  [
+
+    def __init__(self) -> None:
+        file_name = ASSETS_PATH / "sprites" / "pokemon" / "atacks" / "Charge.png"
+        self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(
+            size=(64, 64), columns=10, count=10
+        )
+        attack_patern = [
             AttackPattern(
                 explosion_knock_back=-5,
                 damage=2,
                 knockback_direction=Position(x_direction=-2, y_direction=-2),
                 knockback_strength=0,
-                texture=attack_texture
+                texture=attack_texture,
             )
             for attack_texture in self.attack_textures
         ]
         logger.debug("it will rain fire!")
         super().__init__(attack_pattern=attack_patern)
-        self.direction=(0,0)
+        self.direction = (0, 0)
 
-    def update(self,delta_time:float):
+    def update(self, delta_time: float):
         self.animation_timer += delta_time
         idx = self.attack_textures.index(self.texture)
         match self.direction:
             case (1, 0):
                 self.center_x += 0.5
-            case (-1,0):
+            case (-1, 0):
                 self.center_x -= 0.5
-            case (0,1):
+            case (0, 1):
                 self.center_y += 0.5
-            case (0,-1):
+            case (0, -1):
                 self.center_y -= 0.5
 
         if self.animation_timer >= self.frame_duration:
@@ -208,6 +217,15 @@ class ElectroBall(Attack):
             super().update(delta_time)
 
             self.animation_timer = 0
+
+
+ALL_ATTACKS = {
+    "tacle": SimpleMelee,
+    "blue fire": BlueFireBreath,
+    "electro ball": ElectroBall,
+    "fire breath": FireBreath,
+    None: None,
+}
 
 # TODO: add config for possible attacks and config for the player chosen attacks.
 # TODO: add hitbox damage for blunt attack (taclke) atacks.

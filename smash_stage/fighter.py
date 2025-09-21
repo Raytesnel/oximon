@@ -6,8 +6,7 @@ from pydantic import BaseModel
 
 from smash_stage.attacks import (
     FireBreath,
-    BlueFireBreath,
-    ElectroBall, SimpleMelee,
+    Attack,
 )
 
 
@@ -16,6 +15,14 @@ class KnockBackDamage(BaseModel):
     y_position: float
     knockback: float
     damage: int
+
+
+class Attacks(BaseModel):
+    up: type[Attack] | None
+    down: type[Attack] | None
+    left: type[Attack] | None
+    right: type[Attack] | None
+    base: type[Attack]
 
 
 class Character(arcade.Sprite):
@@ -52,7 +59,7 @@ class Character(arcade.Sprite):
             # "attack_heavy_2": arcade.load_spritesheet(asset_path/ "charge_attack.png").get_texture_grid(size=(128, 128), columns=13, count=13),
         }
         self.direction = "down"
-        self.stun_duration = 1/5
+        self.stun_duration = 1 / 5
         self.stun_counter = 0.0
         self.is_stunned = False
         self.pending_knockback: Optional[KnockBackDamage] = None
@@ -73,11 +80,15 @@ class Character(arcade.Sprite):
         self.held_keys = set()
         self.animation_state = "idle"
         self.reverse = False
+        self.attacks = None
+
+    def set_attacks(self, attacks: Attacks):
+        self.attacks = attacks
 
     def take_hit(self, knockback_data: KnockBackDamage):
         """Trigger stun + knockback sequence."""
         self.animation_state = "hurt"
-        self.frame_duration = 1/10
+        self.frame_duration = 1 / 10
         self.current_frame = 0
         self.pending_knockback = knockback_data
         self.stun_counter = 0
@@ -91,8 +102,15 @@ class Character(arcade.Sprite):
         if self.frame_timer > self.frame_duration:
             if (
                 self.animation_state
-                in ["jump","hurt","attack_1", "attack_heavy_1", "attack_2", "attack_heavy_2",]
-                and self.current_frame == len(self.animations[self.animation_state]) -1
+                in [
+                    "jump",
+                    "hurt",
+                    "attack_1",
+                    "attack_heavy_1",
+                    "attack_2",
+                    "attack_heavy_2",
+                ]
+                and self.current_frame == len(self.animations[self.animation_state]) - 1
             ):
                 self.animation_state = "idle"
                 self.frame_duration = 1 / 10
@@ -129,20 +147,23 @@ class Character(arcade.Sprite):
             self.change_x = 0
 
     def perform_attack(self, direction="neutral"):
-        if not self.animation_state in ["run","walk","jump","idle"]:
+        if not self.animation_state in ["run", "walk", "jump", "idle"]:
             raise ValueError("already a attack animation is working.")
+        attack = None
         match direction:
             case "special_right":
                 offset_hand_x = 30
                 offset_hand_y = -15
-                attack = BlueFireBreath()
-                attack.direction = (1, 0)
+                if self.attacks.right:
+                    attack = self.attacks.right()
+                    attack.direction = (1, 0)
             case "special_left":
                 offset_hand_x = 30
                 offset_hand_y = -15
-                attack = BlueFireBreath()
-                attack.angle = 180
-                attack.direction = (-1, 0)
+                if self.attacks.left:
+                    attack = self.attacks.left()
+                    attack.angle = 180
+                    attack.direction = (-1, 0)
 
             case "special_neutral":
                 offset_hand_x = 40
@@ -151,24 +172,28 @@ class Character(arcade.Sprite):
             case "special_up":
                 offset_hand_x = 0
                 offset_hand_y = +15
-                attack = BlueFireBreath()
-                attack.angle = 90
-                attack.direction = (0, 1)
+                if self.attacks.up:
+                    attack = self.attacks.up()
+                    attack.angle = 90
+                    attack.direction = (0, 1)
 
-            case "special_down" :
+            case "special_down":
                 offset_hand_x = 30
                 offset_hand_y = -15
-                attack = ElectroBall()
-                attack.direction = (1, 0)
+                if self.attacks.down:
+                    attack = self.attacks.down()
+                    attack.direction = (1, 0)
 
-            case "normal_neutral" :
+            case "normal_neutral":
                 offset_hand_x = 30
                 offset_hand_y = -15
-                attack = SimpleMelee()
-                attack.direction = (1, 0)
+                if self.attacks.base:
+                    attack = self.attacks.base()
+                    attack.direction = (1, 0)
             case _:
                 raise ValueError("unknown button for attack.")
-
+        if not attack:
+            raise ValueError("no attack is set on that button")
         attack.new_attack()
         attack.owner = self
         attack.center_y = self.center_y + offset_hand_y
@@ -193,13 +218,13 @@ class EnemyAI:
         target_position = self.target.center_x
         if not self.character.is_stunned:
             if self.character.center_x < target_position - 10:
-                if self.character.change_x <0 :
+                if self.character.change_x < 0:
                     self.character.change_x += self.character.MOVE_SPEED
                 else:
                     self.character.change_x = self.character.MOVE_SPEED
                 self.character.animation_state = "walk"
             elif self.character.center_x > target_position + 10:
-                if self.character.change_x >0:
+                if self.character.change_x > 0:
                     self.character.change_x -= self.character.MOVE_SPEED
                 else:
                     self.character.change_x = -self.character.MOVE_SPEED

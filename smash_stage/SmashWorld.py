@@ -213,7 +213,7 @@ class SmashWorld(arcade.View):
             try:
                 hitbox = self.character_1.perform_attack(direction)
             except ValueError:
-                logger.debug("stil doing a attackx")
+                logger.debug("stil doing a attack")
             else:
                 logger.debug("kamehama")
                 self.attack_hitboxes.append(hitbox)

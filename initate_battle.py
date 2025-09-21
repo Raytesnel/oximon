@@ -2,17 +2,9 @@ import arcade
 
 from pokemon import Monsters
 from smash_stage.SmashWorld import SmashWorld
-from smash_stage.fighter import Character
-from utils import POKEMON_SPRITES_PATH, load_state, ASSETS_PATH
-
-
-class Monster:
-    def __init__(self, name, hp, atk, image_path, scale):
-        self.name = name
-        self.hp = hp
-        self.atk = atk
-        self.image_path = image_path
-        self.sprite = arcade.Sprite(image_path, scale=scale)
+from smash_stage.attacks import SimpleMelee, ALL_ATTACKS
+from smash_stage.fighter import Attacks
+from utils import load_state
 
 
 class BattleSplashView(arcade.View):
@@ -23,25 +15,7 @@ class BattleSplashView(arcade.View):
         self.selected_index = 0
         self.camera = arcade.Camera2D()
         self.character_stats = load_state()
-        self.team_monsters = []
-        counter = 0
-        for monster_name, monster_data in self.character_stats["pokemons"].items():
-            self.team_monsters.append(
-                Monster(
-                    name=monster_name,
-                    hp=monster_data["stats"]["health"],
-                    atk=monster_data["stats"]["attack"],
-                    image_path=POKEMON_SPRITES_PATH
-                    / monster_name.title()
-                    / "banner.png",
-                    scale=1,
-                )
-            )
-            counter += 1
-            if counter == 3:
-                break
-
-        # Pre-create enemy text labels
+        self.selected_monster = None
         self.enemy_labels = [
             arcade.Text("Enemy:", 550, 400, arcade.color.WHITE, 16),
             arcade.Text(f"Name: {wild_pokemon.name}", 550, 370, arcade.color.WHITE, 14),
@@ -52,56 +26,81 @@ class BattleSplashView(arcade.View):
     def on_draw(self):
         self.clear()
         self.camera.use()
-        # Background
-        arcade.draw_lbwh_rectangle_filled(
-            bottom=0,
-            left=0,
-            width=self.window.width,
-            height=self.window.height,
-            color=arcade.color.BLACK,
-        )
-
-        # Draw static enemy info
         for label in self.enemy_labels:
             label.draw()
 
-        # Draw your team with highlight
-        for i, monster in enumerate(self.team_monsters):
+        for i, (monster_name, monster_data) in enumerate(
+            self.character_stats["pokemons"].items()
+        ):
+            sprite = arcade.Sprite(
+                [
+                    monster.over_world_sprites.banner
+                    for monster in Monsters
+                    if monster.name.lower() == monster_name.lower()
+                ][0]
+            )
             y = 400 - i * 70
             color = (
                 arcade.color.YELLOW if i == self.selected_index else arcade.color.WHITE
             )
-
-            # Position and draw sprite
-            monster.sprite.center_x = 40
-            monster.sprite.center_y = y + 10
-            arcade.draw_sprite(monster.sprite)
-
-            # Draw name & HP next to sprite
-            text = arcade.Text(f"{monster.name} - HP: {monster.hp}", 80, y, color, 14)
+            if color == arcade.color.YELLOW:
+                self.selected_monster = (monster_name, monster_data)
+            sprite.center_x = 40
+            sprite.center_y = y + 10
+            arcade.draw_sprite(sprite)
+            text = arcade.Text(
+                f"{monster_name} - HP: {monster_data['stats']['health']}",
+                80,
+                y,
+                color,
+                14,
+            )
             text.draw()
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.UP:
-            self.selected_index = (self.selected_index - 1) % len(self.team_monsters)
+            self.selected_index = (self.selected_index - 1) % len(
+                self.character_stats["pokemons"]
+            )
         elif key == arcade.key.DOWN:
-            self.selected_index = (self.selected_index + 1) % len(self.team_monsters)
+            self.selected_index = (self.selected_index + 1) % len(
+                self.character_stats["pokemons"]
+            )
         elif key == arcade.key.SPACE:
-            selected = self.team_monsters[
-                self.selected_index
-            ]  # TODO: emplement attacks and monster from state
-            wild_monster_fighter = next(
+            wild_monster = next(
                 pokemon
                 for pokemon in Monsters
                 if pokemon.name == self.wild_pokemon.name
             )
+            selected_fighter = next(
+                monster
+                for monster in Monsters
+                if monster.name.lower() == self.selected_monster[0].lower()
+            ).fighter
+            wild_monster_fighter = wild_monster.fighter
+            wild_monster_fighter.set_attacks(
+                Attacks(
+                    up=None,
+                    down=None,
+                    right=wild_monster.moves[0].move,
+                    left=wild_monster.moves[0].move,
+                    base=SimpleMelee,
+                )
+            )
+            selected_fighter.set_attacks(
+                Attacks(
+                    up=ALL_ATTACKS[self.selected_monster[1]["attacks"]["up"]],
+                    down=ALL_ATTACKS[self.selected_monster[1]["attacks"]["down"]],
+                    left=ALL_ATTACKS[self.selected_monster[1]["attacks"]["left"]],
+                    right=ALL_ATTACKS[self.selected_monster[1]["attacks"]["right"]],
+                    base=ALL_ATTACKS[self.selected_monster[1]["attacks"]["base"]],
+                )
+            )
             self.window.show_view(
                 SmashWorld(
                     overworld_view=self.game_view,
-                    wild_monster=wild_monster_fighter.fighter,
+                    wild_monster=wild_monster_fighter,
                     wild_monster_overworld=self.wild_pokemon,
-                    chosen_monster=Character(
-                        ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage", "mage"
-                    ),  # TODO: move Character object instantion to a the self.team_monsters or so.
+                    chosen_monster=selected_fighter,
                 )
             )
