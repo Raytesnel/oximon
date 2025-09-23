@@ -83,8 +83,8 @@ class SimpleMelee(Attack):
         attack_pattern = [
             AttackPattern(
                 explosion_knock_back=0,
-                damage=1,
-                knockback_direction=Position(x_direction=2, y_direction=1),
+                damage=10,
+                knockback_direction=Position(x_direction=4, y_direction=3),
                 knockback_strength=8,
                 texture=box_texture,  # invisible box texture
             )
@@ -103,7 +103,7 @@ class BlueFireBreath(Attack):
         attack_patern = [
             AttackPattern(
                 explosion_knock_back=0,
-                damage=60,
+                damage=10,
                 knockback_direction=Position(x_direction=4, y_direction=2),
                 knockback_strength=10,
                 texture=attack_texture,
@@ -160,9 +160,9 @@ class FireBreath(Attack):
         attack_patern = [
             AttackPattern(
                 explosion_knock_back=-5,
-                damage=2,
-                knockback_direction=Position(x_direction=0, y_direction=2),
-                knockback_strength=0,
+                damage=10,
+                knockback_direction=Position(x_direction=3, y_direction=3),
+                knockback_strength=10,
                 texture=attack_texture,
             )
             for attack_texture in self.attack_textures
@@ -187,10 +187,10 @@ class ElectroBall(Attack):
         )
         attack_patern = [
             AttackPattern(
-                explosion_knock_back=-5,
-                damage=2,
-                knockback_direction=Position(x_direction=-2, y_direction=-2),
-                knockback_strength=0,
+                explosion_knock_back=1,
+                damage=10,
+                knockback_direction=Position(x_direction=6, y_direction=1),
+                knockback_strength=10,
                 texture=attack_texture,
             )
             for attack_texture in self.attack_textures

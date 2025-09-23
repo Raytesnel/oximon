@@ -136,7 +136,7 @@ Monsters = [
         attack=80,
         moves=[
             Moves(
-                name="blue fire",
+                name="electro ball",
                 attack_mode="heavy",
                 range=True,
                 move=BlueFireBreath,
@@ -214,6 +214,18 @@ Monsters = [
         moves=[
             Moves(
                 name="fire blast",
+                attack_mode="heavy",
+                range=True,
+                move=FireBreath,
+                quest_line=QuestLineMove(
+                    quest="Survive 10 fire attacks",
+                    finised=False,
+                    objective_count=10,
+                    achieved_count=4,
+                ),
+            ),
+            Moves(
+                name="blue fire",
                 attack_mode="heavy",
                 range=True,
                 move=FireBreath,

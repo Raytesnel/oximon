@@ -52,7 +52,7 @@ class SmashWorld(arcade.View):
             self.character_2, platforms=self.stage.platforms, gravity_constant=1
         )
         self.physics_engine_1.enable_multi_jump(1)
-        self.enemy_ai = EnemyAI(self.character_2, self.character_1, self.stage)
+        self.enemy_ai = EnemyAI(self.character_2, self.character_1, self)
         self.setup()
 
     def setup(self):

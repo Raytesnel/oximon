@@ -1,3 +1,4 @@
+import random
 from pathlib import Path
 from typing import Optional
 
@@ -99,7 +100,9 @@ class Character(arcade.Sprite):
 
     def update_animation(self, delta_time: float = 1 / 60):
         self.frame_timer += delta_time
-        if self.frame_timer > self.frame_duration:
+        if self.is_stunned:
+            self.animation_state = "hurt"
+        elif self.frame_timer > self.frame_duration:
             if (
                 self.animation_state
                 in [
@@ -211,24 +214,45 @@ class EnemyAI:
         self.character = character
         self.target = target
         self.stage = stage
+        self.attack_cooldown = 1.0  # seconds between attacks
+        self.attack_timer = 0.0
 
     def update(self, delta_time: float):
-        """Beweeg richting midden of richting target."""
-        # voorbeeld: altijd naar midden stage bewegen
+        """Move toward target and attack when close."""
+        self.attack_timer -= delta_time
+        if self.attack_timer < 0:
+            self.attack_timer = 0
+
         target_position = self.target.center_x
         if not self.character.is_stunned:
+            # Movement toward target
             if self.character.center_x < target_position - 10:
-                if self.character.change_x < 0:
-                    self.character.change_x += self.character.MOVE_SPEED
-                else:
-                    self.character.change_x = self.character.MOVE_SPEED
+                self.character.change_x = self.character.MOVE_SPEED
                 self.character.animation_state = "walk"
+                self.character.reverse = False
             elif self.character.center_x > target_position + 10:
-                if self.character.change_x > 0:
-                    self.character.change_x -= self.character.MOVE_SPEED
-                else:
-                    self.character.change_x = -self.character.MOVE_SPEED
+                self.character.change_x = -self.character.MOVE_SPEED
                 self.character.animation_state = "walk"
+                self.character.reverse = True
             else:
                 self.character.change_x = 0
                 self.character.animation_state = "idle"
+
+            # Attack if close enough
+            distance_x = abs(self.character.center_x - self.target.center_x)
+            distance_y = abs(self.character.center_y - self.target.center_y)
+
+            if distance_x < 100 and distance_y < 60 and self.attack_timer == 0:
+                try:
+                    attack_names = [
+                        f"special_{direction}"
+                        for direction, attack in self.character.attacks
+                        if attack is not None
+                    ]
+                    attack_names.append("normal_neutral")
+                    attack = self.character.perform_attack(random.choice(attack_names))
+                    self.stage.attack_hitboxes.append(attack)
+                    self.character.animation_state = "attack_1"
+                    self.attack_timer = self.attack_cooldown
+                except ValueError:
+                    pass  # no attack available
