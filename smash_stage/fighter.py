@@ -8,7 +8,6 @@ from loguru import logger
 from pydantic import BaseModel
 
 from smash_stage.attacks import (
-    FireBreath,
     Attack,
 )
 
@@ -73,6 +72,16 @@ class Character(arcade.Sprite):
             ).get_texture_grid(size=(128, 128), columns=7, count=7),
             # "attack_heavy_2": arcade.load_spritesheet(asset_path/ "charge_attack.png").get_texture_grid(size=(128, 128), columns=13, count=13),
         }
+        self.animations["jump_start"] = self.animations["jump"][:3]
+        self.animations["jump_up"] = [
+            self.animations["jump"][3],
+            self.animations["jump"][3],
+        ]
+        self.animations["jump_down"] = [
+            self.animations["jump"][5],
+            self.animations["jump"][5],
+        ]
+        self.animations["jump_landing"] = self.animations["jump"][5:8]
         self.direction = "down"
         self.stun_duration = 1 / 5
         self.stun_counter = 0.0
@@ -84,13 +93,14 @@ class Character(arcade.Sprite):
         self.texture = self.animations["idle"][0]
         # --- jumping power
         self.max_jumps = 2
+        self.jump_count = 0
         self.is_jumping = False
         self.jump_held = False
         self.jump_timer = 0.0
         self.max_jump_time = 0.5
-        self.jump_power = 10
+        self.jump_power = 4
         self.jump_volocity = 0.85
-        self.base_hold_jump_power = 4
+        self.base_hold_jump_power = 3
         self.hold_jump_power = 4
         self.physics_engine: PhysicsEnginePlatformer | None = None
         # --- jumping power
@@ -132,21 +142,13 @@ class Character(arcade.Sprite):
             self.animation_state = "hurt"
         elif self.frame_timer > self.frame_duration:
             if (
-                self.animation_state
-                in [
-                    "jump",
-                    "hurt",
-                    "attack_1",
-                    "attack_heavy_1",
-                    "attack_2",
-                    "attack_heavy_2",
-                ]
+                self.animation_state is not "idle"
                 and self.current_frame == len(self.animations[self.animation_state]) - 1
             ):
                 if not self.is_jumping:
                     self.animation_state = "idle"
-                    self.is_attacking = False
                     self.frame_duration = 1 / 10
+                self.is_attacking = False
             self.current_frame = (self.current_frame + 1) % len(
                 self.animations[self.animation_state]
             )
@@ -179,62 +181,8 @@ class Character(arcade.Sprite):
         else:
             self.change_x = 0
 
-    def perform_attack(self, direction="neutral"):
-        if not self.animation_state in ["run", "walk", "jump", "idle"]:
-            raise ValueError("already a attack animation is working.")
-        attack = None
-        match direction:
-            case "special_right":
-                offset_hand_x = 30
-                offset_hand_y = -15
-                if self.attacks.right:
-                    attack = self.attacks.right.attack()
-                    attack.direction = (1, 0)
-            case "special_left":
-                offset_hand_x = 30
-                offset_hand_y = -15
-                if self.attacks.left:
-                    attack = self.attacks.left.attack()
-                    attack.angle = 180
-                    attack.direction = (-1, 0)
-
-            case "special_neutral":
-                offset_hand_x = 40
-                offset_hand_y = -15
-                attack = FireBreath()
-            case "special_up":
-                offset_hand_x = 0
-                offset_hand_y = +15
-                if self.attacks.up:
-                    attack = self.attacks.up.attack()
-                    attack.angle = 90
-                    attack.direction = (0, 1)
-
-            case "special_down":
-                offset_hand_x = 30
-                offset_hand_y = -15
-                if self.attacks.down:
-                    attack = self.attacks.down.attack()
-                    attack.direction = (1, 0)
-
-            case "normal_neutral":
-                offset_hand_x = 30
-                offset_hand_y = -15
-                if self.attacks.base:
-                    attack = self.attacks.base.attack()
-                    attack.direction = (1, 0)
-            case _:
-                raise ValueError("unknown button for attack.")
-        if not attack:
-            raise ValueError("no attack is set on that button")
-        attack.new_attack()
-        attack.owner = self
-        attack.center_y = self.center_y + offset_hand_y
-        attack.center_x = self.center_x + offset_hand_x
-        return attack
-
     def idle(self):
-        if not self.is_attacking:
+        if not self.is_attacking and not self.is_jumping:
             self.animation_state = "idle"
             self.change_x = 0
 
@@ -263,45 +211,62 @@ class Character(arcade.Sprite):
             self.change_x *= self.run_volocity
 
     def jump(self):
-        """jumping like hollow knight, how longer you press how higher you jump,
-        this is called from on_key_press"""
+        """Triggered on key press. Hollow Knight-style jump."""
         if self.is_attacking:
             return
-        if not self.physics_engine.can_jump():
-            logger.debug(f"jumps:{self.physics_engine.allowed_jumps}")
+        if self.jump_count >= self.max_jumps:
             return
-        else:
-            logger.debug(f"we can jump:{self.physics_engine.jumps_since_ground}")
-            logger.debug(f"we can jump:{self.physics_engine.allowed_jumps}")
-            logger.debug(f"we can jump:{self.physics_engine.can_jump()}")
-        self.current_frame = 0
+        self.jump_count += 1
         self.animation_state = "jump"
-        logger.debug(f"before jumping!:{self.change_y}")
-        self.physics_engine.increment_jump_counter()
-        logger.debug(f"we can jump:{self.physics_engine.can_jump()}")
+        self.current_frame = 0
+        self.is_jumping = True
+        self.jump_held = True
+        self.jump_timer = 0.0
+        self.hold_jump_power = 4
         self.change_y = 0
         self.change_y += self.jump_power
-        logger.debug(f"after jumping!:{self.change_y}")
-        self.jump_timer = 0.0
+        logger.debug(f"Jump #{self.jump_count} started!")
+        # TODO: make the animation so that this i rising, update is somtime falling (depending on Y direction) and landing for the landign frames.
 
     def update_jump(self, delta_time: float):
+        """Handle held jump to extend height."""
         if self.is_attacking:
+            self.change_y = 1
+        elif self.change_y > 0:
+            self.animation_state = "jump_up"
+        elif self.change_y < 0:
+            self.animation_state = "jump_down"
+        if self.is_attacking or not self.is_jumping:
             return
-        if not self.physics_engine.can_jump():
-            return
-        if self.jump_held:
-            logger.debug(f"keep climbing!: {round(self.hold_jump_power,2)}")
+        if not self.jump_held and self.jump_timer > 0:
+            self.jump_timer = self.max_jump_time
+
+        if self.jump_held and self.jump_timer < self.max_jump_time:
+            logger.debug("fly little bird")
+            self.jump_timer += delta_time
             self.hold_jump_power *= self.jump_volocity
             self.change_y += self.hold_jump_power
-            self.jump_timer += delta_time
-        if self.jump_timer > self.max_jump_time:
-            logger.debug("times up!")
-            self.jump_timer = 0
-        if not self.jump_held and self.hold_jump_power != self.base_hold_jump_power:
-            logger.debug("resetting jumping power")
+        else:
+            self.jump_held = False
             self.hold_jump_power = self.base_hold_jump_power
-        if not self.is_jumping and not self.jump_held:
-            return
+
+    def handle_landing(self, platforms: arcade.SpriteList, offset: float = 5.0):
+        """
+        Reset jumps if character is on/just above a platform.
+        offset: how far below the sprite to check for ground.
+        """
+        sensor = arcade.SpriteSolidColor(int(self.width), 2, arcade.color.WHITE)
+        sensor.center_x = self.center_x
+        sensor.center_y = self.bottom - offset
+
+        hits = arcade.check_for_collision_with_list(sensor, platforms)
+        if hits and self.change_y <= 0 < self.jump_count:
+            if self.jump_count != 0:
+                self.animation_state = "jump_landing"
+                logger.debug("Landed! Jump count reset.")
+                self.is_jumping = False
+            self.jump_count = 0
+            self.jump_held = False
 
     def attack(self, attack: CharacterAttack | None) -> Attack:
         if not attack:

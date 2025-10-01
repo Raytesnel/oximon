@@ -1,5 +1,4 @@
 import arcade
-from loguru import logger
 
 from smash_stage.attacks import SimpleMelee, FireBreath, BlueFireBreath
 from smash_stage.fighter import (
@@ -80,6 +79,7 @@ class TestFighter(arcade.View):
     def on_update(self, delta_time: float = 1 / 60):
         self.timer += delta_time
         self.character_1.update_jump(delta_time)
+        self.character_1.handle_landing(self.stage.platforms)
         self.stage.update()
         self.player_list.update()
         self.player_list.update_animation(delta_time)
@@ -189,14 +189,12 @@ class TestFighter(arcade.View):
                     pass
         elif key == arcade.key.SPACE:
             self.character_1.jump()
-            self.character_1.jump_held = True
 
     def on_key_release(self, key, modifiers):
         self.held_keys.discard(key)
         if key in (arcade.key.LEFT, arcade.key.RIGHT):
             self.character_1.change_x = 0
         if key == arcade.key.SPACE:
-            logger.debug("release the button!")
             self.character_1.jump_held = False
 
 
