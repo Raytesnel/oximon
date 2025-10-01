@@ -3,6 +3,8 @@ from pathlib import Path
 from typing import Optional
 
 import arcade
+from arcade import PhysicsEnginePlatformer
+from loguru import logger
 from pydantic import BaseModel
 
 from smash_stage.attacks import (
@@ -18,12 +20,24 @@ class KnockBackDamage(BaseModel):
     damage: int
 
 
+class CharacterAttack(BaseModel):
+    attack: type[Attack]
+    position: tuple[int, int]
+    end_start_up_frame: int
+    end_attack_frame: int
+    animation: str
+
+
 class Attacks(BaseModel):
-    up: type[Attack] | None
-    down: type[Attack] | None
-    left: type[Attack] | None
-    right: type[Attack] | None
-    base: type[Attack]
+    up: CharacterAttack | None
+    down: CharacterAttack | None
+    left: CharacterAttack | None
+    right: CharacterAttack | None
+    base: CharacterAttack
+
+
+class NoAttackSet(Exception):
+    pass
 
 
 class Character(arcade.Sprite):
@@ -68,11 +82,25 @@ class Character(arcade.Sprite):
         self.frame_timer = 0
         self.frame_duration = 1 / 10
         self.texture = self.animations["idle"][0]
-        self.jump_count = 0
+        # --- jumping power
         self.max_jumps = 2
+        self.is_jumping = False
+        self.jump_held = False
+        self.jump_timer = 0.0
+        self.max_jump_time = 0.5
+        self.jump_power = 10
+        self.jump_volocity = 0.85
+        self.base_hold_jump_power = 4
+        self.hold_jump_power = 4
+        self.physics_engine: PhysicsEnginePlatformer | None = None
+        # --- jumping power
+        # -- movement
+        self.run_volocity = 1.1
+        self.max_run_speed = 8
+        self.walk_speed = 0.5
+        # -- movement
+        self.is_attacking = False
         self.lives = 100
-        self.MOVE_SPEED = 2
-        self.JUMP_SPEED = 20
         self.name = name
         self.hit_timer = 1 / 10
         self.hit_counter = 0
@@ -81,7 +109,7 @@ class Character(arcade.Sprite):
         self.held_keys = set()
         self.animation_state = "idle"
         self.reverse = False
-        self.attacks = None
+        self.attacks: Attacks | None = None
 
     def set_attacks(self, attacks: Attacks):
         self.attacks = attacks
@@ -115,8 +143,10 @@ class Character(arcade.Sprite):
                 ]
                 and self.current_frame == len(self.animations[self.animation_state]) - 1
             ):
-                self.animation_state = "idle"
-                self.frame_duration = 1 / 10
+                if not self.is_jumping:
+                    self.animation_state = "idle"
+                    self.is_attacking = False
+                    self.frame_duration = 1 / 10
             self.current_frame = (self.current_frame + 1) % len(
                 self.animations[self.animation_state]
             )
@@ -158,13 +188,13 @@ class Character(arcade.Sprite):
                 offset_hand_x = 30
                 offset_hand_y = -15
                 if self.attacks.right:
-                    attack = self.attacks.right()
+                    attack = self.attacks.right.attack()
                     attack.direction = (1, 0)
             case "special_left":
                 offset_hand_x = 30
                 offset_hand_y = -15
                 if self.attacks.left:
-                    attack = self.attacks.left()
+                    attack = self.attacks.left.attack()
                     attack.angle = 180
                     attack.direction = (-1, 0)
 
@@ -176,7 +206,7 @@ class Character(arcade.Sprite):
                 offset_hand_x = 0
                 offset_hand_y = +15
                 if self.attacks.up:
-                    attack = self.attacks.up()
+                    attack = self.attacks.up.attack()
                     attack.angle = 90
                     attack.direction = (0, 1)
 
@@ -184,14 +214,14 @@ class Character(arcade.Sprite):
                 offset_hand_x = 30
                 offset_hand_y = -15
                 if self.attacks.down:
-                    attack = self.attacks.down()
+                    attack = self.attacks.down.attack()
                     attack.direction = (1, 0)
 
             case "normal_neutral":
                 offset_hand_x = 30
                 offset_hand_y = -15
                 if self.attacks.base:
-                    attack = self.attacks.base()
+                    attack = self.attacks.base.attack()
                     attack.direction = (1, 0)
             case _:
                 raise ValueError("unknown button for attack.")
@@ -202,6 +232,94 @@ class Character(arcade.Sprite):
         attack.center_y = self.center_y + offset_hand_y
         attack.center_x = self.center_x + offset_hand_x
         return attack
+
+    def idle(self):
+        if not self.is_attacking:
+            self.animation_state = "idle"
+            self.change_x = 0
+
+    def walk(self, direction):
+        if self.is_attacking:
+            return
+        if not self.is_jumping:
+            self.animation_state = "walk"
+        if direction == "left":
+            self.reverse = True
+            self.change_x -= self.walk_speed
+        elif direction == "right":
+            self.reverse = False
+            self.change_x += self.walk_speed
+
+    def run(self, direction):
+        if self.is_attacking:
+            return
+        if not self.is_jumping:
+            self.animation_state = "run"
+        if direction == "left":
+            self.reverse = True if direction == "left" else False
+        if self.change_x >= self.max_run_speed:
+            self.change_x = self.max_run_speed
+        else:
+            self.change_x *= self.run_volocity
+
+    def jump(self):
+        """jumping like hollow knight, how longer you press how higher you jump,
+        this is called from on_key_press"""
+        if self.is_attacking:
+            return
+        if not self.physics_engine.can_jump():
+            logger.debug(f"jumps:{self.physics_engine.allowed_jumps}")
+            return
+        else:
+            logger.debug(f"we can jump:{self.physics_engine.jumps_since_ground}")
+            logger.debug(f"we can jump:{self.physics_engine.allowed_jumps}")
+            logger.debug(f"we can jump:{self.physics_engine.can_jump()}")
+        self.current_frame = 0
+        self.animation_state = "jump"
+        logger.debug(f"before jumping!:{self.change_y}")
+        self.physics_engine.increment_jump_counter()
+        logger.debug(f"we can jump:{self.physics_engine.can_jump()}")
+        self.change_y = 0
+        self.change_y += self.jump_power
+        logger.debug(f"after jumping!:{self.change_y}")
+        self.jump_timer = 0.0
+
+    def update_jump(self, delta_time: float):
+        if self.is_attacking:
+            return
+        if not self.physics_engine.can_jump():
+            return
+        if self.jump_held:
+            logger.debug(f"keep climbing!: {round(self.hold_jump_power,2)}")
+            self.hold_jump_power *= self.jump_volocity
+            self.change_y += self.hold_jump_power
+            self.jump_timer += delta_time
+        if self.jump_timer > self.max_jump_time:
+            logger.debug("times up!")
+            self.jump_timer = 0
+        if not self.jump_held and self.hold_jump_power != self.base_hold_jump_power:
+            logger.debug("resetting jumping power")
+            self.hold_jump_power = self.base_hold_jump_power
+        if not self.is_jumping and not self.jump_held:
+            return
+
+    def attack(self, attack: CharacterAttack | None) -> Attack:
+        if not attack:
+            raise NoAttackSet()
+        if self.is_attacking:
+            raise NoAttackSet("not the time to attack yet")
+        offset_hand_x, offset_hand_y = attack.position
+        new_attack = attack.attack()
+        new_attack.new_attack()
+        new_attack.owner = self
+        new_attack.center_y = self.center_y + offset_hand_y
+        new_attack.center_x = self.center_x + offset_hand_x
+        self.current_frame = 0
+        self.animation_state = attack.animation
+        self.is_attacking = True
+        return new_attack
+
+    def is_hurt(self, time_knockback: int): ...
 
 
 # TODO: while in recovery state,Character(PLAYER_PATH, "monster") movement in reduced ( terug lopen terwilj je weg wordt geschoten)
@@ -216,6 +334,7 @@ class EnemyAI:
         self.stage = stage
         self.attack_cooldown = 1.0  # seconds between attacks
         self.attack_timer = 0.0
+        self.MOVE_SPEED = 2
 
     def update(self, delta_time: float):
         """Move toward target and attack when close."""
@@ -225,13 +344,12 @@ class EnemyAI:
 
         target_position = self.target.center_x
         if not self.character.is_stunned:
-            # Movement toward target
             if self.character.center_x < target_position - 10:
-                self.character.change_x = self.character.MOVE_SPEED
+                self.character.change_x = self.MOVE_SPEED
                 self.character.animation_state = "walk"
                 self.character.reverse = False
             elif self.character.center_x > target_position + 10:
-                self.character.change_x = -self.character.MOVE_SPEED
+                self.character.change_x = -self.MOVE_SPEED
                 self.character.animation_state = "walk"
                 self.character.reverse = True
             else:
