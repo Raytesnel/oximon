@@ -1,12 +1,13 @@
 import arcade
+from loguru import logger
 
 from smash_stage.attacks import SimpleMelee, FireBreath, BlueFireBreath
 from smash_stage.fighter import (
     Character,
-    KnockBackDamage,
     NoAttackSet,
     Attacks,
     CharacterAttack,
+    KnockBackDamage,
 )
 from smash_stage.stage import SmashStage
 from utils import SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE
@@ -37,11 +38,13 @@ class TestFighter(arcade.View):
         chosen_monster: Character,
     ):
         super().__init__()
+        self.stage_attack = None
         self.camera = arcade.Camera2D()
         self.held_keys = set()
         self.attack_hitboxes = arcade.SpriteList()
         self.timer = 0
         self.character_1 = chosen_monster
+
         self.stage = SmashStage(SMASH_MAP_PATH)
         self.physics_engine_1 = arcade.PhysicsEnginePlatformer(
             self.character_1, walls=self.stage.platforms, gravity_constant=1
@@ -108,7 +111,7 @@ class TestFighter(arcade.View):
                     and arcade.check_for_collision(hitbox, target)
                     and not hitbox.is_hit
                 ):
-                    target.take_hit(
+                    target.is_hurt(
                         KnockBackDamage(
                             x_position=hitbox.knockback_direction.x_direction,
                             y_position=hitbox.knockback_direction.y_direction,
@@ -135,7 +138,13 @@ class TestFighter(arcade.View):
 
     def on_key_press(self, key, modifiers):
         self.held_keys.add(key)
-        # if key == arcade.key.Z:
+        if key == arcade.key.Z:
+            self.stage_attack = FireBreath()
+            self.stage_attack.new_attack()
+            self.stage_attack.owner = "somone"
+            self.stage_attack.center_x = self.character_1.center_x
+            self.stage_attack.center_y = self.character_1.center_y
+            self.attack_hitboxes.append(self.stage_attack)
         #     direction = "normal_neutral"
         #     if arcade.key.UP in self.held_keys:
         #         direction = "normal_up"
@@ -231,5 +240,8 @@ if __name__ == "__main__":
         )
     )
     test_fighter.character_1.set_attacks(attacks)
+    logger.debug(
+        f"location character:X{test_fighter.character_1.center_x}Y{test_fighter.character_1.center_y}"
+    )
     window.show_view(test_fighter)
     arcade.run()

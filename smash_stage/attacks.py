@@ -28,6 +28,7 @@ class Attack(arcade.Sprite):
     ):
         super().__init__()
         self.is_hit = False
+        self.done = False
         self.attack_pattern = attack_pattern
         self.attack_flow = None
         self.explosion_knock_back = 0
@@ -45,10 +46,10 @@ class Attack(arcade.Sprite):
         self.attack_flow = iter(self.attack_pattern)
         self.current_frame = 0
         self.is_hit = False
-        self.explosion_knock_back = 0
-        self.damage = 0
-        self.knockback_direction = Position(x_direction=0, y_direction=0)
-        self.knockback_strength = 0
+        # self.explosion_knock_back = 0
+        # self.damage = 0
+        # self.knockback_direction = Position(x_direction=0, y_direction=0)
+        # self.knockback_strength = 0
         self.animation_timer = 0
         self.texture = self.attack_pattern[0].texture
 
@@ -57,6 +58,7 @@ class Attack(arcade.Sprite):
             new_attack: AttackPattern = next(self.attack_flow)
         except StopIteration:
             logger.debug("eind of animation")
+            self.done = True
             self.remove_from_sprite_lists()
             return
         self.texture = new_attack.texture
@@ -157,9 +159,10 @@ class FireBreath(Attack):
         self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(
             size=(88, 79), columns=12, count=12
         )
+
         attack_patern = [
             AttackPattern(
-                explosion_knock_back=-5,
+                explosion_knock_back=5,
                 damage=10,
                 knockback_direction=Position(x_direction=3, y_direction=3),
                 knockback_strength=10,
@@ -169,6 +172,10 @@ class FireBreath(Attack):
         ]
         logger.debug("it will rain fire!")
         super().__init__(attack_pattern=attack_patern)
+        self.explosion_knock_back = 5
+        self.damage = 10
+        self.knockback_direction = Position(x_direction=3, y_direction=3)
+        self.knockback_strength = 10
 
     def update(self, delta_time: float):
         self.animation_timer += delta_time

@@ -81,10 +81,10 @@ class Character(arcade.Sprite):
             self.animations["jump"][5],
             self.animations["jump"][5],
         ]
+        self.stun_sec = 0
         self.animations["jump_landing"] = self.animations["jump"][5:8]
         self.direction = "down"
         self.stun_duration = 1 / 5
-        self.stun_counter = 0.0
         self.is_stunned = False
         self.pending_knockback: Optional[KnockBackDamage] = None
         self.current_frame = 0
@@ -124,28 +124,16 @@ class Character(arcade.Sprite):
     def set_attacks(self, attacks: Attacks):
         self.attacks = attacks
 
-    def take_hit(self, knockback_data: KnockBackDamage):
-        """Trigger stun + knockback sequence."""
-        self.animation_state = "hurt"
-        self.frame_duration = 1 / 10
-        self.current_frame = 0
-        self.pending_knockback = knockback_data
-        self.stun_counter = 0
-        if not self.is_stunned:
-            self.lives = max(0, self.lives - self.pending_knockback.damage)
-
-        self.is_stunned = True
-
     def update_animation(self, delta_time: float = 1 / 60):
         self.frame_timer += delta_time
-        if self.is_stunned:
+        if self.stun_sec:
             self.animation_state = "hurt"
-        elif self.frame_timer > self.frame_duration:
+        if self.frame_timer > self.frame_duration:
             if (
                 self.animation_state is not "idle"
                 and self.current_frame == len(self.animations[self.animation_state]) - 1
             ):
-                if not self.is_jumping:
+                if not self.is_jumping and not self.stun_sec:
                     self.animation_state = "idle"
                     self.frame_duration = 1 / 10
                 self.is_attacking = False
@@ -158,24 +146,21 @@ class Character(arcade.Sprite):
             self.frame_timer = 0
 
     def update(self, delta_time: float = 1 / 60):
-        if self.is_stunned:
-            self.stun_counter += delta_time
-            if self.stun_counter >= self.stun_duration:
-                self.is_stunned = False
-                if self.pending_knockback:
-                    self.change_x = (
-                        self.pending_knockback.x_position
-                        * self.pending_knockback.knockback
-                    )
-                    self.change_y = (
-                        self.pending_knockback.y_position
-                        * self.pending_knockback.knockback
-                    )
-                    self.pending_knockback = None
-            else:
-                self.change_y = 0
-                self.change_x = 0
-            return  # No movement/gravity during stun
+        if self.stun_sec:
+            self.stun_sec -= delta_time
+            if self.stun_sec < 0:
+                self.stun_sec = 0
+            self.change_y = 1
+            self.change_x = 0
+            return
+        if self.pending_knockback:
+            self.change_x = (
+                self.pending_knockback.x_position * self.pending_knockback.knockback
+            )
+            self.change_y = (
+                self.pending_knockback.y_position * self.pending_knockback.knockback
+            )
+            self.pending_knockback = None
         if abs(self.change_x) > 0.1:
             self.change_x *= 0.85
         else:
@@ -187,7 +172,7 @@ class Character(arcade.Sprite):
             self.change_x = 0
 
     def walk(self, direction):
-        if self.is_attacking:
+        if self.is_attacking or self.stun_sec:
             return
         if not self.is_jumping:
             self.animation_state = "walk"
@@ -199,7 +184,7 @@ class Character(arcade.Sprite):
             self.change_x += self.walk_speed
 
     def run(self, direction):
-        if self.is_attacking:
+        if self.is_attacking or self.stun_sec:
             return
         if not self.is_jumping:
             self.animation_state = "run"
@@ -284,7 +269,18 @@ class Character(arcade.Sprite):
         self.is_attacking = True
         return new_attack
 
-    def is_hurt(self, time_knockback: int): ...
+    def is_hurt(self, knockback_data: KnockBackDamage):
+        self.center_x += 10
+        self.center_y += 10
+        self.animation_state = "hurt"
+        self.stun_sec = 0.5
+        self.frame_duration = 1 / 10
+        self.current_frame = 0
+        self.pending_knockback = knockback_data
+        if not self.is_stunned:
+            self.lives = max(0, self.lives - self.pending_knockback.damage)
+
+        self.is_stunned = True
 
 
 # TODO: while in recovery state,Character(PLAYER_PATH, "monster") movement in reduced ( terug lopen terwilj je weg wordt geschoten)
