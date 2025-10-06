@@ -8,6 +8,7 @@ from smash_stage.fighter import (
     Attacks,
     CharacterAttack,
     KnockBackDamage,
+    AttackClass,
 )
 from smash_stage.stage import SmashStage
 from utils import SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE
@@ -124,6 +125,7 @@ class TestFighter(arcade.View):
         self.p1_lives_text.text = f"P1 Lives: {self.character_1.lives}"
 
         self.physics_engine_1.update()
+        self.scroll_to_player()
 
     def scroll_to_player(self):
         new_position = arcade.camera.grips.constrain_boundary_xy(
@@ -137,67 +139,53 @@ class TestFighter(arcade.View):
         )
 
     def on_key_press(self, key, modifiers):
+        if key == arcade.key.SPACE:
+            self.character_1.jump()
         self.held_keys.add(key)
-        if key == arcade.key.Z:
+        if key == arcade.key.V:
             self.stage_attack = FireBreath()
             self.stage_attack.new_attack()
             self.stage_attack.owner = "somone"
             self.stage_attack.center_x = self.character_1.center_x
             self.stage_attack.center_y = self.character_1.center_y
             self.attack_hitboxes.append(self.stage_attack)
-        #     direction = "normal_neutral"
-        #     if arcade.key.UP in self.held_keys:
-        #         direction = "normal_up"
-        #     elif arcade.key.DOWN in self.held_keys:
-        #         direction = "normal_down"
-        #     elif arcade.key.LEFT in self.held_keys:
-        #         direction = "normal_left"
-        #     elif arcade.key.RIGHT in self.held_keys:
-        #         direction = "normal_right"
-        #
-        #     try:
-        #         hitbox = self.character_1.perform_attack(direction)
-        #     except ValueError:
-        #         logger.debug("stil doing a attack")
-        #     else:
-        #         logger.debug("tacle!")
-        #         self.attack_hitboxes.append(hitbox)
-        #         self.character_1.animation_state = "attack_2"
-        #         self.character_1.current_frame = 0
-
+        attack = None
+        if key == arcade.key.Z:
+            attack = self.character_1.attacks.neutral
         if key == arcade.key.X:
-            if arcade.key.UP in self.held_keys:
-                try:
-                    hitbox = self.character_1.attack(self.character_1.attacks.up)
-                    self.attack_hitboxes.append(hitbox)
-                except (NoAttackSet, AttributeError):
-                    pass
-            elif arcade.key.DOWN in self.held_keys:
-                try:
-                    hitbox = self.character_1.attack(self.character_1.attacks.down)
-                    self.attack_hitboxes.append(hitbox)
-                except (NoAttackSet, AttributeError):
-                    pass
-            elif arcade.key.LEFT in self.held_keys:
-                try:
-                    hitbox = self.character_1.attack(self.character_1.attacks.left)
-                    self.attack_hitboxes.append(hitbox)
-                except (NoAttackSet, AttributeError):
-                    pass
-            elif arcade.key.RIGHT in self.held_keys:
-                try:
-                    hitbox = self.character_1.attack(self.character_1.attacks.right)
-                    self.attack_hitboxes.append(hitbox)
-                except (NoAttackSet, AttributeError):
-                    pass
-            else:
-                try:
-                    hitbox = self.character_1.attack(self.character_1.attacks.base)
-                    self.attack_hitboxes.append(hitbox)
-                except (NoAttackSet, AttributeError):
-                    pass
-        elif key == arcade.key.SPACE:
-            self.character_1.jump()
+            attack = self.character_1.attacks.special
+        if attack is None:
+            return
+        if arcade.key.UP in self.held_keys:
+            try:
+                hitbox = self.character_1.attack(attack.up)
+                self.attack_hitboxes.append(hitbox)
+            except (NoAttackSet, AttributeError):
+                pass
+        elif arcade.key.DOWN in self.held_keys:
+            try:
+                hitbox = self.character_1.attack(attack.down)
+                self.attack_hitboxes.append(hitbox)
+            except (NoAttackSet, AttributeError):
+                pass
+        elif arcade.key.LEFT in self.held_keys:
+            try:
+                hitbox = self.character_1.attack(attack.side)
+                self.attack_hitboxes.append(hitbox)
+            except (NoAttackSet, AttributeError):
+                pass
+        elif arcade.key.RIGHT in self.held_keys:
+            try:
+                hitbox = self.character_1.attack(attack.side)
+                self.attack_hitboxes.append(hitbox)
+            except (NoAttackSet, AttributeError):
+                pass
+        else:
+            try:
+                hitbox = self.character_1.attack(attack.neutral)
+                self.attack_hitboxes.append(hitbox)
+            except (NoAttackSet, AttributeError):
+                pass
 
     def on_key_release(self, key, modifiers):
         self.held_keys.discard(key)
@@ -209,28 +197,35 @@ class TestFighter(arcade.View):
 
 if __name__ == "__main__":
     attacks = Attacks(
-        up=CharacterAttack(
-            attack=FireBreath,
-            position=(40, -15),
-            end_attack_frame=5,
-            end_start_up_frame=3,
-            animation="attack_heavy_1",
+        neutral=AttackClass(
+            up=CharacterAttack(
+                attack=FireBreath,
+                position=(40, -15),
+                end_attack_frame=5,
+                end_start_up_frame=3,
+                animation="attack_heavy_1",
+            ),
+            down=CharacterAttack(
+                attack=BlueFireBreath,
+                position=(30, -15),
+                end_attack_frame=5,
+                end_start_up_frame=3,
+                animation="attack_heavy_1",
+            ),
+            side=None,
+            neutral=None,
         ),
-        down=CharacterAttack(
-            attack=BlueFireBreath,
-            position=(30, -15),
-            end_attack_frame=5,
-            end_start_up_frame=3,
-            animation="attack_heavy_1",
-        ),
-        left=None,
-        right=None,
-        base=CharacterAttack(
-            attack=SimpleMelee,
-            position=(40, -15),
-            animation="attack_2",
-            end_attack_frame=5,
-            end_start_up_frame=3,
+        special=AttackClass(
+            up=None,
+            down=None,
+            side=None,
+            neutral=CharacterAttack(
+                attack=SimpleMelee,
+                position=(40, -15),
+                animation="attack_2",
+                end_attack_frame=5,
+                end_start_up_frame=3,
+            ),
         ),
     )
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, resizable=True)

@@ -43,15 +43,14 @@ class Attack(arcade.Sprite):
         self.direction = (0, 0)  # (1,0) right, (-1,0) left, (0,1) up, (0,-1) down
 
     def new_attack(self):
+        if self.direction == (-1,0):
+            for attack in self.attack_pattern:
+                attack.texture = attack.texture.flip_horizontally()
+        self.texture = self.attack_pattern[0].texture
         self.attack_flow = iter(self.attack_pattern)
         self.current_frame = 0
         self.is_hit = False
-        # self.explosion_knock_back = 0
-        # self.damage = 0
-        # self.knockback_direction = Position(x_direction=0, y_direction=0)
-        # self.knockback_strength = 0
         self.animation_timer = 0
-        self.texture = self.attack_pattern[0].texture
 
     def update(self, delta_time):
         try:
@@ -61,6 +60,7 @@ class Attack(arcade.Sprite):
             self.done = True
             self.remove_from_sprite_lists()
             return
+        self.current_frame +=1
         self.texture = new_attack.texture
         self.explosion_knock_back = new_attack.explosion_knock_back
         self.knockback_strength = new_attack.knockback_strength
@@ -116,17 +116,15 @@ class BlueFireBreath(Attack):
         super().__init__(attack_pattern=attack_patern)
         self.direction = (1, 0)
         self.counter = 0
-        # TODO: implement, self.is_hit so the ball can trigger effect when hit.
 
     def update(self, delta_time: float):
         self.animation_timer += delta_time
-        idx = self.attack_textures.index(self.texture)
-        if idx == 4 and not self.is_hit and self.counter < 3:
-            self.counter += 1
+        if not self.is_hit and self.counter < 3:
             self.attack_flow = iter(self.attack_pattern)
             self.current_frame = 0
-            idx = self.attack_textures.index(self.texture)
-        if idx < len(self.attack_textures) - 6 and not self.is_hit:
+            self.counter +=1
+
+        if self.current_frame < len(self.attack_textures) - 6 and not self.is_hit:
             match self.direction:
                 case (1, 0):
                     self.center_x += 2

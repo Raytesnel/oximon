@@ -27,12 +27,16 @@ class CharacterAttack(BaseModel):
     animation: str
 
 
-class Attacks(BaseModel):
+class AttackClass(BaseModel):
     up: CharacterAttack | None
     down: CharacterAttack | None
-    left: CharacterAttack | None
-    right: CharacterAttack | None
-    base: CharacterAttack
+    side: CharacterAttack | None
+    neutral: CharacterAttack | None
+
+
+class Attacks(BaseModel):
+    neutral: AttackClass
+    special: AttackClass
 
 
 class NoAttackSet(Exception):
@@ -85,7 +89,6 @@ class Character(arcade.Sprite):
         self.animations["jump_landing"] = self.animations["jump"][5:8]
         self.direction = "down"
         self.stun_duration = 1 / 5
-        self.is_stunned = False
         self.pending_knockback: Optional[KnockBackDamage] = None
         self.current_frame = 0
         self.frame_timer = 0
@@ -211,7 +214,6 @@ class Character(arcade.Sprite):
         self.change_y = 0
         self.change_y += self.jump_power
         logger.debug(f"Jump #{self.jump_count} started!")
-        # TODO: make the animation so that this i rising, update is somtime falling (depending on Y direction) and landing for the landign frames.
 
     def update_jump(self, delta_time: float):
         """Handle held jump to extend height."""
@@ -227,7 +229,6 @@ class Character(arcade.Sprite):
             self.jump_timer = self.max_jump_time
 
         if self.jump_held and self.jump_timer < self.max_jump_time:
-            logger.debug("fly little bird")
             self.jump_timer += delta_time
             self.hold_jump_power *= self.jump_volocity
             self.change_y += self.hold_jump_power
@@ -245,7 +246,7 @@ class Character(arcade.Sprite):
         sensor.center_y = self.bottom - offset
 
         hits = arcade.check_for_collision_with_list(sensor, platforms)
-        if hits and self.change_y <= 0 < self.jump_count:
+        if hits and self.change_y <= 0 < self.jump_count and not self.is_attacking:
             if self.jump_count != 0:
                 self.animation_state = "jump_landing"
                 logger.debug("Landed! Jump count reset.")
@@ -260,10 +261,14 @@ class Character(arcade.Sprite):
             raise NoAttackSet("not the time to attack yet")
         offset_hand_x, offset_hand_y = attack.position
         new_attack = attack.attack()
+        if self.reverse:
+            new_attack.center_x = self.center_x - offset_hand_x
+            new_attack.direction = (-1, 0)
+        else:
+            new_attack.center_x = self.center_x + offset_hand_x
         new_attack.new_attack()
         new_attack.owner = self
         new_attack.center_y = self.center_y + offset_hand_y
-        new_attack.center_x = self.center_x + offset_hand_x
         self.current_frame = 0
         self.animation_state = attack.animation
         self.is_attacking = True
@@ -273,20 +278,16 @@ class Character(arcade.Sprite):
         self.center_x += 10
         self.center_y += 10
         self.animation_state = "hurt"
-        self.stun_sec = 0.5
         self.frame_duration = 1 / 10
         self.current_frame = 0
         self.pending_knockback = knockback_data
-        if not self.is_stunned:
+        if not self.stun_sec:
             self.lives = max(0, self.lives - self.pending_knockback.damage)
-
-        self.is_stunned = True
+        self.stun_sec = 0.5
 
 
 # TODO: while in recovery state,Character(PLAYER_PATH, "monster") movement in reduced ( terug lopen terwilj je weg wordt geschoten)
 # TODO: attack hit flashy things.
-# TODO: add velocity instead of channge, zo when hit it slowly stops and then you can return.
-
 
 class EnemyAI:
     def __init__(self, character: Character, target: Character, stage):
@@ -304,7 +305,7 @@ class EnemyAI:
             self.attack_timer = 0
 
         target_position = self.target.center_x
-        if not self.character.is_stunned:
+        if not self.character.stun_sec:
             if self.character.center_x < target_position - 10:
                 self.character.change_x = self.MOVE_SPEED
                 self.character.animation_state = "walk"
@@ -317,7 +318,6 @@ class EnemyAI:
                 self.character.change_x = 0
                 self.character.animation_state = "idle"
 
-            # Attack if close enough
             distance_x = abs(self.character.center_x - self.target.center_x)
             distance_y = abs(self.character.center_y - self.target.center_y)
 
