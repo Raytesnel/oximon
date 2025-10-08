@@ -28,10 +28,10 @@ class CharacterAttack(BaseModel):
 
 
 class AttackClass(BaseModel):
-    up: CharacterAttack | None
-    down: CharacterAttack | None
-    side: CharacterAttack | None
-    neutral: CharacterAttack | None
+    up: CharacterAttack | None = None
+    down: CharacterAttack | None = None
+    side: CharacterAttack | None = None
+    neutral: CharacterAttack | None = None
 
 
 class Attacks(BaseModel):
@@ -85,6 +85,7 @@ class Character(arcade.Sprite):
             self.animations["jump"][5],
             self.animations["jump"][5],
         ]
+        self.stage = None
         self.stun_sec = 0
         self.animations["jump_landing"] = self.animations["jump"][5:8]
         self.direction = "down"
@@ -149,6 +150,8 @@ class Character(arcade.Sprite):
             self.frame_timer = 0
 
     def update(self, delta_time: float = 1 / 60):
+        self.update_jump(delta_time)
+        self.handle_landing()
         if self.stun_sec:
             self.stun_sec -= delta_time
             if self.stun_sec < 0:
@@ -236,7 +239,7 @@ class Character(arcade.Sprite):
             self.jump_held = False
             self.hold_jump_power = self.base_hold_jump_power
 
-    def handle_landing(self, platforms: arcade.SpriteList, offset: float = 5.0):
+    def handle_landing(self, offset: float = 5.0):
         """
         Reset jumps if character is on/just above a platform.
         offset: how far below the sprite to check for ground.
@@ -245,7 +248,7 @@ class Character(arcade.Sprite):
         sensor.center_x = self.center_x
         sensor.center_y = self.bottom - offset
 
-        hits = arcade.check_for_collision_with_list(sensor, platforms)
+        hits = arcade.check_for_collision_with_list(sensor, self.stage)
         if hits and self.change_y <= 0 < self.jump_count and not self.is_attacking:
             if self.jump_count != 0:
                 self.animation_state = "jump_landing"
@@ -289,6 +292,7 @@ class Character(arcade.Sprite):
 # TODO: while in recovery state,Character(PLAYER_PATH, "monster") movement in reduced ( terug lopen terwilj je weg wordt geschoten)
 # TODO: attack hit flashy things.
 
+
 class EnemyAI:
     def __init__(self, character: Character, target: Character, stage):
         self.character = character
@@ -323,15 +327,26 @@ class EnemyAI:
 
             if distance_x < 100 and distance_y < 60 and self.attack_timer == 0:
                 try:
-                    attack_names = [
-                        f"special_{direction}"
-                        for direction, attack in self.character.attacks
-                        if attack is not None
-                    ]
-                    attack_names.append("normal_neutral")
-                    attack = self.character.perform_attack(random.choice(attack_names))
-                    self.stage.attack_hitboxes.append(attack)
-                    self.character.animation_state = "attack_1"
-                    self.attack_timer = self.attack_cooldown
+                    attack_kind = random.choice(
+                        [self.character.attacks.special, self.character.attacks.neutral]
+                    )
+                    attack_choice = random.choice(
+                        [
+                            attack_kind.up,
+                            attack_kind.down,
+                            attack_kind.side,
+                            attack_kind.neutral,
+                        ]
+                    )
+                    if not attack_choice:
+                        return
+                    try:
+                        attack = self.character.attack(attack_choice)
+                    except NoAttackSet:
+                        pass
+                    else:
+                        self.stage.attack_hitboxes.append(attack)
+                        self.character.animation_state = "attack_1"
+                        self.attack_timer = self.attack_cooldown
                 except ValueError:
                     pass  # no attack available

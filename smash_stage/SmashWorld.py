@@ -1,8 +1,7 @@
 import arcade
-from loguru import logger
 
 from lifeforms.pokemons import WildPokemon
-from smash_stage.fighter import Character, KnockBackDamage, EnemyAI
+from smash_stage.fighter import Character, KnockBackDamage, EnemyAI, NoAttackSet
 from smash_stage.stage import SmashStage
 from utils import SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE
 from utils import SMASH_MAP_PATH, ASSETS_PATH
@@ -45,6 +44,8 @@ class SmashWorld(arcade.View):
         self.character_1 = chosen_monster
         self.character_2 = wild_monster
         self.stage = SmashStage(SMASH_MAP_PATH)
+        self.character_1.stage = self.stage.platforms
+        self.character_2.stage = self.stage.platforms
         self.physics_engine_1 = arcade.PhysicsEnginePlatformer(
             self.character_1, platforms=self.stage.platforms, gravity_constant=1
         )
@@ -96,33 +97,17 @@ class SmashWorld(arcade.View):
         self.stage.update()
         self.player_list.update()
         self.player_list.update_animation(delta_time)
-
-        if self.physics_engine_1.can_jump():
-            self.character_1.jump_count = 0
-
-        # Movement
-        move_speed = self.character_1.MOVE_SPEED
-
         if arcade.key.LEFT in self.held_keys:
-            self.character_1.change_x = -move_speed
-            self.character_1.reverse = True
-            self.character_1.animation_state = "walk"
+            self.character_1.walk("left")
             if arcade.key.LCTRL in self.held_keys:
-                self.character_1.change_x = -move_speed * 2
-                self.character_1.reverse = True
-                self.character_1.animation_state = "run"
+                self.character_1.run("left")
 
         elif arcade.key.RIGHT in self.held_keys:
-            self.character_1.change_x = move_speed
-            self.character_1.reverse = False
-            self.character_1.animation_state = "walk"
+            self.character_1.walk("right")
             if arcade.key.LCTRL in self.held_keys:
-                self.character_1.change_x = move_speed * 2
-                self.character_1.reverse = False
-                self.character_1.animation_state = "run"
+                self.character_1.run("right")
         elif not self.held_keys or self.held_keys == [arcade.key.LCTRL]:
-            self.character_1.animation_state = "idle"
-        # TODO: move all animation_state setters to fighter class.
+            self.character_1.idle()
         else:
             self.character_1.change_x = 0
 
@@ -137,7 +122,7 @@ class SmashWorld(arcade.View):
                     and arcade.check_for_collision(hitbox, target)
                     and not hitbox.is_hit
                 ):
-                    target.take_hit(
+                    target.is_hurt(
                         KnockBackDamage(
                             x_position=hitbox.knockback_direction.x_direction,
                             y_position=hitbox.knockback_direction.y_direction,
@@ -177,60 +162,53 @@ class SmashWorld(arcade.View):
         )
 
     def on_key_press(self, key, modifiers):
+        if key == arcade.key.SPACE:
+            self.character_1.jump()
         self.held_keys.add(key)
+        attack = None
         if key == arcade.key.Z:
-            direction = "normal_neutral"
-            if arcade.key.UP in self.held_keys:
-                direction = "normal_up"
-            elif arcade.key.DOWN in self.held_keys:
-                direction = "normal_down"
-            elif arcade.key.LEFT in self.held_keys:
-                direction = "normal_left"
-            elif arcade.key.RIGHT in self.held_keys:
-                direction = "normal_right"
-
+            attack = self.character_1.attacks.neutral
+        if key == arcade.key.X:
+            attack = self.character_1.attacks.special
+        if attack is None:
+            return
+        if arcade.key.UP in self.held_keys:
             try:
-                hitbox = self.character_1.perform_attack(direction)
-            except ValueError:
-                logger.debug("stil doing a attack")
-            else:
-                logger.debug("tacle!")
+                hitbox = self.character_1.attack(attack.up)
                 self.attack_hitboxes.append(hitbox)
-                self.character_1.animation_state = "attack_2"
-                self.character_1.current_frame = 0
-
-        elif key == arcade.key.X:
-            direction = "special_neutral"
-            if arcade.key.UP in self.held_keys:
-                direction = "special_up"
-            elif arcade.key.DOWN in self.held_keys:
-                direction = "special_down"
-            elif arcade.key.LEFT in self.held_keys:
-                direction = "special_left"
-            elif arcade.key.RIGHT in self.held_keys:
-                direction = "special_right"
-
+            except (NoAttackSet, AttributeError):
+                pass
+        elif arcade.key.DOWN in self.held_keys:
             try:
-                hitbox = self.character_1.perform_attack(direction)
-            except ValueError:
-                logger.debug("stil doing a attack")
-            else:
-                logger.debug("kamehama")
+                hitbox = self.character_1.attack(attack.down)
                 self.attack_hitboxes.append(hitbox)
-                self.character_1.animation_state = "attack_heavy_1"
-                self.character_1.current_frame = 0
-
-        elif key == arcade.key.SPACE:
-            if self.physics_engine_1.can_jump():
-                self.character_1.current_frame = 0
-                self.character_1.animation_state = "jump"
-
-                self.physics_engine_1.jump(self.character_1.JUMP_SPEED)
+            except (NoAttackSet, AttributeError):
+                pass
+        elif arcade.key.LEFT in self.held_keys:
+            try:
+                hitbox = self.character_1.attack(attack.side)
+                self.attack_hitboxes.append(hitbox)
+            except (NoAttackSet, AttributeError):
+                pass
+        elif arcade.key.RIGHT in self.held_keys:
+            try:
+                hitbox = self.character_1.attack(attack.side)
+                self.attack_hitboxes.append(hitbox)
+            except (NoAttackSet, AttributeError):
+                pass
+        else:
+            try:
+                hitbox = self.character_1.attack(attack.neutral)
+                self.attack_hitboxes.append(hitbox)
+            except (NoAttackSet, AttributeError):
+                pass
 
     def on_key_release(self, key, modifiers):
         self.held_keys.discard(key)
         if key in (arcade.key.LEFT, arcade.key.RIGHT):
             self.character_1.change_x = 0
+        if key == arcade.key.SPACE:
+            self.character_1.jump_held = False
 
 
 if __name__ == "__main__":

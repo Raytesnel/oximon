@@ -45,8 +45,8 @@ class TestFighter(arcade.View):
         self.attack_hitboxes = arcade.SpriteList()
         self.timer = 0
         self.character_1 = chosen_monster
-
         self.stage = SmashStage(SMASH_MAP_PATH)
+        self.character_1.stage = self.stage.platforms
         self.physics_engine_1 = arcade.PhysicsEnginePlatformer(
             self.character_1, walls=self.stage.platforms, gravity_constant=1
         )
@@ -82,8 +82,6 @@ class TestFighter(arcade.View):
 
     def on_update(self, delta_time: float = 1 / 60):
         self.timer += delta_time
-        self.character_1.update_jump(delta_time)
-        self.character_1.handle_landing(self.stage.platforms)
         self.stage.update()
         self.player_list.update()
         self.player_list.update_animation(delta_time)
