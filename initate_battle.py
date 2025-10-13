@@ -1,5 +1,6 @@
 import arcade
 
+from lifeforms.pokemons import WildPokemon
 from pokemon import Monsters
 from smash_stage.SmashWorld import SmashWorld
 from smash_stage.attacks import SimpleMelee, ALL_ATTACKS, BlueFireBreath
@@ -8,9 +9,13 @@ from utils import load_state
 
 
 class BattleSplashView(arcade.View):
-    def __init__(self, overworld_view, wild_pokemon):
+
+    def __init__(self, overworld_view, wild_pokemon: WildPokemon):
         super().__init__()
         self.wild_pokemon = wild_pokemon
+        self.wild_monster = next(
+            pokemon for pokemon in Monsters if pokemon.name == self.wild_pokemon.name
+        )
         self.game_view = overworld_view
         self.selected_index = 0
         self.camera = arcade.Camera2D()
@@ -19,8 +24,12 @@ class BattleSplashView(arcade.View):
         self.enemy_labels = [
             arcade.Text("Enemy:", 550, 400, arcade.color.WHITE, 16),
             arcade.Text(f"Name: {wild_pokemon.name}", 550, 370, arcade.color.WHITE, 14),
-            arcade.Text("HP: 100", 550, 350, arcade.color.WHITE, 14),
-            arcade.Text("ATK: 20", 550, 330, arcade.color.WHITE, 14),
+            arcade.Text(
+                f"HP: {self.wild_monster.health}", 550, 350, arcade.color.WHITE, 14
+            ),
+            arcade.Text(
+                f"ATK: {self.wild_monster.attack}", 550, 330, arcade.color.WHITE, 14
+            ),
         ]
 
     def on_draw(self):
@@ -67,17 +76,14 @@ class BattleSplashView(arcade.View):
                 self.character_stats["pokemons"]
             )
         elif key == arcade.key.SPACE:
-            wild_monster = next(
-                pokemon
-                for pokemon in Monsters
-                if pokemon.name == self.wild_pokemon.name
-            )
+
             selected_fighter = next(
                 monster
                 for monster in Monsters
                 if monster.name.lower() == self.selected_monster[0].lower()
             ).fighter
-            wild_monster_fighter = wild_monster.fighter
+            wild_monster_fighter = self.wild_monster.fighter
+            # TODO: make monster use attacks from a random pokedex
             wild_monster_fighter.set_attacks(
                 Attacks(
                     neutral=AttackClass(

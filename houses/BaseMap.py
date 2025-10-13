@@ -169,7 +169,8 @@ class BaseMap(arcade.View):
         elif key == arcade.key.RIGHT and self.player.change_x > 0:
             self.player.change_x = 0
 
-
+# TODO: get all pokemon capture into own dialogPanel. and a base dialogPanel.
+# TODO: add variable monster to the monster dialog so we can capture the fought monster.
 class DialogPanel(arcade.Section):
     def __init__(
         self,
