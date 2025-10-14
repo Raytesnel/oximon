@@ -28,10 +28,10 @@ class CharacterAttack(BaseModel):
 
 
 class AttackClass(BaseModel):
-    up: CharacterAttack | None = None
-    down: CharacterAttack | None = None
-    side: CharacterAttack | None = None
-    neutral: CharacterAttack | None = None
+    up: type[Attack] | None = None
+    down: type[Attack] | None = None
+    side: type[Attack] | None = None
+    neutral: type[Attack] | None = None
 
 
 class Attacks(BaseModel):
@@ -76,6 +76,9 @@ class Character(arcade.Sprite):
             ).get_texture_grid(size=(128, 128), columns=7, count=7),
             # "attack_heavy_2": arcade.load_spritesheet(asset_path/ "charge_attack.png").get_texture_grid(size=(128, 128), columns=13, count=13),
         }
+        self.attack_positions = {"attack_2": (40, -15), "attack_heavy_1": (40, -15)}
+        # TODO: make these textures as input variable.
+
         self.animations["jump_start"] = self.animations["jump"][:3]
         self.animations["jump_up"] = [
             self.animations["jump"][3],
@@ -126,6 +129,7 @@ class Character(arcade.Sprite):
         self.attacks: Attacks | None = None
 
     def set_attacks(self, attacks: Attacks):
+        logger.info(f"attacks are set :{attacks}")
         self.attacks = attacks
 
     def update_animation(self, delta_time: float = 1 / 60):
@@ -257,13 +261,16 @@ class Character(arcade.Sprite):
             self.jump_count = 0
             self.jump_held = False
 
-    def attack(self, attack: CharacterAttack | None) -> Attack:
+    def attack(self, attack: type[Attack] | None) -> Attack:
         if not attack:
             raise NoAttackSet()
         if self.is_attacking:
             raise NoAttackSet("not the time to attack yet")
-        offset_hand_x, offset_hand_y = attack.position
-        new_attack = attack.attack()
+        self.animation_state = (
+            "attack_heavy_1" if attack.TYPE == "RANGE" else "attack_2"
+        )
+        offset_hand_x, offset_hand_y = self.attack_positions[self.animation_state]
+        new_attack = attack()
         if self.reverse:
             new_attack.center_x = self.center_x - offset_hand_x
             new_attack.direction = (-1, 0)
@@ -273,7 +280,6 @@ class Character(arcade.Sprite):
         new_attack.owner = self
         new_attack.center_y = self.center_y + offset_hand_y
         self.current_frame = 0
-        self.animation_state = attack.animation
         self.is_attacking = True
         return new_attack
 

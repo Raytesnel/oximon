@@ -1,13 +1,21 @@
 import os
+import random
 from pathlib import Path
 from typing import Literal
 
+from loguru import logger
 from pydantic import BaseModel
 
 from lifeforms.characters import FighterSprites
 from lifeforms.pokemons import WildPokemon, OverWorldMonsterSprites
-from smash_stage.attacks import Attack, BlueFireBreath, SimpleMelee, FireBreath
-from smash_stage.fighter import Character
+from smash_stage.attacks import (
+    Attack,
+    BlueFireBreath,
+    SimpleMelee,
+    FireBreath,
+    ALL_ATTACKS,
+)
+from smash_stage.fighter import Character, Attacks, AttackClass
 from utils import ASSETS_PATH
 
 ASSETS_PATH = Path(os.path.dirname(__file__)) / "assets"
@@ -27,7 +35,6 @@ class Pokemon(BaseModel):
     areas: list[str]
 
 
-# TODO make the fighter and overworld pokemon a sub class of a Monsterclass
 
 
 class EncounterMonster(BaseModel):
@@ -213,7 +220,7 @@ Monsters = [
         attack=80,
         moves=[
             Moves(
-                name="fire blast",
+                name="fire breath",
                 attack_mode="heavy",
                 range=True,
                 move=FireBreath,
@@ -251,6 +258,29 @@ Monsters = [
         ],
     ),
 ]
+
+
+def assign_attacks(monster: Monster) -> Attacks:
+    attacks = [ALL_ATTACKS[move.name] for move in monster.moves] + [
+        None
+    ] * random.randint(1, 5)
+    logger.debug(f"attacks are: {attacks}")
+    logger.debug(f"attack type: {type(attacks[0])}")
+    return Attacks(
+        neutral=AttackClass(
+            up=random.choice(attacks),
+            down=random.choice(attacks),
+            side=random.choice(attacks),
+            neutral=random.choice(attacks),
+        ),
+        special=AttackClass(
+            up=random.choice(attacks),
+            down=random.choice(attacks),
+            side=random.choice(attacks),
+            neutral=random.choice(attacks),
+        ),
+    )
+
 
 """
 Lucy lijstje:

@@ -1,10 +1,10 @@
 import arcade
 
 from lifeforms.pokemons import WildPokemon
-from pokemon import Monsters
+from pokemon import Monsters, assign_attacks
 from smash_stage.SmashWorld import SmashWorld
-from smash_stage.attacks import SimpleMelee, ALL_ATTACKS, BlueFireBreath
-from smash_stage.fighter import Attacks, AttackClass, CharacterAttack
+from smash_stage.attacks import ALL_ATTACKS
+from smash_stage.fighter import Attacks, AttackClass
 from utils import load_state
 
 
@@ -83,102 +83,24 @@ class BattleSplashView(arcade.View):
                 if monster.name.lower() == self.selected_monster[0].lower()
             ).fighter
             wild_monster_fighter = self.wild_monster.fighter
-            # TODO: make monster use attacks from a random pokedex
-            wild_monster_fighter.set_attacks(
-                Attacks(
-                    neutral=AttackClass(
-                        neutral=CharacterAttack(
-                            attack=SimpleMelee,
-                            position=(40, -15),
-                            animation="attack_2",
-                            end_attack_frame=5,
-                            end_start_up_frame=3,
-                        ),
-                    ),
-                    special=AttackClass(
-                        neutral=CharacterAttack(
-                            attack=BlueFireBreath,
-                            position=(30, -15),
-                            end_attack_frame=5,
-                            end_start_up_frame=3,
-                            animation="attack_heavy_1",
-                        ),
-                    ),
-                )
-            )
+            wild_monster_fighter.set_attacks(assign_attacks(self.wild_monster))
             selected_fighter.set_attacks(
                 Attacks(
                     special=AttackClass(
-                        up=(
-                            CharacterAttack(
-                                attack=ALL_ATTACKS[
-                                    self.selected_monster[1]["attacks"]["up"]
-                                ],
-                                position=(40, -15),
-                                animation="attack_2",
-                                end_attack_frame=5,
-                                end_start_up_frame=3,
-                            )
-                            if self.selected_monster[1]["attacks"]["up"]
-                            else None
-                        ),
-                        down=(
-                            CharacterAttack(
-                                attack=ALL_ATTACKS[
-                                    self.selected_monster[1]["attacks"]["down"]
-                                ],
-                                position=(40, -15),
-                                animation="attack_2",
-                                end_attack_frame=5,
-                                end_start_up_frame=3,
-                            )
-                            if self.selected_monster[1]["attacks"]["down"]
-                            else None
-                        ),
-                        side=(
-                            CharacterAttack(
-                                attack=ALL_ATTACKS[
-                                    self.selected_monster[1]["attacks"]["right"]
-                                ],
-                                position=(40, -15),
-                                animation="attack_2",
-                                end_attack_frame=5,
-                                end_start_up_frame=3,
-                            )
-                            if self.selected_monster[1]["attacks"]["right"]
-                            else None
-                        ),
-                        neutral=(
-                            CharacterAttack(
-                                attack=ALL_ATTACKS[
-                                    self.selected_monster[1]["attacks"]["base"]
-                                ],
-                                position=(40, -15),
-                                animation="attack_2",
-                                end_attack_frame=5,
-                                end_start_up_frame=3,
-                            )
-                            if self.selected_monster[1]["attacks"]["base"]
-                            else None
-                        ),
+                        up=ALL_ATTACKS[self.selected_monster[1]["attacks"]["up"]],
+                        down=ALL_ATTACKS[self.selected_monster[1]["attacks"]["down"]],
+                        side=ALL_ATTACKS[self.selected_monster[1]["attacks"]["right"]],
+                        neutral=ALL_ATTACKS[
+                            self.selected_monster[1]["attacks"]["base"]
+                        ],
                     ),
                     neutral=AttackClass(
                         up=None,
                         down=None,
                         side=None,
-                        neutral=(
-                            CharacterAttack(
-                                attack=ALL_ATTACKS[
-                                    self.selected_monster[1]["attacks"]["base"]
-                                ],
-                                position=(40, -15),
-                                animation="attack_2",
-                                end_attack_frame=5,
-                                end_start_up_frame=3,
-                            )
-                            if self.selected_monster[1]["attacks"]["base"]
-                            else None
-                        ),
+                        neutral=ALL_ATTACKS[
+                            self.selected_monster[1]["attacks"]["base"]
+                        ],
                     ),
                 )
             )

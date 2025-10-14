@@ -6,7 +6,6 @@ from smash_stage.fighter import (
     Character,
     NoAttackSet,
     Attacks,
-    CharacterAttack,
     KnockBackDamage,
     AttackClass,
 )
@@ -196,20 +195,8 @@ class TestFighter(arcade.View):
 if __name__ == "__main__":
     attacks = Attacks(
         neutral=AttackClass(
-            up=CharacterAttack(
-                attack=FireBreath,
-                position=(40, -15),
-                end_attack_frame=5,
-                end_start_up_frame=3,
-                animation="attack_heavy_1",
-            ),
-            down=CharacterAttack(
-                attack=BlueFireBreath,
-                position=(30, -15),
-                end_attack_frame=5,
-                end_start_up_frame=3,
-                animation="attack_heavy_1",
-            ),
+            up=FireBreath,
+            down=BlueFireBreath,
             side=None,
             neutral=None,
         ),
@@ -217,13 +204,7 @@ if __name__ == "__main__":
             up=None,
             down=None,
             side=None,
-            neutral=CharacterAttack(
-                attack=SimpleMelee,
-                position=(40, -15),
-                animation="attack_2",
-                end_attack_frame=5,
-                end_start_up_frame=3,
-            ),
+            neutral=SimpleMelee,
         ),
     )
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, resizable=True)

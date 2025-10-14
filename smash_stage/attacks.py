@@ -21,6 +21,7 @@ class AttackPattern(BaseModel, arbitrary_types_allowed=True):
 
 
 class Attack(arcade.Sprite):
+    TYPE = "MELEE"
     def __init__(
         self,
         attack_pattern: list[AttackPattern],
@@ -77,6 +78,7 @@ def collect_attack_sprites(attack_folder: Path) -> list[arcade.Texture]:
 
 
 class SimpleMelee(Attack):
+    TYPE = "MELEE"
     def __init__(self) -> None:
         box_texture = arcade.make_soft_square_texture(
             size=64, color=(255, 255, 255, 0), center_alpha=0
@@ -96,7 +98,7 @@ class SimpleMelee(Attack):
 
 
 class BlueFireBreath(Attack):
-
+    TYPE = "RANGE"
     def __init__(self) -> None:
         file_name = ASSETS_PATH / "sprites" / "pokemon" / "atacks" / "Fire_2.png"
         self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(
@@ -151,7 +153,7 @@ class BlueFireBreath(Attack):
 
 
 class FireBreath(Attack):
-
+    TYPE = "RANGE"
     def __init__(self) -> None:
         file_name = ASSETS_PATH / "sprites" / "pokemon" / "atacks" / "Flame_jet.png"
         self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(
@@ -184,7 +186,7 @@ class FireBreath(Attack):
 
 
 class ElectroBall(Attack):
-
+    TYPE = "RANGE"
     def __init__(self) -> None:
         file_name = ASSETS_PATH / "sprites" / "pokemon" / "atacks" / "Charge.png"
         self.attack_textures = arcade.load_spritesheet(file_name).get_texture_grid(
@@ -205,22 +207,11 @@ class ElectroBall(Attack):
         self.direction = (0, 0)
 
     def update(self, delta_time: float):
-        self.animation_timer += delta_time
-        idx = self.attack_textures.index(self.texture)
-        match self.direction:
-            case (1, 0):
-                self.center_x += 0.5
-            case (-1, 0):
-                self.center_x -= 0.5
-            case (0, 1):
-                self.center_y += 0.5
-            case (0, -1):
-                self.center_y -= 0.5
 
+        self.animation_timer += delta_time
         if self.animation_timer >= self.frame_duration:
             # width_last_frame = self.texture.width
             super().update(delta_time)
-
             self.animation_timer = 0
 
 
