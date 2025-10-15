@@ -71,25 +71,3 @@ npc_dude:
       lines:
         - speaker: npc_dude
           text: "your still alive, great, now, i get the other two. bye bye"
-monster_capture:
-  dialogs:
-    intro:
-      conditions: {}
-      lines:
-        - speaker: "monster-watch"
-          text: "Monster is fainted, do you want to download the monster to the watch?"
-      choices:
-        - text: "yes"
-          next: download_monster
-        - text: "no"
-          next: kill_monster
-    download_monster:
-      conditions: {}
-      lines:
-        - speaker: "monster-watch"
-          text: "monster downloaded succesvol to watch."
-    kill_monster:
-      conditions: {}
-      lines:
-        - speaker: "monster-watch"
-          text: "disentegrated monster.... jamjam"

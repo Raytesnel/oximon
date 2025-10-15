@@ -295,7 +295,6 @@ class Character(arcade.Sprite):
         self.stun_sec = 0.5
 
 
-# TODO: while in recovery state,Character(PLAYER_PATH, "monster") movement in reduced ( terug lopen terwilj je weg wordt geschoten)
 # TODO: attack hit flashy things.
 
 

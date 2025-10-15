@@ -4,7 +4,21 @@ player:
     x: 900.712
     y: 927.086
   name: raytesnel
-pokedex: [ ]
-pokemons: { }
+pokedex:
+  - Charmander
+  - Bulbasaur
+pokemons:
+  bulbasaur:
+    attacks:
+      base: tacle
+      down: null
+      left: null
+      right: null
+      up: null
+    stats:
+      attack: 25
+      defense: 25
+      health: 120
+      speed: 25
 quests:
-  starter_chosen: false
+  starter_chosen: true

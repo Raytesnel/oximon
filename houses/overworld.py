@@ -5,7 +5,7 @@ import arcade
 from arcade.types import TiledObject
 from loguru import logger
 
-from houses.BaseMap import BaseMap, DialogPanel
+from houses.BaseMap import BaseMap, DialogMonsterPanel
 from houses.helper_stuff import check_object_collision
 from initate_battle import BattleSplashView
 from lifeforms.pokemons import WildPokemon
@@ -146,4 +146,4 @@ class OverworldView(BaseMap):
     def enemy_defeated(self, wild_pokemon: WildPokemon):
         wild_pokemon.alive = False
         self.window.show_view(self)
-        self.dialog = DialogPanel("monster_capture", self.player_state)
+        self.dialog = DialogMonsterPanel(self.player_state)

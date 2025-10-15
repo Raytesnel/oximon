@@ -1,8 +1,10 @@
+from abc import abstractmethod, ABC
 from pathlib import Path
 
 import arcade
 import yaml
 from arcade import load_tilemap
+from arcade.types import Color
 from loguru import logger
 
 from houses.helper_stuff import check_object_collision
@@ -169,91 +171,31 @@ class BaseMap(arcade.View):
         elif key == arcade.key.RIGHT and self.player.change_x > 0:
             self.player.change_x = 0
 
-# TODO: get all pokemon capture into own dialogPanel. and a base dialogPanel.
-# TODO: add variable monster to the monster dialog so we can capture the fought monster.
-class DialogPanel(arcade.Section):
-    def __init__(
-        self,
-        npc_id: str,
-        player_state: dict,
-    ):
-        super().__init__(0, 0, SCREEN_WIDTH, 120, enabled=True)
-        self.npc_id = npc_id
-        self.player_state = player_state
-        self.current_line = 0
-        self.active = True
-        self.choices_active = False
-        self.selected_choice = 0
+
+class DialogPanelBase(arcade.Section, ABC):
+    def __init__(self, player_state, height: int = 120):
+        """base setup for coloring and so on for a dialog panel, this is used for catching monsters or dialogs for npc"""
+        super().__init__(0, 0, SCREEN_WIDTH, height, enabled=True)
         self.text_color = arcade.color.WHITE
-        self.download_monster = False
-        self.kill_monster = False
-        self._read_dialog_file()
-        try:
-            self.current_node = self.get_available_node()
-        except Exception:
-            logger.error(
-                "tacle this problem!, we have somthing when we have no available lines."
-            )
-        self.lines = self.current_node["lines"]
+        self.active = True
+        self.selected_choice = 0
+        self.player_state = player_state
+        self.dialog_data = None
         self.text_obj = arcade.Text(
-            text=self.lines[0]["text"],
+            text="",
             x=20,
             y=self.height // 2 - 20,
             color=self.text_color,
             font_size=16,
             width=self.width - 40,
         )
+        self.current_node = None
 
-    def _read_dialog_file(self):
-        dialog_file = ASSETS_PATH / "map" / "dialog.yaml"
-        with open(dialog_file, "r", encoding="utf-8") as f:
-            self.dialog_data = yaml.safe_load(f)
-
-    def get_available_node(self):
-        npc_data = self.dialog_data[self.npc_id]["dialogs"]
-        for name, n in npc_data.items():
-            conds = n.get("conditions", {})
-            if all(
-                self.player_state.get("quests").get(k) == v for k, v in conds.items()
-            ):
-                return n
-
-    def advance_line(self):
-        self.current_line += 1
-        if self.current_line >= len(self.lines):
-            # Node finished
-            self.check_next()
-        else:
-            line = self.lines[self.current_line]
-            self.text_obj.text = line["text"]
-            self.text_obj.color = self.text_color
-
-    def check_next(self):
-        if "quest_update" in self.current_node:
-            for key, val in self.current_node["quest_update"].items():
-                self.player_state["quests"][key] = val
-            save_state(self.player_state)
-            self.player_state = load_state()
-        if "pokemons" in self.current_node:
-            for monster_name, monster_data in self.current_node["pokemons"].items():
-                self.player_state["pokemons"][monster_name] = monster_data
-            save_state(self.player_state)
-
-        # Handle choices
-        if "choices" in self.current_node:
-            self.choices_active = True
-            self.selected_choice = 0
-        # Auto-next node
-        elif "next" in self.current_node:
-            next_node_name = self.current_node["next"]
-            self.current_node = self.dialog_data[self.npc_id]["dialogs"][next_node_name]
-            self.lines = self.current_node["lines"]
-            self.current_line = 0
-            line = self.lines[0]
-            self.text_obj.text = line["text"]
-            self.text_obj.color = self.text_color
-        else:
-            self.active = False  # Close dialog
+    def new_line(self, text: str, color: Color | None = None):
+        if not color:
+            color = self.text_color
+        self.text_obj.text = text
+        self.text_obj.color = color
 
     def on_draw(self):
         if not self.active:
@@ -283,6 +225,12 @@ class DialogPanel(arcade.Section):
                 )
                 choice.draw()
 
+    @abstractmethod
+    def _read_dialog_file(self): ...
+
+    def check_node_next(self, node_name: str):
+        pass
+
     def on_key_press(self, key, modifiers):
         if not self.active:
             return
@@ -296,11 +244,7 @@ class DialogPanel(arcade.Section):
             elif key == arcade.key.SPACE:
                 chosen = self.current_node["choices"][self.selected_choice]
                 next_node_name = chosen["next"]
-                if next_node_name == "download_monster":
-                    self.download_monster = True
-                elif next_node_name == "kill_monster":
-                    logger.debug("pokemon needs to be removed.")
-                    self.kill_monster = True
+                self.check_node_next(next_node_name)
                 self.current_node = self.dialog_data[self.npc_id]["dialogs"][
                     next_node_name
                 ]
@@ -313,3 +257,119 @@ class DialogPanel(arcade.Section):
         else:
             if key == arcade.key.SPACE:
                 self.advance_line()
+
+    def advance_line(self):
+        self.current_line += 1
+        if self.current_line >= len(self.lines):
+            self.check_next()
+        else:
+            self.new_line(
+                text=self.lines[self.current_line]["text"], color=self.text_color
+            )
+
+    def check_next(self):
+        if "quest_update" in self.current_node:
+            for key, val in self.current_node["quest_update"].items():
+                self.player_state["quests"][key] = val
+            save_state(self.player_state)
+            self.player_state = load_state()
+        if "pokemons" in self.current_node:
+            for monster_name, monster_data in self.current_node["pokemons"].items():
+                self.player_state["pokemons"][monster_name] = monster_data
+            save_state(self.player_state)
+
+        # Handle choices
+        if "choices" in self.current_node:
+            self.choices_active = True
+            self.selected_choice = 0
+        # Auto-next node
+        elif "next" in self.current_node:
+            next_node_name = self.current_node["next"]
+            self.current_node = self.dialog_data[self.npc_id]["dialogs"][next_node_name]
+            self.lines = self.current_node["lines"]
+            self.current_line = 0
+            line = self.lines[0]
+            self.text_obj.text = line["text"]
+            self.text_obj.color = self.text_color
+        else:
+            self.active = False  # Close dialog
+
+
+class DialogMonsterPanel(DialogPanelBase):
+    def __init__(
+        self,
+        player_state: dict,
+    ):
+        super().__init__(player_state)
+        self.npc_id = "monster_capture"
+        self.player_state = player_state
+        self.current_line = 0
+        self.choices_active = False
+        self.selected_choice = 0
+        self.text_color = arcade.color.WHITE
+        self.download_monster = False
+        self.kill_monster = False
+        self._read_dialog_file()
+        self.current_node = self.dialog_data["monster_capture"]["dialogs"]["intro"]
+        self.lines = self.current_node["lines"]
+        self.text_obj = arcade.Text(
+            text=self.lines[0]["text"],
+            x=20,
+            y=self.height // 2 - 20,
+            color=self.text_color,
+            font_size=16,
+            width=self.width - 40,
+        )
+
+    def _read_dialog_file(self):
+        dialog_file = ASSETS_PATH / "map" / "monster_eating.yaml"
+        with open(dialog_file, "r", encoding="utf-8") as f:
+            self.dialog_data = yaml.safe_load(f)
+
+    def check_node_next(self, node_name: str):
+        if node_name == "download_monster":
+            self.download_monster = True
+        elif node_name == "kill_monster":
+            logger.debug("pokemon needs to be removed.")
+            self.kill_monster = True
+
+
+class DialogPanel(DialogPanelBase):
+    def __init__(
+        self,
+        npc_id: str,
+        player_state: dict,
+    ):
+        super().__init__(player_state)
+        self.npc_id = npc_id
+        self.player_state = player_state
+        self.current_line = 0
+        self.choices_active = False
+        self.selected_choice = 0
+        self.text_color = arcade.color.WHITE
+        self._read_dialog_file()
+        self.current_node = self.get_available_node()
+        self.lines = self.current_node["lines"]
+        self.text_obj = arcade.Text(
+            text=self.lines[0]["text"],
+            x=20,
+            y=self.height // 2 - 20,
+            color=self.text_color,
+            font_size=16,
+            width=self.width - 40,
+        )
+
+    def _read_dialog_file(self):
+        dialog_file = ASSETS_PATH / "map" / "dialog.yaml"
+        with open(dialog_file, "r", encoding="utf-8") as f:
+            self.dialog_data = yaml.safe_load(f)
+
+    def get_available_node(self):
+        npc_data = self.dialog_data[self.npc_id]["dialogs"]
+        for name, n in npc_data.items():
+            conds = n.get("conditions", {})
+            if all(
+                self.player_state.get("quests").get(k) == v for k, v in conds.items()
+            ):
+                return n
+        raise Exception("no next found")
