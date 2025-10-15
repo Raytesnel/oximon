@@ -2,9 +2,9 @@ import arcade
 
 from lifeforms.pokemons import WildPokemon
 from pokemon import Monsters, assign_attacks
+from schemas.schemas import AttackClass, Attacks
 from smash_stage.SmashWorld import SmashWorld
 from smash_stage.attacks import ALL_ATTACKS
-from smash_stage.fighter import Attacks, AttackClass
 from utils import load_state
 
 

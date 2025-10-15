@@ -1,18 +1,9 @@
 import random
-from pathlib import Path
 
 import arcade
 from arcade.hitbox import HitBox
-from pydantic import BaseModel
 
-
-class OverWorldMonsterSprites(BaseModel):
-    up: Path
-    down: Path
-    left: Path
-    right: Path
-    dead: Path
-    banner: Path
+from schemas.schemas import OverWorldMonsterSprites
 
 
 class WildPokemon(arcade.Sprite):

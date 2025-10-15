@@ -1,95 +1,29 @@
 import os
 import random
 from pathlib import Path
-from typing import Literal
 
 from loguru import logger
-from pydantic import BaseModel
 
-from lifeforms.characters import FighterSprites
-from lifeforms.pokemons import WildPokemon, OverWorldMonsterSprites
+from schemas.monster_schema import Monster
+from schemas.schemas import (
+    AttackClass,
+    Attacks,
+    FighterSprites,
+    SpriteSheet,
+    EncounterMonster,
+    QuestLineMove,
+    Moves,
+    DescriptionMonster,
+    OverWorldMonsterSprites,
+)
 from smash_stage.attacks import (
-    Attack,
     BlueFireBreath,
     SimpleMelee,
     FireBreath,
     ALL_ATTACKS,
 )
-from smash_stage.fighter import Character, Attacks, AttackClass
-from utils import ASSETS_PATH
 
 ASSETS_PATH = Path(os.path.dirname(__file__)) / "assets"
-
-
-class PokemonSprite(BaseModel):
-    left: list[Path]
-    right: list[Path]
-    up: list[Path]
-    down: list[Path]
-
-
-class Pokemon(BaseModel):
-    name: str
-    level: int
-    sprite: PokemonSprite
-    areas: list[str]
-
-
-
-
-class EncounterMonster(BaseModel):
-    field: int
-    chance: float
-
-
-class QuestLineMove(BaseModel):
-    quest: str
-    finised: bool
-    objective_count: int
-    achieved_count: int
-
-
-class Moves(BaseModel, arbitrary_types_allowed=True):
-    name: str
-    attack_mode: Literal["heavy", "light"]
-    range: bool
-    move: type[Attack]
-    quest_line: QuestLineMove
-
-
-class DescriptionMonster(BaseModel):
-    description: str
-    type: Literal["Fire", "Water", "Void", "Life", "Air", "Stone", "Tech"]
-
-
-class Monster(BaseModel):
-    name: str
-    fighter_sprites: FighterSprites
-    over_world_sprites: OverWorldMonsterSprites
-    encounter_fields: list[EncounterMonster]
-    description: DescriptionMonster
-    speed: int
-    health: int
-    defense: int
-    attack: int
-    moves: list[Moves]
-
-    @property
-    def over_world(self) -> WildPokemon:
-        return WildPokemon(name=self.name, image_path=self.over_world_sprites)
-
-    @property
-    def fighter(self) -> Character:
-        return Character(
-            name=self.name,
-            asset_path=ASSETS_PATH
-            / "sprites/pokemon/Lightning Mage",  # TODO: make path to FighterSprites
-        )
-
-    @property
-    def fields(self) -> list[int]:
-        return [field.field for field in self.encounter_fields]
-
 
 Monsters = [
     Monster(
@@ -98,32 +32,96 @@ Monsters = [
             description="een monster met een groene puist", type="Life"
         ),
         fighter_sprites=FighterSprites(
-            light_attack_melee=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "Attack_2.png",
-            light_attack_range=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "light_ball.png",
-            heavy_attack_range=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "charge_attack.png",
-            heavy_attack_melee=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "Attack_1.png",
-            dead=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Dead.png",
-            hurt=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Hurt.png",
-            idle=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Idle.png",
-            jump=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Jump.png",
-            run=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Run.png",
-            walk=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Walk.png",
+            attack_melee=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Attack_2.png",
+                texture_columns=4,
+                size=128,
+            ),
+            attack_range=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Light_ball.png",
+                texture_columns=7,
+                size=128,
+            ),
+            attack_range_heavy=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "charge_attack.png",
+                texture_columns=13,
+                size=128,
+            ),
+            attack_heavy_melee=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Attack_1.png",
+                texture_columns=10,
+                size=128,
+            ),
+            dead=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Dead.png",
+                texture_columns=5,
+                size=128,
+            ),
+            hurt=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Hurt.png",
+                texture_columns=3,
+                size=128,
+            ),
+            idle=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Idle.png",
+                texture_columns=7,
+                size=128,
+            ),
+            jump=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Jump.png",
+                texture_columns=8,
+                size=128,
+            ),
+            run=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Run.png",
+                texture_columns=8,
+                size=128,
+            ),
+            walk=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Walk.png",
+                texture_columns=7,
+                size=128,
+            ),
         ),
         over_world_sprites=OverWorldMonsterSprites(
             left=ASSETS_PATH / "sprites" / "pokemon" / "Bulbasaur" / "left.png",
@@ -175,32 +173,96 @@ Monsters = [
             type="Fire",
         ),
         fighter_sprites=FighterSprites(
-            light_attack_melee=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "Attack_2.png",
-            light_attack_range=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "light_ball.png",
-            heavy_attack_range=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "charge_attack.png",
-            heavy_attack_melee=ASSETS_PATH
-            / "sprites"
-            / "pokemon"
-            / "Lightning Mage"
-            / "Attack_1.png",
-            dead=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Dead.png",
-            hurt=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Hurt.png",
-            idle=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Idle.png",
-            jump=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Jump.png",
-            run=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Run.png",
-            walk=ASSETS_PATH / "sprites" / "pokemon" / "Lightning Mage" / "Walk.png",
+            attack_melee=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Attack_2.png",
+                texture_columns=4,
+                size=128,
+            ),
+            attack_range=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Light_ball.png",
+                texture_columns=7,
+                size=128,
+            ),
+            attack_range_heavy=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "charge_attack.png",
+                texture_columns=13,
+                size=128,
+            ),
+            attack_heavy_melee=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Attack_1.png",
+                texture_columns=10,
+                size=128,
+            ),
+            dead=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Dead.png",
+                texture_columns=5,
+                size=128,
+            ),
+            hurt=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Hurt.png",
+                texture_columns=3,
+                size=128,
+            ),
+            idle=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Idle.png",
+                texture_columns=7,
+                size=128,
+            ),
+            jump=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Jump.png",
+                texture_columns=8,
+                size=128,
+            ),
+            run=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Run.png",
+                texture_columns=8,
+                size=128,
+            ),
+            walk=SpriteSheet(
+                spritesheet_path=ASSETS_PATH
+                / "sprites"
+                / "pokemon"
+                / "Lightning Mage"
+                / "Walk.png",
+                texture_columns=7,
+                size=128,
+            ),
         ),
         over_world_sprites=OverWorldMonsterSprites(
             left=ASSETS_PATH / "sprites" / "pokemon" / "Charmander" / "left.png",

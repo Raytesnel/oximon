@@ -1,13 +1,11 @@
 import arcade
 from loguru import logger
 
+from schemas.schemas import KnockBackDamage, AttackClass, Attacks
 from smash_stage.attacks import SimpleMelee, FireBreath, BlueFireBreath
 from smash_stage.fighter import (
     Character,
     NoAttackSet,
-    Attacks,
-    KnockBackDamage,
-    AttackClass,
 )
 from smash_stage.stage import SmashStage
 from utils import SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE

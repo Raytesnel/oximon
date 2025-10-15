@@ -5,7 +5,8 @@ from arcade import Texture
 from arcade.types import XYWH
 from loguru import logger
 
-from pokemon import Monsters, Moves
+from pokemon import Monsters
+from schemas.schemas import Moves
 from utils import POKEMON_SPRITES_PATH, save_state
 
 

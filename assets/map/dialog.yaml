@@ -33,11 +33,11 @@ npc_dude:
       pokemons:
         charmander:
             attacks:
-              - down: blue fire
-              - up: null
-              - left: null
-              - right: null
-              - base: tacle
+              down: blue fire
+              up: null
+              left: null
+              right: null
+              base: tacle
             stats:
               health: 100
               defense: 20

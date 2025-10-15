@@ -57,7 +57,7 @@ class OverworldView(BaseMap):
                             "speed": 10,
                         },
                     }
-                    # TODO select random setup of Monsters
+                    # TODO: make correct monster as input so we get the attacks stats etc. to save( see monster_defeated + monsterdialog to fix this)
                     save_state(self.player_state)
 
                 if self.dialog.kill_monster:

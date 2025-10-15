@@ -1,7 +1,8 @@
 import arcade
 
 from lifeforms.pokemons import WildPokemon
-from smash_stage.fighter import Character, KnockBackDamage, EnemyAI, NoAttackSet
+from schemas.schemas import KnockBackDamage
+from smash_stage.fighter import Character, EnemyAI, NoAttackSet
 from smash_stage.stage import SmashStage
 from utils import SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE
 from utils import SMASH_MAP_PATH, ASSETS_PATH

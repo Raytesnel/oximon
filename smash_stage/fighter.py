@@ -1,42 +1,14 @@
 import random
-from pathlib import Path
 from typing import Optional
 
 import arcade
 from arcade import PhysicsEnginePlatformer
 from loguru import logger
-from pydantic import BaseModel
 
+from schemas.schemas import KnockBackDamage, Attacks, FighterSprites
 from smash_stage.attacks import (
     Attack,
 )
-
-
-class KnockBackDamage(BaseModel):
-    x_position: float
-    y_position: float
-    knockback: float
-    damage: int
-
-
-class CharacterAttack(BaseModel):
-    attack: type[Attack]
-    position: tuple[int, int]
-    end_start_up_frame: int
-    end_attack_frame: int
-    animation: str
-
-
-class AttackClass(BaseModel):
-    up: type[Attack] | None = None
-    down: type[Attack] | None = None
-    side: type[Attack] | None = None
-    neutral: type[Attack] | None = None
-
-
-class Attacks(BaseModel):
-    neutral: AttackClass
-    special: AttackClass
 
 
 class NoAttackSet(Exception):
@@ -44,41 +16,79 @@ class NoAttackSet(Exception):
 
 
 class Character(arcade.Sprite):
-    def __init__(self, asset_path: Path, name: str):
+
+    def __init__(self, asset_path: FighterSprites, name: str):
         super().__init__(scale=1)
         self.animations = {
-            "walk": arcade.load_spritesheet(asset_path / "Walk.png").get_texture_grid(
-                size=(128, 128), columns=7, count=7
+            "walk": arcade.load_spritesheet(
+                asset_path.walk.spritesheet_path
+            ).get_texture_grid(
+                size=(asset_path.walk.size, asset_path.walk.size),
+                columns=asset_path.walk.texture_columns,
+                count=asset_path.walk.texture_columns,
             ),
-            "run": arcade.load_spritesheet(asset_path / "Run.png").get_texture_grid(
-                size=(128, 128), columns=8, count=8
+            "run": arcade.load_spritesheet(
+                asset_path.run.spritesheet_path
+            ).get_texture_grid(
+                size=(asset_path.run.size, asset_path.run.size),
+                columns=asset_path.run.texture_columns,
+                count=asset_path.run.texture_columns,
             ),
-            "jump": arcade.load_spritesheet(asset_path / "Jump.png").get_texture_grid(
-                size=(128, 128), columns=8, count=8
+            "jump": arcade.load_spritesheet(
+                asset_path.jump.spritesheet_path
+            ).get_texture_grid(
+                size=(asset_path.jump.size, asset_path.jump.size),
+                columns=asset_path.jump.texture_columns,
+                count=asset_path.jump.texture_columns,
             ),
-            "idle": arcade.load_spritesheet(asset_path / "Idle.png").get_texture_grid(
-                size=(128, 128), columns=7, count=7
+            "idle": arcade.load_spritesheet(
+                asset_path.idle.spritesheet_path
+            ).get_texture_grid(
+                size=(asset_path.idle.size, asset_path.idle.size),
+                columns=asset_path.idle.texture_columns,
+                count=asset_path.idle.texture_columns,
             ),
-            "hurt": arcade.load_spritesheet(asset_path / "Hurt.png").get_texture_grid(
-                size=(128, 128), columns=3, count=3
+            "hurt": arcade.load_spritesheet(
+                asset_path.hurt.spritesheet_path
+            ).get_texture_grid(
+                size=(asset_path.hurt.size, asset_path.hurt.size),
+                columns=asset_path.hurt.texture_columns,
+                count=asset_path.hurt.texture_columns,
             ),
-            "dead": arcade.load_spritesheet(asset_path / "Dead.png").get_texture_grid(
-                size=(128, 128), columns=5, count=5
+            "dead": arcade.load_spritesheet(
+                asset_path.dead.spritesheet_path
+            ).get_texture_grid(
+                size=(asset_path.dead.size, asset_path.dead.size),
+                columns=asset_path.dead.texture_columns,
+                count=asset_path.dead.texture_columns,
             ),
             "attack_1": arcade.load_spritesheet(
-                asset_path / "Attack_1.png"
-            ).get_texture_grid(size=(128, 128), columns=10, count=10),
-            "attack_2": arcade.load_spritesheet(
-                asset_path / "Attack_2.png"
-            ).get_texture_grid(size=(128, 128), columns=4, count=4),
+                asset_path.attack_heavy_melee.spritesheet_path
+            ).get_texture_grid(
+                size=(
+                    asset_path.attack_heavy_melee.size,
+                    asset_path.attack_heavy_melee.size,
+                ),
+                columns=asset_path.attack_heavy_melee.texture_columns,
+                count=asset_path.attack_heavy_melee.texture_columns,
+            ),
+            "attack_2": arcade.load_spritesheet(  # TODO: rename to melee or range attack
+                asset_path.attack_melee.spritesheet_path
+            ).get_texture_grid(
+                size=(asset_path.attack_melee.size, asset_path.attack_melee.size),
+                columns=asset_path.attack_melee.texture_columns,
+                count=asset_path.attack_melee.texture_columns,
+            ),
             "attack_heavy_1": arcade.load_spritesheet(
-                asset_path / "Light_ball.png"
-            ).get_texture_grid(size=(128, 128), columns=7, count=7),
-            # "attack_heavy_2": arcade.load_spritesheet(asset_path/ "charge_attack.png").get_texture_grid(size=(128, 128), columns=13, count=13),
+                asset_path.attack_range.spritesheet_path
+            ).get_texture_grid(
+                size=(asset_path.attack_range.size, asset_path.attack_range.size),
+                columns=asset_path.attack_range.texture_columns,
+                count=asset_path.attack_range.texture_columns,
+            ),
         }
         self.attack_positions = {"attack_2": (40, -15), "attack_heavy_1": (40, -15)}
-        # TODO: make these textures as input variable.
-
+        # TODO: cut arms legs etc, so we get position from that.
         self.animations["jump_start"] = self.animations["jump"][:3]
         self.animations["jump_up"] = [
             self.animations["jump"][3],
