@@ -16,9 +16,7 @@ from utils import load_state, save_state
 class OverworldView(BaseMap):
 
     def __init__(self, map: Path, possible_gates: list[str], music: Path):
-        self.max_pokemon_per_bush = (
-            3  # TODO: calculate this with surface area of the field.
-        )
+        self.max_pokemon_per_block = 0.05
         self.counter_pokemon = 0
         self.wild_pokemon_list = arcade.SpriteList()
         super().__init__(
@@ -75,15 +73,14 @@ class OverworldView(BaseMap):
             ),
             None,
         )
-        if (
-            self.max_pokemon_per_bush > len(self.wild_pokemon_list)
-            and player_in_pokemon_field is not None
-        ):
-            if self.counter_pokemon > random.uniform(100, 500):
-                self.spawn_pokemon(player_in_pokemon_field)
-            else:
-                self.counter_pokemon += 1
-        elif player_in_pokemon_field is None:
+
+        if self.counter_pokemon > random.uniform(100, 500) and player_in_pokemon_field:
+            self.spawn_pokemon(
+                player_in_pokemon_field, current_monster=len(self.wild_pokemon_list)
+            )
+        else:
+            self.counter_pokemon += 1
+        if player_in_pokemon_field is None:
             self.wild_pokemon_list.clear()
             self.y_sorted_sprites.clear()
         for pokemon in self.wild_pokemon_list:
@@ -108,8 +105,18 @@ class OverworldView(BaseMap):
                 self.player.change_x = 0
                 self.player.change_y = 0
 
-    def spawn_pokemon(self, pokemon_field: TiledObject):
+    def spawn_pokemon(self, pokemon_field: TiledObject, current_monster: int):
         left_top, right_top, right_bottom, left_bottom = pokemon_field.shape
+        max_monster_in_field = int(
+            (
+                ((left_top[0] - right_top[0]) / 32)
+                * ((left_bottom[1] - left_top[1]) / 32)
+            )
+            * self.max_pokemon_per_block
+        )
+        if current_monster > max_monster_in_field:
+            return
+        logger.info(f"{max_monster_in_field} en nu {current_monster}")
         bounds = (left_top[0], right_top[0], left_bottom[1], left_top[1])
         pokemons_allowed_in_field = [
             pokemon for pokemon in Monsters if int(pokemon_field.name) in pokemon.fields
