@@ -33,6 +33,7 @@ class BaseMap(arcade.View):
         self.npc_list = arcade.SpriteList()
         self.possible_gates = possible_gates
         self.camera = arcade.Camera2D()
+        self.map_cam = arcade.Camera2D()
         self.gui_camera = arcade.Camera2D()
         self.dialog: DialogPanel | None = None
         self.player_list = arcade.SpriteList()
@@ -52,6 +53,7 @@ class BaseMap(arcade.View):
 
     def setup(self):
         self.y_sorted_sprites.append(self.player)
+        self.map_cam.position = arcade.Vec2(0, 0)  # always fixed
         for gate in self.possible_gates:
 
             self.possible_gate_objects = [
@@ -65,6 +67,7 @@ class BaseMap(arcade.View):
         self.player_list.draw()
         self.y_sorted_sprites.draw()
         self.scene.get_sprite_list("voorgrond").draw()
+
         self.gui_camera.use()
         if self.dialog and self.dialog.active:
             self.dialog.on_draw()
@@ -120,15 +123,15 @@ class BaseMap(arcade.View):
         screen_width, screen_height = self.window.width, self.window.height
 
         # Clamp camera position so it doesn't scroll outside map boundaries
-        cam_x = max(
+        self.cam_x = max(
             screen_width // 2, min(self.player.center_x, map_width - screen_width // 2)
         )
-        cam_y = max(
+        self.cam_y = max(
             screen_height // 2,
             min(self.player.center_y, map_height - screen_height // 2),
         )
 
-        self.camera.position = arcade.Vec2(cam_x, cam_y)
+        self.camera.position = arcade.Vec2(self.cam_x, self.cam_y)
 
     def _read_all_entrances(
         self,

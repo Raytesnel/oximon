@@ -11,7 +11,7 @@ from initate_battle import BattleSplashView
 from lifeforms.pokemons import WildPokemon
 from pokemon import Monsters
 from utils import load_state, save_state
-
+from arcade.experimental import Shadertoy
 
 class OverworldView(BaseMap):
 
@@ -19,17 +19,38 @@ class OverworldView(BaseMap):
         self.max_pokemon_per_block = 0.05
         self.counter_pokemon = 0
         self.wild_pokemon_list = arcade.SpriteList()
+        self.mist_shader = None
+        self.time = 0.0
         super().__init__(
             map=map, possible_gates=possible_gates, music=music, current_player=0.2
         )
 
     def setup(self):
         super().setup()
+        # Load shader
+        shader_path = Path("assets/map/mist.glsl")
+        self.mist_shader = Shadertoy.create_from_file(self.window.get_size(), shader_path)
         self.y_sorted_sprites.extend(self.scene["grass"])
         self.y_sorted_sprites.extend(self.wild_pokemon_list)
 
+    def on_draw(self):
+        super().on_draw()
+
+        if self.mist_shader:
+            self.map_cam.position = arcade.Vec2(0, 0)
+            self.map_cam.zoom = 1.0
+            ctx = self.window.ctx
+            ctx.enable(ctx.BLEND)
+            ctx.blend_func = (ctx.SRC_ALPHA, ctx.ONE_MINUS_SRC_ALPHA)
+            cam_x, cam_y = float(self.camera.position[0]), float(self.camera.position[1])
+            self.mist_shader.program["iCamera"] = (cam_x, cam_y)
+            self.mist_shader.render(time=self.time)
+
     def on_update(self, delta_time):
         super().on_update(delta_time)
+        self.time +=delta_time
+        if self.mist_shader:
+            self.mist_shader.render(time=self.time)
         if self.dialog:
             pokemon_defeated = [
                 pokemon for pokemon in self.wild_pokemon_list if not pokemon.alive
