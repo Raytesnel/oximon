@@ -1,3 +1,3 @@
-# pokesmash
-A pokemon game with platform fighting
-with some nice artworks
+# Oximon
+A monster capture game with realtime fighting and no leveling system.
+written in rust using Bevy
