@@ -15,6 +15,8 @@ impl Plugin for MovementPlugin {
                 apply_acceleration,
                 apply_friction.after(apply_acceleration),
                 apply_velocity.after(apply_friction),
+                handle_dash_input,
+                update_dash,
             ),
         );
     }
