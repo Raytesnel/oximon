@@ -9,15 +9,22 @@ pub struct MovementPlugin;
 
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
+        // INPUT (frame-based)
+        app.add_systems(Update, handle_dash_input);
+
+        // SIMULATION (fixed)
         app.add_systems(
-            Update,
+            FixedUpdate,
             (
+                update_dash_timer,
+                update_recover,
+                update_movement_state,
                 apply_acceleration,
-                apply_friction.after(apply_acceleration),
-                apply_velocity.after(apply_friction),
-                handle_dash_input,
-                update_dash,
-            ),
+                apply_friction,
+                apply_velocity,
+                debug_movement_state_changes,
+            )
+                .chain(),
         );
     }
 }
