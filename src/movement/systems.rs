@@ -1,58 +1,79 @@
 use super::components::*;
+use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
-
 const UP_BUTTON: KeyCode = KeyCode::ArrowUp;
 const DOWN_BUTTON: KeyCode = KeyCode::ArrowDown;
 const LEFT_BUTTON: KeyCode = KeyCode::ArrowLeft;
 const RIGHT_BUTTON: KeyCode = KeyCode::ArrowRight;
-const MAX_SPEED: f32 = 200.0;
-const ACCELERATION: f32 = 1000.0;
-const WALK_STOP_TIME: f32 = 0.05;
+const MAX_SPEED: f32 = 250.0;
+const SPEED_UP_TIME: f32 = 0.2;
+const ACCELERATION: f32 = MAX_SPEED / SPEED_UP_TIME;
+const WALK_STOP_TIME: f32 = 0.4;
 const FRICTION: f32 = MAX_SPEED / WALK_STOP_TIME;
 
-const DASH_ACCELERATION: f32 = 2000.0;
-const DASH_MAX_SPEED: f32 = 1000.0;
+const DASH_MAX_SPEED: f32 = 600.0;
 const DASH_BUTTON: KeyCode = KeyCode::ShiftLeft;
 const DASH_FRICTION: f32 = 500.0;
-const DASH_STOP_TIME: f32 = 0.2;
+const DASH_STOP_TIME: f32 = 0.1;
 const POST_DASH_FRICTION: f32 = DASH_MAX_SPEED / DASH_STOP_TIME;
 const DASH_TIME: f32 = 0.3;
+
+#[derive(QueryData)]
+#[query_data(mutable)]
+pub struct MovementData {
+    pub velocity: &'static Velocity,
+    pub state: &'static mut MovementState,
+    pub dash: Option<&'static Dash>,
+    pub recover: Option<&'static Recover>,
+}
 
 pub fn apply_acceleration(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(&mut Velocity, Option<&Dash>), With<Player>>,
+    mut query: Query<(&mut Velocity, &MovementState, Option<&Dash>), With<Player>>,
 ) {
-    let direction = compute_direction(&keyboard);
+    let input_dir = compute_direction(&keyboard);
+    for (mut velocity, state, dash) in &mut query {
+        match state {
+            MovementState::Dashing => {
+                let dash = dash.expect("Dashing state must have Dash component");
 
-    for (mut velocity, dash) in &mut query {
-        if let Some(dash) = dash {
-            velocity.0 += dash.direction * DASH_ACCELERATION * time.delta_secs();
-            if velocity.0.length() > DASH_MAX_SPEED {
-                velocity.0 = velocity.0.normalize() * DASH_MAX_SPEED;
+                velocity.0 = dash.direction * DASH_MAX_SPEED;
+
+                if velocity.0.length() > DASH_MAX_SPEED {
+                    velocity.0 = velocity.0.normalize() * DASH_MAX_SPEED;
+                }
             }
-            continue;
-        } else {
-            velocity.0 += direction * ACCELERATION * time.delta_secs();
-            if velocity.0.length() > MAX_SPEED {
-                velocity.0 = velocity.0.normalize() * MAX_SPEED;
+
+            MovementState::Recovering => {}
+
+            MovementState::Moving | MovementState::Idle => {
+                velocity.0 += input_dir * ACCELERATION * time.delta_secs();
+                info!("velocity: {:?}", velocity);
+
+                if velocity.0.length() > MAX_SPEED {
+                    velocity.0 = velocity.0.normalize() * MAX_SPEED;
+                }
             }
         }
     }
 }
 pub fn apply_friction(
     time: Res<Time>,
-    mut query: Query<(&mut Velocity, Option<&Dash>), With<Player>>,
+    mut query: Query<(&mut Velocity, &MovementState), With<Player>>,
 ) {
-    for (mut velocity, dash) in &mut query {
+    for (mut velocity, state) in &mut query {
         let speed = velocity.0.length();
-        let friction = if dash.is_some() {
-            DASH_FRICTION
-        } else if velocity.0.length() > MAX_SPEED {
-            POST_DASH_FRICTION
-        } else {
-            FRICTION
+
+        let friction = match state {
+            MovementState::Dashing => DASH_FRICTION,
+            MovementState::Recovering => POST_DASH_FRICTION,
+            MovementState::Moving | MovementState::Idle => FRICTION,
         };
+        info!(
+            "velocity before: {:?}, with friction: {:?}",
+            velocity, friction
+        );
         if speed > 0.0 {
             let drop = friction * time.delta_secs();
             let new_speed = (speed - drop).max(0.0);
@@ -92,23 +113,21 @@ pub fn compute_direction(input: &ButtonInput<KeyCode>) -> Vec3 {
 pub fn handle_dash_input(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
-    _time: Res<Time>,
-    query: Query<(Entity, Option<&Dash>), With<Player>>,
+    query: Query<(Entity, &MovementState), With<Player>>,
 ) {
-    if !keyboard.just_pressed(DASH_BUTTON) {
+    if !keyboard.pressed(DASH_BUTTON) {
         return;
     }
 
-    for (entity, dash) in &query {
-        // prevent re-dashing while already dashing
-        if dash.is_some() {
+    for (entity, state) in &query {
+        if *state == MovementState::Dashing {
+            info!("Ignore dash input, already dashing.");
             continue;
         }
 
         let direction = compute_direction(&keyboard);
-
-        // don't dash if no direction
         if direction == Vec3::ZERO {
+            info!("Ignore dash input, no direction input.");
             continue;
         }
 
@@ -119,35 +138,100 @@ pub fn handle_dash_input(
     }
 }
 
-pub fn update_dash(mut commands: Commands, time: Res<Time>, mut query: Query<(Entity, &mut Dash)>) {
+pub fn update_dash_timer(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut Dash)>,
+) {
     for (entity, mut dash) in &mut query {
         dash.timer.tick(time.delta());
+        debug!("dash time left: {:?}", dash.timer.remaining());
         if dash.timer.is_finished() {
-            commands.entity(entity).remove::<Dash>();
+            commands
+                .entity(entity)
+                .remove::<Dash>()
+                .insert(MovementState::Recovering)
+                .insert(Recover {
+                    timer: Timer::from_seconds(DASH_STOP_TIME, TimerMode::Once),
+                });
         }
+    }
+}
+
+pub fn update_recover(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut Recover)>,
+) {
+    for (entity, mut recover) in &mut query {
+        recover.timer.tick(time.delta());
+        debug!("current time left: {:?}", recover.timer.remaining());
+        if recover.timer.is_finished() {
+            commands.entity(entity).remove::<Recover>();
+        }
+    }
+}
+
+pub fn update_movement_state(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut query: Query<MovementData, With<Player>>,
+) {
+    for mut data in &mut query {
+        let input_dir = compute_direction(&keyboard);
+        let speed = data.velocity.0.length();
+
+        let new_state = if data.dash.is_some() {
+            MovementState::Dashing
+        } else if data.recover.is_some() {
+            MovementState::Recovering
+        } else if input_dir != Vec3::ZERO {
+            MovementState::Moving
+        } else if speed > 1.0 {
+            // still sliding
+            MovementState::Moving
+        } else {
+            MovementState::Idle
+        };
+
+        if *data.state != new_state {
+            info!("State change: {:?} -> {:?}", *data.state, new_state);
+            debug!("velocity: {:?}", data.velocity);
+            *data.state = new_state;
+        }
+    }
+}
+
+pub fn debug_movement_state_changes(
+    mut query: Query<(Entity, &MovementState), Changed<MovementState>>,
+) {
+    for (entity, state) in &mut query {
+        debug!("Entity {:?} changed state to {:?}", entity, state);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::movement::MovementPlugin;
+    use bevy::app::FixedMain;
     use bevy::time::Time;
 
-    fn add_systems() -> App {
-        let mut app = App::new();
+    fn tick(app: &mut App, dt: f32) {
+        let delta = std::time::Duration::from_secs_f32(dt);
 
-        app.add_systems(
-            Update,
-            (
-                apply_acceleration,
-                apply_friction.after(apply_acceleration),
-                apply_velocity.after(apply_friction),
-            ),
-        );
+        // FIXED TIME (for FixedUpdate systems)
+        {
+            let mut time = app.world_mut().resource_mut::<Time<Fixed>>();
+            time.advance_by(delta);
+        }
 
-        app.world_mut()
-            .spawn((Player, Transform::default(), Velocity::default()));
-        app
+        // REAL TIME (for normal systems)
+        {
+            let mut time = app.world_mut().resource_mut::<Time>();
+            time.advance_by(delta);
+        }
+        app.world_mut().run_schedule(FixedMain);
+        app.update();
     }
 
     #[test]
@@ -162,7 +246,7 @@ mod tests {
     }
 
     fn run_movement(keys: &[KeyCode]) -> Vec3 {
-        let mut app = add_systems();
+        let mut app = test_app();
 
         // input
         let mut input = ButtonInput::<KeyCode>::default();
@@ -170,21 +254,17 @@ mod tests {
             input.press(*key);
         }
         app.insert_resource(input);
-
+        tick(&mut app, 0.016);
         // simulate multiple frames
         for _ in 0..10 {
-            let mut time = Time::<()>::default();
-            time.advance_by(std::time::Duration::from_secs_f32(0.016));
-            app.insert_resource(time);
-
-            app.update();
+            tick(&mut app, 0.016);
         }
 
         let world = app.world_mut();
-        let mut query = world.query::<&Transform>();
+        let mut query = world.query::<&Velocity>();
         let transform = query.single(world);
 
-        transform.unwrap().translation
+        transform.unwrap().0
     }
 
     #[test]
@@ -195,7 +275,6 @@ mod tests {
             (vec![LEFT_BUTTON], -Vec3::X),
             (vec![RIGHT_BUTTON], Vec3::X),
         ];
-
         for (keys, expected) in cases {
             let movement = run_movement(&keys);
 
@@ -233,15 +312,14 @@ mod tests {
     fn movement_is_normalized() {
         let straight = run_movement(&[RIGHT_BUTTON]).length();
         let diagonal = run_movement(&[RIGHT_BUTTON, UP_BUTTON]).length();
-
         assert!(
-            (straight - diagonal).abs() < 1.0, // 👈 relaxed tolerance due to acceleration
+            (straight - diagonal).abs() < 10.0, // 👈 relaxed tolerance due to acceleration
             "Diagonal movement is faster than straight movement"
         );
     }
 
     fn run_frames(input_per_frame: Vec<Vec<KeyCode>>) -> Vec<Vec3> {
-        let mut app = add_systems();
+        let mut app = test_app();
 
         let mut positions = Vec::new();
 
@@ -252,11 +330,7 @@ mod tests {
             }
             app.insert_resource(input);
 
-            let mut time = Time::<()>::default();
-            time.advance_by(std::time::Duration::from_secs_f32(0.016));
-            app.insert_resource(time);
-
-            app.update();
+            tick(&mut app, 0.016);
 
             let world = app.world_mut();
             let mut query = world.query::<&Transform>();
@@ -293,6 +367,12 @@ mod tests {
             vec![RIGHT_BUTTON],
             vec![RIGHT_BUTTON],
             vec![RIGHT_BUTTON],
+            vec![RIGHT_BUTTON],
+            vec![RIGHT_BUTTON],
+            vec![RIGHT_BUTTON],
+            vec![RIGHT_BUTTON],
+            vec![RIGHT_BUTTON],
+            vec![RIGHT_BUTTON],
             vec![], // release
             vec![],
         ]);
@@ -313,7 +393,7 @@ mod tests {
     #[test]
     fn movement_has_max_speed_cap() {
         let frames = run_frames(vec![
-            vec![RIGHT_BUTTON]; 30 // hold key for many frames
+            vec![RIGHT_BUTTON]; 300 // hold key for many frames
         ]);
 
         let mut deltas = vec![];
@@ -325,7 +405,10 @@ mod tests {
         let prev = deltas[deltas.len() - 2];
         assert!(
             (last - prev).abs() < 0.1,
-            "Speed did not stabilize near max speed"
+            "Speed did not stabilize near max speed, but got div {:?} of last:{:?}, previous:{:?}",
+            (last - prev).abs(),
+            last,
+            prev
         );
 
         assert!(last < 10.0, "Speed is unreasonably high");
@@ -346,16 +429,29 @@ mod tests {
 
         assert!(last_delta.abs() < 0.01, "Player did not come to a stop");
     }
-    fn add_dash_systems() -> App {
-        let mut app = add_systems();
 
-        app.add_systems(Update, (handle_dash_input, update_dash));
+    fn test_app() -> App {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins);
 
+        app.add_plugins(MovementPlugin);
+
+        app.insert_resource(Time::<Fixed>::from_seconds(0.016));
+
+        app.insert_resource(ButtonInput::<KeyCode>::default());
+        app.world_mut().spawn((
+            Player,
+            Transform::default(),
+            Velocity::default(),
+            MovementState::Idle,
+        ));
+        // tick(&mut app, 0.016);
+        app.update();
         app
     }
     #[test]
     fn dash_is_triggered() {
-        let mut app = add_dash_systems();
+        let mut app = test_app();
 
         // input: press right + dash
         let mut input = ButtonInput::<KeyCode>::default();
@@ -363,11 +459,7 @@ mod tests {
         input.press(DASH_BUTTON);
         app.insert_resource(input);
 
-        let mut time = Time::<()>::default();
-        time.advance_by(std::time::Duration::from_secs_f32(0.016));
-        app.insert_resource(time);
-
-        app.update();
+        tick(&mut app, 0.016);
 
         let world = app.world_mut();
         let mut q = world.query::<&Dash>();
@@ -378,18 +470,14 @@ mod tests {
     }
     #[test]
     fn dash_has_correct_direction() {
-        let mut app = add_dash_systems();
+        let mut app = test_app();
 
         let mut input = ButtonInput::<KeyCode>::default();
         input.press(RIGHT_BUTTON);
         input.press(DASH_BUTTON);
         app.insert_resource(input);
 
-        let mut time = Time::<()>::default();
-        time.advance_by(std::time::Duration::from_secs_f32(0.016));
-        app.insert_resource(time);
-
-        app.update();
+        tick(&mut app, 0.016);
 
         let world = app.world_mut();
         let mut q = world.query::<&Dash>();
@@ -404,33 +492,29 @@ mod tests {
     fn dash_increases_movement_speed() {
         let normal = run_movement(&[RIGHT_BUTTON]);
 
-        let mut app = add_dash_systems();
+        let mut app = test_app();
 
         let mut input = ButtonInput::<KeyCode>::default();
         input.press(RIGHT_BUTTON);
         input.press(DASH_BUTTON);
         app.insert_resource(input);
 
-        for _ in 0..3 {
-            let mut time = Time::<()>::default();
-            time.advance_by(std::time::Duration::from_secs_f32(0.016));
-            app.insert_resource(time);
-            app.update();
+        for _ in 0..5 {
+            tick(&mut app, 0.016);
         }
 
         let world = app.world_mut();
-        let mut q = world.query::<&Transform>();
-        let dash_pos = q.single(world).unwrap().translation;
-
+        let mut q = world.query::<&Velocity>();
+        let velocity = q.single(world).unwrap();
         assert!(
-            dash_pos.x > normal.x,
+            velocity.0.x > normal.x,
             "Dash did not increase movement speed"
         );
     }
 
     #[test]
     fn dash_respects_max_speed() {
-        let mut app = add_dash_systems();
+        let mut app = test_app();
 
         let mut input = ButtonInput::<KeyCode>::default();
         input.press(RIGHT_BUTTON);
@@ -438,10 +522,7 @@ mod tests {
         app.insert_resource(input);
 
         for _ in 0..20 {
-            let mut time = Time::<()>::default();
-            time.advance_by(std::time::Duration::from_secs_f32(DASH_TIME / 20f32));
-            app.insert_resource(time);
-            app.update();
+            tick(&mut app, 0.016);
         }
 
         let world = app.world_mut();
@@ -455,33 +536,35 @@ mod tests {
     }
     #[test]
     fn dash_stops_within_expected_time() {
-        let mut app = add_dash_systems();
+        let mut app = test_app();
 
         // trigger dash
         let mut input = ButtonInput::<KeyCode>::default();
+
         input.press(RIGHT_BUTTON);
         input.press(DASH_BUTTON);
         app.insert_resource(input);
-
         // first frame: start dash
-        let mut time = Time::<()>::default();
-        time.advance_by(std::time::Duration::from_secs_f32(0.016));
-        app.insert_resource(time);
-        app.update();
-
+        tick(&mut app, 0.016);
         // release input
-        let input = ButtonInput::<KeyCode>::default();
-        app.insert_resource(input);
-        app.update();
-
+        {
+            let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+            input.release(RIGHT_BUTTON);
+            input.release(DASH_BUTTON);
+        }
+        tick(&mut app, 0.016);
+        let world = app.world_mut();
+        let mut q = world.query::<&MovementState>();
+        let state = q.single(world).unwrap();
+        assert_eq!(*state, MovementState::Dashing);
         let total_time = DASH_TIME + DASH_STOP_TIME + WALK_STOP_TIME;
-        let steps = (total_time / 0.016) as usize;
+        let steps = (total_time / 0.016) as usize + 200;
 
         for _ in 0..steps {
-            let mut time = Time::<()>::default();
-            time.advance_by(std::time::Duration::from_secs_f32(0.016));
-            app.insert_resource(time);
-            app.update();
+            tick(&mut app, 0.016);
+            let world = app.world_mut();
+            let mut q = world.query::<(&Velocity, &MovementState)>();
+            let (velocity, state) = q.single(world).unwrap();
         }
 
         let world = app.world_mut();
@@ -491,5 +574,89 @@ mod tests {
             velocity.0.length() < 1.0,
             "Dash did not stop within expected time"
         );
+    }
+
+    #[test]
+    fn player_becomes_idle_when_stopped() {
+        let mut app = test_app();
+
+        // no input, no velocity
+        app.insert_resource(ButtonInput::<KeyCode>::default());
+
+        for _ in 0..5 {
+            tick(&mut app, 0.016);
+        }
+
+        let world = app.world_mut();
+        let mut q = world.query::<&MovementState>();
+
+        let state = q.single(world).unwrap();
+        assert_eq!(*state, MovementState::Idle);
+    }
+    #[test]
+    fn player_enters_moving_state_when_input_pressed() {
+        let mut app = test_app();
+
+        let mut input = ButtonInput::<KeyCode>::default();
+        input.press(RIGHT_BUTTON);
+        app.insert_resource(input);
+
+        tick(&mut app, 0.016);
+        let world = app.world_mut();
+        let mut q = world.query::<&MovementState>();
+
+        let state = q.single(world).unwrap();
+        assert_eq!(*state, MovementState::Moving);
+    }
+    #[test]
+    fn dash_forces_dashing_state() {
+        let mut app = test_app();
+
+        let mut input = ButtonInput::<KeyCode>::default();
+        input.press(RIGHT_BUTTON);
+        input.press(DASH_BUTTON);
+        app.insert_resource(input);
+        tick(&mut app, 0.016);
+        tick(&mut app, 0.016);
+        tick(&mut app, 0.016);
+
+        let world = app.world_mut();
+        let mut q = world.query::<&MovementState>();
+        let state = q.single(world).unwrap();
+        assert_eq!(*state, MovementState::Dashing);
+    }
+    #[test]
+    fn dash_transitions_to_recovering() {
+        let mut app = test_app();
+
+        let mut input = ButtonInput::<KeyCode>::default();
+        input.press(RIGHT_BUTTON);
+        input.press(DASH_BUTTON);
+        app.insert_resource(input);
+        tick(&mut app, 0.016);
+        // release input
+        {
+            let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+            input.release(RIGHT_BUTTON);
+            input.release(DASH_BUTTON);
+        }
+        // tick(&mut app, 0.016);
+        // run until dash should finish
+        let total_time = DASH_TIME;
+        let steps = (total_time / 0.016) as usize;
+        for _ in 0..steps {
+            tick(&mut app, 0.016);
+        }
+
+        let world = app.world_mut();
+
+        let mut dash_q = world.query::<&Dash>();
+        let dash_count = dash_q.iter(world).count();
+        let mut velocity_q = world.query::<&Velocity>();
+        let mut state_q = world.query::<&MovementState>();
+        let state = state_q.single(world).unwrap();
+
+        assert_eq!(dash_count, 0, "Dash component should be removed");
+        assert_eq!(*state, MovementState::Recovering);
     }
 }

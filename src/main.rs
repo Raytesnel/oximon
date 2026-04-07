@@ -2,7 +2,7 @@ pub mod movement;
 
 use crate::movement::MovementPlugin;
 use bevy::prelude::*;
-use movement::components::{Player, Velocity};
+use movement::components::{MovementState, Player, Velocity};
 
 fn main() {
     App::new()
@@ -23,5 +23,6 @@ fn setup(mut commands: Commands) {
         Transform::from_xyz(0., 0., 0.),
         Player,
         Velocity::default(),
+        MovementState::Idle,
     ));
 }
