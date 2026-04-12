@@ -201,6 +201,22 @@ pub fn update_movement_state(
     }
 }
 
+pub fn update_facing(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut query: Query<&mut Facing, With<Player>>,
+) {
+    let input_dir = compute_direction(&keyboard).truncate();
+
+    if input_dir.length() > 0.1 {
+        let dir = input_dir.normalize();
+
+        for mut facing in &mut query {
+            info!("Facing direction: {:?}", dir);
+            facing.0 = dir;
+        }
+    }
+}
+
 pub fn debug_movement_state_changes(
     mut query: Query<(Entity, &MovementState), Changed<MovementState>>,
 ) {
@@ -444,11 +460,51 @@ mod tests {
             Player,
             Transform::default(),
             Velocity::default(),
+            Facing(Vec2::X),
             MovementState::Idle,
         ));
         // tick(&mut app, 0.016);
         app.update();
         app
+    }
+    #[test]
+    fn check_face_position_is_same_as_last_input_vector(){
+        let mut app = test_app();
+        let mut input = ButtonInput::<KeyCode>::default();
+        input.press(RIGHT_BUTTON);
+        app.insert_resource(input);
+        tick(&mut app, 0.016);
+
+        let world = app.world_mut();
+        let mut q = world.query::<&Facing>();
+        let facing = q.single(world).unwrap();
+
+        assert!(
+            facing.0.distance(Vec2::X) < 0.01,
+            "Facing was {:?}, expected RIGHT",
+            facing.0
+        );
+    }
+    #[test]
+    fn check_face_position_updates_when_changing_orientation(){
+        let mut app = test_app();
+        tick(&mut app, 0.016);
+        {
+            let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+            input.press(LEFT_BUTTON);
+            input.press(UP_BUTTON);
+        }
+        tick(&mut app, 0.016);
+        let world = app.world_mut();
+        let mut q = world.query::<&Facing>();
+        let facing = q.single(world).unwrap();
+
+        let expected = Vec2::new(-1.0, 1.0).normalize();
+        assert!(
+            facing.0.distance(expected) < 0.01,
+            "Facing was {:?}, expected up-left",
+            facing.0
+        );
     }
     #[test]
     fn dash_is_triggered() {

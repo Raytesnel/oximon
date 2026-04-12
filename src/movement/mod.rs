@@ -19,6 +19,7 @@ impl Plugin for MovementPlugin {
                 update_dash_timer,
                 update_recover,
                 update_movement_state,
+                update_facing,
                 apply_acceleration,
                 apply_friction,
                 apply_velocity,

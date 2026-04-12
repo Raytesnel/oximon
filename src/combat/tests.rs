@@ -16,10 +16,16 @@ fn test_app() -> App {
 fn damage_reduces_health() {
     let mut app = test_app();
 
-    let entity = app.world_mut().spawn((
-        Health { current: 100.0, max: 100.0 },
-        CombatState::Idle,
-    )).id();
+    let entity = app
+        .world_mut()
+        .spawn((
+            Health {
+                current: 100.0,
+                max: 100.0,
+            },
+            CombatState::Idle,
+        ))
+        .id();
 
     app.add_message::<DamageEvent>();
     app.world_mut().write_message(DamageEvent {
@@ -37,10 +43,16 @@ fn damage_reduces_health() {
 fn entity_dies_when_health_zero() {
     let mut app = test_app();
 
-    let entity = app.world_mut().spawn((
-        Health { current: 20.0, max: 100.0 },
-        CombatState::Idle,
-    )).id();
+    let entity = app
+        .world_mut()
+        .spawn((
+            Health {
+                current: 20.0,
+                max: 100.0,
+            },
+            CombatState::Idle,
+        ))
+        .id();
 
     app.add_message::<DamageEvent>();
     app.world_mut().write_message(DamageEvent {

@@ -1,14 +1,15 @@
-pub mod movement;
 mod combat;
 mod common;
+pub mod movement;
 
-use crate::movement::MovementPlugin;
-use bevy::prelude::*;
-use common::components::Enemy;
-use movement::components::{MovementState, Velocity};
 use crate::combat::CombatPlugin;
 use crate::combat::components::{CombatState, Health, Stats};
 use crate::common::components::Player;
+use crate::movement::MovementPlugin;
+use crate::movement::components::Facing;
+use bevy::prelude::*;
+use common::components::Enemy;
+use movement::components::{MovementState, Velocity};
 
 fn main() {
     App::new()
@@ -30,40 +31,32 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         Transform::from_xyz(0., 0., 0.),
-
         Player,
+        Facing(Vec2::X),
         Velocity::default(),
         MovementState::Idle,
-
         Health {
             current: 100.0,
             max: 100.0,
         },
-        Stats {
-            attack: 25.0,
-        },
+        Stats { attack: 25.0 },
         CombatState::Idle,
     ));
 
     // Dummy enemy
     commands.spawn((
         Sprite {
-            color: Color::srgb(0.,0.,1.0),
+            color: Color::srgb(0., 0., 1.0),
             custom_size: Some(Vec2::new(20.0, 20.0)),
             ..default()
         },
         Transform::from_xyz(100.0, 0.0, 0.0),
-
         Enemy,
-
         Health {
             current: 100.0,
             max: 100.0,
         },
-        Stats {
-            attack: 25.0,
-        },
+        Stats { attack: 25.0 },
         CombatState::Idle,
     ));
-
 }
