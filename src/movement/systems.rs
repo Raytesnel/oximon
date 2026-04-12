@@ -1,6 +1,8 @@
 use super::components::*;
+use crate::common::components::Player;
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
+
 const UP_BUTTON: KeyCode = KeyCode::ArrowUp;
 const DOWN_BUTTON: KeyCode = KeyCode::ArrowDown;
 const LEFT_BUTTON: KeyCode = KeyCode::ArrowLeft;
@@ -49,8 +51,6 @@ pub fn apply_acceleration(
 
             MovementState::Moving | MovementState::Idle => {
                 velocity.0 += input_dir * ACCELERATION * time.delta_secs();
-                info!("velocity: {:?}", velocity);
-
                 if velocity.0.length() > MAX_SPEED {
                     velocity.0 = velocity.0.normalize() * MAX_SPEED;
                 }
@@ -70,7 +70,7 @@ pub fn apply_friction(
             MovementState::Recovering => POST_DASH_FRICTION,
             MovementState::Moving | MovementState::Idle => FRICTION,
         };
-        info!(
+        debug!(
             "velocity before: {:?}, with friction: {:?}",
             velocity, friction
         );
@@ -212,6 +212,7 @@ pub fn debug_movement_state_changes(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::common::components::Player;
     use crate::movement::MovementPlugin;
     use bevy::app::FixedMain;
     use bevy::time::Time;
