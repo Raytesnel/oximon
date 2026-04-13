@@ -20,12 +20,10 @@ impl Plugin for MovementPlugin {
                 update_recover,
                 update_movement_state,
                 update_facing,
-                apply_acceleration,
-                apply_friction,
-                apply_velocity,
-                debug_movement_state_changes,
-            )
-                .chain(),
+                apply_acceleration.after(update_facing),
+                apply_friction.after(apply_acceleration),
+                apply_velocity.after(apply_acceleration),
+            ),
         );
     }
 }

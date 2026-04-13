@@ -70,10 +70,6 @@ pub fn apply_friction(
             MovementState::Recovering => POST_DASH_FRICTION,
             MovementState::Moving | MovementState::Idle => FRICTION,
         };
-        debug!(
-            "velocity before: {:?}, with friction: {:?}",
-            velocity, friction
-        );
         if speed > 0.0 {
             let drop = friction * time.delta_secs();
             let new_speed = (speed - drop).max(0.0);
@@ -121,13 +117,13 @@ pub fn handle_dash_input(
 
     for (entity, state) in &query {
         if *state == MovementState::Dashing {
-            info!("Ignore dash input, already dashing.");
+            debug!("Ignore dash input, already dashing.");
             continue;
         }
 
         let direction = compute_direction(&keyboard);
         if direction == Vec3::ZERO {
-            info!("Ignore dash input, no direction input.");
+            debug!("Ignore dash input, no direction input.");
             continue;
         }
 
@@ -145,7 +141,6 @@ pub fn update_dash_timer(
 ) {
     for (entity, mut dash) in &mut query {
         dash.timer.tick(time.delta());
-        debug!("dash time left: {:?}", dash.timer.remaining());
         if dash.timer.is_finished() {
             commands
                 .entity(entity)
@@ -165,24 +160,28 @@ pub fn update_recover(
 ) {
     for (entity, mut recover) in &mut query {
         recover.timer.tick(time.delta());
-        debug!("current time left: {:?}", recover.timer.remaining());
         if recover.timer.is_finished() {
             commands.entity(entity).remove::<Recover>();
         }
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn update_movement_state(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<MovementData, With<Player>>,
+    mut query: Query<(
+        &Velocity,
+        &mut MovementState,
+        Option<&Dash>,
+        Option<&Recover>,
+    ), With<Player>>,
 ) {
-    for mut data in &mut query {
+    for (mut velocity,mut movement_state, dash, recover) in &mut query  {
         let input_dir = compute_direction(&keyboard);
-        let speed = data.velocity.0.length();
-
-        let new_state = if data.dash.is_some() {
+        let speed = velocity.0.length();
+        let new_state = if dash.is_some() {
             MovementState::Dashing
-        } else if data.recover.is_some() {
+        } else if recover.is_some() {
             MovementState::Recovering
         } else if input_dir != Vec3::ZERO {
             MovementState::Moving
@@ -193,10 +192,9 @@ pub fn update_movement_state(
             MovementState::Idle
         };
 
-        if *data.state != new_state {
-            info!("State change: {:?} -> {:?}", *data.state, new_state);
-            debug!("velocity: {:?}", data.velocity);
-            *data.state = new_state;
+        if *movement_state != new_state {
+            debug!("State change: {:?} -> {:?}", *movement_state, new_state);
+            *movement_state = new_state;
         }
     }
 }
@@ -211,7 +209,6 @@ pub fn update_facing(
         let dir = input_dir.normalize();
 
         for mut facing in &mut query {
-            info!("Facing direction: {:?}", dir);
             facing.0 = dir;
         }
     }

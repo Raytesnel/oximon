@@ -3,6 +3,8 @@ use super::events::*;
 use crate::common::components::{Enemy, Player};
 use bevy::ecs::error::info;
 use bevy::prelude::*;
+use crate::movement::components::Facing;
+const ATTACK_RANGE: f32 = 100.0; // ~5 blocks
 
 pub fn apply_damage_system(
     mut events: MessageReader<DamageEvent>,
@@ -30,53 +32,38 @@ pub fn apply_damage_system(
         }
     }
 }
-
-pub fn simple_attack_system(
-    mut damage_writer: MessageWriter<DamageEvent>,
-    query: Query<(Entity, &Transform, &Stats)>,
-) {
-    let entities: Vec<_> = query.iter().collect();
-
-    for (attacker, transform, stats) in &entities {
-        for (target, target_transform, _) in &entities {
-            if attacker == target {
-                continue;
-            }
-
-            let distance = transform.translation.distance(target_transform.translation);
-
-            if distance < 50.0 {
-                damage_writer.write(DamageEvent {
-                    target: *target,
-                    amount: stats.attack,
-                });
-            }
-        }
-    }
-}
-
 pub fn player_attack_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<(Entity, &Stats), With<Player>>,
-    targets: Query<Entity, (With<Enemy>, With<Health>)>,
+    player_query: Query<(&Transform, &Facing, &Stats), With<Player>>,
+    enemies: Query<(Entity, &Transform), With<Enemy>>,
     mut writer: MessageWriter<DamageEvent>,
 ) {
     if !keyboard.just_pressed(KeyCode::Space) {
         return;
     }
-    info!("Attack!");
-    // for now: hit first enemy found (prototype)
-    info!("player count: {}", query.iter().count());
-    if let Some(target) = targets.iter().next() {
-        info!("attacking {:?}", target);
-        for (_player, stats) in query.iter() {
-            writer.write(DamageEvent {
-                target,
-                amount: stats.attack,
-            });
-            info!("message send to attack :{:?}", target);
+
+    for (player_transform, facing, stats) in &player_query {
+        let origin = player_transform.translation.truncate();
+        let forward = facing.0.normalize();
+        for (enemy, enemy_transform) in &enemies {
+            let to_enemy = enemy_transform.translation.truncate() - origin;
+            let distance = to_enemy.length();
+            if distance > ATTACK_RANGE {
+                info!("attack missed, {:?}, but character is {:?}",ATTACK_RANGE,to_enemy);
+                continue;
+            }
+
+            let dir = to_enemy.normalize_or_zero();
+
+            // ✅ must be in front (cone check)
+            let alignment = dir.dot(forward);
+
+            if alignment > 0.6 {
+                writer.write(DamageEvent {
+                    target: enemy,
+                    amount: stats.attack,
+                });
+            }
         }
-    } else {
-        info!("no target found, ");
     }
 }
