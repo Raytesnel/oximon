@@ -4,7 +4,7 @@ pub mod movement;
 
 use crate::combat::CombatPlugin;
 use crate::combat::components::{CombatState, Health, AttackStats};
-use crate::common::components::Player;
+use crate::common::components::{Player, Stats};
 use crate::movement::MovementPlugin;
 use crate::movement::components::Facing;
 use bevy::prelude::*;
@@ -32,6 +32,15 @@ fn setup(mut commands: Commands) {
         },
         Transform::from_xyz(0., 0., 0.),
         Player,
+        Stats {
+            max_speed: 250.0,
+            acceleration: 1250.0,
+            friction: 625.0,
+            dash_speed: 600.0,
+            dash_time: 0.01,
+            dash_friction: 500.0,
+            dash_stop_time: 0.01,
+        },
         Facing(Vec2::X),
         Velocity::default(),
         MovementState::Idle,
