@@ -93,7 +93,7 @@ pub fn attack_lifetime_system(
 pub fn spawn_attack_system(
     mut commands: Commands,
     mut events: MessageReader<AttackEvent>,
-    query: Query<(&Transform, &Facing, &Stats)>,
+    query: Query<(&Transform, &Facing, &AttackStats)>,
 ) {
     for event in events.read() {
         if let Ok((transform, facing, stats)) = query.get(event.entity) {
@@ -123,7 +123,7 @@ pub fn spawn_attack_system(
 pub fn quick_attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<(Entity, &Facing, &Stats), With<Player>>,
+    query: Query<(Entity, &Facing, &AttackStats), With<Player>>,
 ) {
     if !keyboard.just_pressed(KeyCode::KeyQ) {
         return;
