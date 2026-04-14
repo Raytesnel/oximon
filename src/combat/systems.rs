@@ -3,7 +3,7 @@ use super::events::*;
 use crate::common::components::{Enemy, Player};
 use bevy::ecs::error::info;
 use bevy::prelude::*;
-use crate::movement::components::Facing;
+use crate::movement::components::{Dash, Facing};
 const ATTACK_RANGE: f32 = 100.0; // ~5 blocks
 
 
@@ -109,6 +109,62 @@ pub fn spawn_attack_system(
                     ..default()
                 },
             ));
+        }
+    }
+}
+
+pub fn quick_attack_input_system(
+    mut commands: Commands,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    query: Query<(Entity, &Facing, &Stats), With<Player>>,
+) {
+    if !keyboard.just_pressed(KeyCode::KeyQ) {
+        return;
+    }
+
+    for (entity, facing, stats) in &query {
+        commands.entity(entity).insert((
+            BodyAttack {
+                damage: stats.attack,
+                timer: Timer::from_seconds(0.2, TimerMode::Once),
+            },
+            Dash {
+                direction: facing.0.extend(0.0),
+                timer: Timer::from_seconds(0.2, TimerMode::Once),
+            },
+        ));
+    }
+}
+pub fn body_attack_hit_system(
+    players: Query<(Entity, &Transform, &BodyAttack), With<Player>>,
+    enemies: Query<(Entity, &Transform), With<Enemy>>,
+    mut writer: MessageWriter<DamageEvent>,
+) {
+    for (_player, player_transform, attack) in &players {
+        let player_pos = player_transform.translation;
+
+        for (enemy, enemy_transform) in &enemies {
+            let distance = player_pos.distance(enemy_transform.translation);
+
+            if distance < 30.0 {
+                writer.write(DamageEvent {
+                    target: enemy,
+                    amount: attack.damage,
+                });
+            }
+        }
+    }
+}
+pub fn body_attack_lifetime_system(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut BodyAttack)>,
+) {
+    for (entity, mut attack) in &mut query {
+        attack.timer.tick(time.delta());
+
+        if attack.timer.is_finished() {
+            commands.entity(entity).remove::<BodyAttack>();
         }
     }
 }

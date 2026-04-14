@@ -29,3 +29,10 @@ pub struct Attack {
 pub struct AttackEvent {
     pub entity: Entity,
 }
+
+
+#[derive(Component)]
+pub struct BodyAttack {
+    pub damage: f32,
+    pub timer: Timer,
+}

@@ -22,6 +22,9 @@ impl Plugin for CombatPlugin {
                 attack_lifetime_system,
                 attack_hit_system,
                 apply_damage_system,
+                quick_attack_input_system,
+                body_attack_hit_system,
+                body_attack_lifetime_system
             ),
         );
     }
