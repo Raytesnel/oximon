@@ -47,11 +47,17 @@ pub fn apply_damage_system(
     }
 }
 pub fn attack_hit_system(
-    attacks: Query<(&Transform, &Attack)>,
+    mut attacks: Query<(&Transform, &mut Attack)>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     mut writer: MessageWriter<DamageEvent>,
+    time: Res<Time>,
 ) {
-    for (attack_transform, attack) in &attacks {
+    for (attack_transform, mut attack) in &mut attacks {
+        attack.hit_timer.tick(time.delta());
+
+        if !attack.hit_timer.just_finished() {
+            continue;
+        }
         for (enemy, enemy_transform) in &enemies {
             let distance = attack_transform
                 .translation
@@ -101,6 +107,7 @@ pub fn spawn_attack_system(
                     damage: stats.attack,
                     range: ATTACK_RANGE,
                     lifetime: Timer::from_seconds(0.1, TimerMode::Once),
+                    hit_timer: Timer::from_seconds(0.05, TimerMode::Repeating),
                 },
                 Transform::from_translation(origin + offset),
                 Sprite {
@@ -165,6 +172,17 @@ pub fn body_attack_lifetime_system(
 
         if attack.timer.is_finished() {
             commands.entity(entity).remove::<BodyAttack>();
+        }
+    }
+}
+
+pub fn despawn_dead_system(
+    mut commands: Commands,
+    query: Query<(Entity, &CombatState)>,
+) {
+    for (entity, state) in &query {
+        if *state == CombatState::Dead {
+            commands.entity(entity).despawn();
         }
     }
 }

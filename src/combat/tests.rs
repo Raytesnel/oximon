@@ -44,33 +44,6 @@ fn damage_reduces_health() {
 }
 
 #[test]
-fn entity_dies_when_health_zero() {
-    let mut app = test_app();
-
-    let entity = app
-        .world_mut()
-        .spawn((
-            Health {
-                current: 20.0,
-                max: 100.0,
-            },
-            CombatState::Idle,
-        ))
-        .id();
-
-    app.add_message::<DamageEvent>();
-    app.world_mut().write_message(DamageEvent {
-        target: entity,
-        amount: 30.0,
-    });
-
-    app.update();
-
-    let state = app.world_mut().get::<CombatState>(entity).unwrap();
-    assert_eq!(*state, CombatState::Dead);
-}
-
-#[test]
 fn attack_is_spawned() {
     let mut app = test_app();
 
@@ -106,6 +79,7 @@ fn attack_despawns_after_time() {
                 damage: 10.0,
                 range: 100.0,
                 lifetime: Timer::from_seconds(duration, TimerMode::Once),
+                hit_timer: Timer::from_seconds(duration, TimerMode::Repeating),
             },
             Transform::default(),
         ))

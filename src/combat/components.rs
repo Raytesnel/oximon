@@ -23,6 +23,7 @@ pub struct Attack {
     pub damage: f32,
     pub range: f32,
     pub lifetime: Timer,
+    pub hit_timer: Timer, // how many seconds per hit
 }
 
 #[derive(Message, Debug)]
@@ -34,5 +35,9 @@ pub struct AttackEvent {
 #[derive(Component)]
 pub struct BodyAttack {
     pub damage: f32,
+    pub timer: Timer,
+}
+#[derive(Component)]
+pub struct Hitstun {
     pub timer: Timer,
 }
