@@ -17,3 +17,15 @@ pub enum CombatState {
     Attacking,
     Dead,
 }
+
+#[derive(Component)]
+pub struct Attack {
+    pub damage: f32,
+    pub range: f32,
+    pub lifetime: Timer,
+}
+
+#[derive(Message, Debug)]
+pub struct AttackEvent {
+    pub entity: Entity,
+}

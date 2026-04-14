@@ -5,3 +5,16 @@ edition = "2024"
 
 [dependencies]
 bevy = "0.18.1"
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
+incremental = false
+debug = false
