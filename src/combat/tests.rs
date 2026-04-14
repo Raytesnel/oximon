@@ -80,6 +80,8 @@ fn attack_despawns_after_time() {
                 range: 100.0,
                 lifetime: Timer::from_seconds(duration, TimerMode::Once),
                 hit_timer: Timer::from_seconds(duration, TimerMode::Repeating),
+                follow_entity:None,
+                active: false,
             },
             Transform::default(),
         ))

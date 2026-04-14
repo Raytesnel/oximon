@@ -20,6 +20,36 @@ pub fn attack_input_system(
         writer.write(AttackEvent { entity });
     }
 }
+
+pub fn quick_attack_input_system(
+    mut commands: Commands,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    query: Query<(Entity, &AttackStats), With<Player>>,
+) {
+    if !keyboard.just_pressed(KeyCode::KeyQ) {
+        return;
+    }
+
+    for (entity, stats) in &query {
+        commands.spawn((
+            Attack {
+                damage: stats.attack,
+                range: 30.0,
+                lifetime: Timer::from_seconds(2.0, TimerMode::Once),
+                hit_timer: Timer::from_seconds(2.1, TimerMode::Repeating),
+                follow_entity: Some(entity),
+                active:false,
+            },
+            Transform::default(),
+            Sprite {
+                color: Color::srgb(1.0, 0.0, 0.0),
+                custom_size: Some(Vec2::new(10.0, 10.0)),
+                ..default()
+            },
+        ));
+    }
+}
+
 pub fn apply_damage_system(
     mut events: MessageReader<DamageEvent>,
     mut query: Query<(&mut Health, &mut CombatState)>,
@@ -53,21 +83,43 @@ pub fn attack_hit_system(
     time: Res<Time>,
 ) {
     for (attack_transform, mut attack) in &mut attacks {
-        attack.hit_timer.tick(time.delta());
 
-        if !attack.hit_timer.just_finished() {
+        // 🔥 IMPORTANT: tick FIRST
+        let tick_ready = attack.hit_timer.tick(time.delta()).just_finished();
+
+        if !attack.active {
+            // first contact = activate but DO NOT spam
+            for (enemy, enemy_transform) in &enemies {
+                let distance = attack_transform.translation.distance(enemy_transform.translation);
+
+                if distance < attack.range{
+                    attack.active = true;
+
+                    writer.write(DamageEvent {
+                        target: enemy,
+                        amount: attack.damage,
+                    });
+
+                    break; // 👈 CRITICAL
+                }
+            }
+
             continue;
         }
-        for (enemy, enemy_transform) in &enemies {
-            let distance = attack_transform
-                .translation
-                .distance(enemy_transform.translation);
 
-            if distance < attack.range {
-                writer.write(DamageEvent {
-                    target: enemy,
-                    amount: attack.damage,
-                });
+        // after activation: only tick-based damage
+        if tick_ready {
+            for (enemy, enemy_transform) in &enemies {
+                let distance = attack_transform.translation.distance(enemy_transform.translation);
+
+                if distance < attack.range &&! attack.lifetime.is_finished(){
+                    writer.write(DamageEvent {
+                        target: enemy,
+                        amount: attack.damage,
+                    });
+
+                    break; // 👈 CRITICAL AGAIN
+                }
             }
         }
     }
@@ -80,10 +132,6 @@ pub fn attack_lifetime_system(
 ) {
     for (entity, mut attack) in &mut query {
         attack.lifetime.tick(time.delta());
-        println!(
-            "attack lifetime: remaining {:?}",
-            attack.lifetime.remaining()
-        );
         if attack.lifetime.is_finished() {
             commands.entity(entity).despawn();
         }
@@ -108,6 +156,8 @@ pub fn spawn_attack_system(
                     range: ATTACK_RANGE,
                     lifetime: Timer::from_seconds(0.1, TimerMode::Once),
                     hit_timer: Timer::from_seconds(0.05, TimerMode::Repeating),
+                    follow_entity:None,
+                    active:false,
                 },
                 Transform::from_translation(origin + offset),
                 Sprite {
@@ -120,58 +170,15 @@ pub fn spawn_attack_system(
     }
 }
 
-pub fn quick_attack_input_system(
-    mut commands: Commands,
-    keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<(Entity, &Facing, &AttackStats), With<Player>>,
+pub fn attack_follow_system(
+    mut attacks: Query<(&mut Transform, &Attack)>,
+    targets: Query<&Transform, Without<Attack>>,
 ) {
-    if !keyboard.just_pressed(KeyCode::KeyQ) {
-        return;
-    }
-
-    for (entity, facing, stats) in &query {
-        commands.entity(entity).insert((
-            BodyAttack {
-                damage: stats.attack,
-                timer: Timer::from_seconds(0.2, TimerMode::Once),
-            },
-            Dash {
-                direction: facing.0.extend(0.0),
-                timer: Timer::from_seconds(0.2, TimerMode::Once),
-            },
-        ));
-    }
-}
-pub fn body_attack_hit_system(
-    players: Query<(Entity, &Transform, &BodyAttack), With<Player>>,
-    enemies: Query<(Entity, &Transform), With<Enemy>>,
-    mut writer: MessageWriter<DamageEvent>,
-) {
-    for (_player, player_transform, attack) in &players {
-        let player_pos = player_transform.translation;
-
-        for (enemy, enemy_transform) in &enemies {
-            let distance = player_pos.distance(enemy_transform.translation);
-
-            if distance < 30.0 {
-                writer.write(DamageEvent {
-                    target: enemy,
-                    amount: attack.damage,
-                });
+    for (mut transform, attack) in &mut attacks {
+        if let Some(entity) = attack.follow_entity {
+            if let Ok(target_transform) = targets.get(entity) {
+                transform.translation = target_transform.translation;
             }
-        }
-    }
-}
-pub fn body_attack_lifetime_system(
-    mut commands: Commands,
-    time: Res<Time>,
-    mut query: Query<(Entity, &mut BodyAttack)>,
-) {
-    for (entity, mut attack) in &mut query {
-        attack.timer.tick(time.delta());
-
-        if attack.timer.is_finished() {
-            commands.entity(entity).remove::<BodyAttack>();
         }
     }
 }
