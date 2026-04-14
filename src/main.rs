@@ -3,7 +3,7 @@ mod common;
 pub mod movement;
 
 use crate::combat::CombatPlugin;
-use crate::combat::components::{CombatState, Health, Stats};
+use crate::combat::components::{CombatState, Health, AttackStats};
 use crate::common::components::Player;
 use crate::movement::MovementPlugin;
 use crate::movement::components::Facing;
@@ -39,7 +39,7 @@ fn setup(mut commands: Commands) {
             current: 100.0,
             max: 100.0,
         },
-        Stats { attack: 25.0 },
+        AttackStats { attack: 25.0 },
         CombatState::Idle,
     ));
 
@@ -56,7 +56,7 @@ fn setup(mut commands: Commands) {
             current: 100.0,
             max: 100.0,
         },
-        Stats { attack: 25.0 },
+        AttackStats { attack: 25.0 },
         CombatState::Idle,
     ));
 }

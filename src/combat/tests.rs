@@ -53,7 +53,7 @@ fn attack_is_spawned() {
             Player,
             Transform::from_xyz(0.0, 0.0, 0.0),
             Facing(Vec2::X),
-            Stats { attack: 10.0 },
+            AttackStats { attack: 10.0 },
         ))
         .id();
     // manually run spawn system logic path

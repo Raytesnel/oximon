@@ -7,7 +7,7 @@ pub struct Health {
 }
 
 #[derive(Component, Debug)]
-pub struct Stats {
+pub struct AttackStats {
     pub attack: f32,
 }
 
