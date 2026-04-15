@@ -5,6 +5,17 @@ pub struct Player;
 #[derive(Component)]
 pub struct Enemy;
 
+#[derive(Clone, Copy)]
+pub enum StatType {
+    Speed,
+    Acceleration,
+    Friction,
+    DashSpeed,
+    DashTime,
+    DashFriction,
+    DashStopTime,
+}
+
 #[derive(Component)]
 pub struct StatsModifiers {
     pub speed: Vec<StatModifier>,
@@ -37,22 +48,44 @@ pub struct ComputedStats {
     pub dash_friction: f32,
     pub dash_stop_time: f32,
 }
+#[derive(Clone, Copy)]
+pub enum ModifierTrigger {
+    Cast,
+    OnHit,
+    After,
+}
 
 #[derive(Clone)]
 pub struct StatModifier {
+    pub stat_type: StatType,
     pub flat: f32,
     pub multiplier: f32,
     pub timer: Option<Timer>,
+    pub trigger: ModifierTrigger,
 }
 impl Stats {
     fn compute(modifiers: &Vec<StatModifier>) -> f32 {
         let mut base = 0.0;
 
         for m in modifiers {
-            base  += m.flat;
-            base *=m.multiplier;
+            base += m.flat;
+            base *= m.multiplier;
         }
         base
+    }
+}
+
+impl Stats {
+    pub fn add_modifier(&mut self, modifier: StatModifier) {
+        match modifier.stat_type {
+            StatType::Speed => self.speed.push(modifier),
+            StatType::Acceleration => self.acceleration.push(modifier),
+            StatType::Friction => self.friction.push(modifier),
+            StatType::DashSpeed => self.dash_speed.push(modifier),
+            StatType::DashTime => self.dash_time.push(modifier),
+            StatType::DashFriction => self.dash_friction.push(modifier),
+            StatType::DashStopTime => self.dash_stop_time.push(modifier),
+        }
     }
 }
 

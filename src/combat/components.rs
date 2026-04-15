@@ -1,3 +1,4 @@
+use crate::common::components::StatModifier;
 use bevy::prelude::*;
 
 #[derive(Component, Debug)]
@@ -25,7 +26,9 @@ pub struct Attack {
     pub lifetime: Timer,
     pub hit_timer: Timer, // how many seconds per hit
     pub follow_entity: Option<Entity>,
-    pub active: bool, //
+    pub active: bool,
+    pub stat_modifiers: Vec<StatModifier>,
+    pub applied_start_modifiers: bool,
 }
 
 #[derive(Message, Debug)]

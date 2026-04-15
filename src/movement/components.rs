@@ -20,5 +20,5 @@ pub enum MovementState {
     Recovering,
 }
 
-#[derive(Component, Debug, Clone, Copy,PartialEq)]
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
 pub struct Facing(pub Vec2);
