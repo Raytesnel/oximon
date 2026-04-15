@@ -51,7 +51,6 @@ pub fn apply_acceleration(
     }
 }
 
-
 pub fn apply_friction(
     time: Res<Time>,
     mut query: Query<(&mut Velocity, &MovementState, &ComputedStats), With<Player>>,
@@ -61,9 +60,7 @@ pub fn apply_friction(
 
         let friction = match state {
             MovementState::Dashing => stats.dash_friction,
-            MovementState::Recovering => {
-                stats.dash_speed / stats.dash_stop_time
-            }
+            MovementState::Recovering => stats.dash_speed / stats.dash_stop_time,
             MovementState::Moving | MovementState::Idle => stats.friction,
         };
 
@@ -137,12 +134,9 @@ pub fn update_dash_timer(
     for (entity, mut dash, stats) in &mut query {
         dash.timer.tick(time.delta());
         if dash.timer.is_finished() {
-            commands
-                .entity(entity)
-                .remove::<Dash>()
-                .insert(Recover {
-                    timer: Timer::from_seconds(stats.dash_stop_time, TimerMode::Once),
-                });
+            commands.entity(entity).remove::<Dash>().insert(Recover {
+                timer: Timer::from_seconds(stats.dash_stop_time, TimerMode::Once),
+            });
         }
     }
 }
@@ -163,14 +157,17 @@ pub fn update_recover(
 #[allow(clippy::type_complexity)]
 pub fn update_movement_state(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(
-        &Velocity,
-        &mut MovementState,
-        Option<&Dash>,
-        Option<&Recover>,
-    ), With<Player>>,
+    mut query: Query<
+        (
+            &Velocity,
+            &mut MovementState,
+            Option<&Dash>,
+            Option<&Recover>,
+        ),
+        With<Player>,
+    >,
 ) {
-    for (mut velocity,mut movement_state, dash, recover) in &mut query  {
+    for (mut velocity, mut movement_state, dash, recover) in &mut query {
         let input_dir = compute_direction(&keyboard);
         let speed = velocity.0.length();
         let new_state = if dash.is_some() {

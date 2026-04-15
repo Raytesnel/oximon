@@ -80,14 +80,16 @@ fn attack_despawns_after_time() {
                 range: 100.0,
                 lifetime: Timer::from_seconds(duration, TimerMode::Once),
                 hit_timer: Timer::from_seconds(duration, TimerMode::Repeating),
-                follow_entity:None,
+                follow_entity: None,
                 active: false,
+                stat_modifiers: vec![],
+                applied_start_modifiers: false,
             },
             Transform::default(),
         ))
         .id();
 
-    for i in 0..(duration/ 0.016).round() as i32 +2 {
+    for i in 0..(duration / 0.016).round() as i32 + 2 {
         app.insert_resource(TimeUpdateStrategy::ManualDuration(
             std::time::Duration::from_secs_f32(0.016),
         ));

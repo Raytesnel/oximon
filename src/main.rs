@@ -3,14 +3,16 @@ mod common;
 pub mod movement;
 
 use crate::combat::CombatPlugin;
-use crate::combat::components::{CombatState, Health, AttackStats};
-use crate::common::components::{ComputedStats, Player, StatModifier, Stats};
+use crate::combat::components::{AttackStats, CombatState, Health};
+use crate::common::CommonPlugin;
+use crate::common::components::{
+    ComputedStats, ModifierTrigger, Player, StatModifier, StatType, Stats,
+};
 use crate::movement::MovementPlugin;
 use crate::movement::components::Facing;
 use bevy::prelude::*;
 use common::components::Enemy;
 use movement::components::{MovementState, Velocity};
-use crate::common::CommonPlugin;
 
 fn main() {
     App::new()
@@ -34,23 +36,65 @@ fn setup(mut commands: Commands) {
         },
         Transform::from_xyz(0., 0., 0.),
         Player,
-        ComputedStats{
-                    speed:250.0,
-                    acceleration:1250.0,
-                    friction:625.0,
-                    dash_speed:600.0,
-                    dash_time:0.01,
-                    dash_friction:50.0,
-                    dash_stop_time:0.2,
+        ComputedStats {
+            speed: 250.0,
+            acceleration: 1250.0,
+            friction: 625.0,
+            dash_speed: 600.0,
+            dash_time: 0.01,
+            dash_friction: 50.0,
+            dash_stop_time: 0.2,
         },
         Stats {
-            speed: vec![StatModifier{ flat:250.0, multiplier:1.0,timer:None}],
-            acceleration: vec![StatModifier{ flat:1250.0, multiplier:1.0,timer:None}],
-            friction: vec![StatModifier{ flat:625.0, multiplier:1.0,timer:None}],
-            dash_speed: vec![StatModifier{ flat:600.0, multiplier:1.0,timer:None}],
-            dash_time: vec![StatModifier{ flat:0.01, multiplier:1.0,timer:None}],
-            dash_friction: vec![StatModifier{ flat:500.0, multiplier:1.0,timer:None}],
-            dash_stop_time: vec![StatModifier{ flat:0.01, multiplier:1.0,timer:None}],
+            speed: vec![StatModifier {
+                flat: 250.0,
+                multiplier: 1.0,
+                timer: None,
+                stat_type: StatType::Speed,
+                trigger: ModifierTrigger::Cast,
+            }],
+            acceleration: vec![StatModifier {
+                flat: 1250.0,
+                multiplier: 1.0,
+                timer: None,
+                stat_type: StatType::Acceleration,
+                trigger: ModifierTrigger::Cast,
+            }],
+            friction: vec![StatModifier {
+                flat: 625.0,
+                multiplier: 1.0,
+                timer: None,
+                stat_type: StatType::Friction,
+                trigger: ModifierTrigger::Cast,
+            }],
+            dash_speed: vec![StatModifier {
+                flat: 600.0,
+                multiplier: 1.0,
+                timer: None,
+                stat_type: StatType::DashSpeed,
+                trigger: ModifierTrigger::Cast,
+            }],
+            dash_time: vec![StatModifier {
+                flat: 0.01,
+                multiplier: 1.0,
+                timer: None,
+                stat_type: StatType::DashTime,
+                trigger: ModifierTrigger::Cast,
+            }],
+            dash_friction: vec![StatModifier {
+                flat: 500.0,
+                multiplier: 1.0,
+                timer: None,
+                stat_type: StatType::DashFriction,
+                trigger: ModifierTrigger::Cast,
+            }],
+            dash_stop_time: vec![StatModifier {
+                flat: 0.01,
+                multiplier: 1.0,
+                timer: None,
+                stat_type: StatType::DashStopTime,
+                trigger: ModifierTrigger::Cast,
+            }],
         },
         Facing(Vec2::X),
         Velocity::default(),

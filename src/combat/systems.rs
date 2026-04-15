@@ -1,11 +1,9 @@
 use super::components::*;
 use super::events::*;
-use crate::common::components::{Enemy, Player};
-use bevy::ecs::error::info;
-use bevy::prelude::*;
+use crate::common::components::{Enemy, ModifierTrigger, Player, StatModifier, StatType, Stats};
 use crate::movement::components::{Dash, Facing};
+use bevy::prelude::*;
 const ATTACK_RANGE: f32 = 100.0; // ~5 blocks
-
 
 pub fn attack_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
@@ -38,7 +36,24 @@ pub fn quick_attack_input_system(
                 lifetime: Timer::from_seconds(2.0, TimerMode::Once),
                 hit_timer: Timer::from_seconds(2.1, TimerMode::Repeating),
                 follow_entity: Some(entity),
-                active:false,
+                active: false,
+                applied_start_modifiers: false,
+                stat_modifiers: vec![
+                    StatModifier {
+                        stat_type: StatType::Speed,
+                        flat: 0.0,
+                        multiplier: 2.0,
+                        timer: Some(Timer::from_seconds(2.1, TimerMode::Once)),
+                        trigger: ModifierTrigger::Cast,
+                    },
+                    StatModifier {
+                        stat_type: StatType::Acceleration,
+                        flat: 0.0,
+                        multiplier: 10.0,
+                        timer: Some(Timer::from_seconds(2.1, TimerMode::Once)),
+                        trigger: ModifierTrigger::Cast,
+                    },
+                ],
             },
             Transform::default(),
             Sprite {
@@ -76,6 +91,27 @@ pub fn apply_damage_system(
         }
     }
 }
+
+pub fn attack_start_system(mut attacks: Query<&mut Attack>, mut stats_query: Query<&mut Stats>) {
+    for mut attack in &mut attacks {
+        if attack.applied_start_modifiers {
+            continue;
+        }
+
+        if let Some(source) = attack.follow_entity {
+            if let Ok(mut stats) = stats_query.get_mut(source) {
+                for modifier in &attack.stat_modifiers {
+                    if matches!(modifier.trigger, ModifierTrigger::Cast) {
+                        stats.add_modifier(modifier.clone());
+                    }
+                }
+            }
+        }
+
+        attack.applied_start_modifiers = true;
+    }
+}
+
 pub fn attack_hit_system(
     mut attacks: Query<(&Transform, &mut Attack)>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
@@ -83,42 +119,40 @@ pub fn attack_hit_system(
     time: Res<Time>,
 ) {
     for (attack_transform, mut attack) in &mut attacks {
-
-        // 🔥 IMPORTANT: tick FIRST
         let tick_ready = attack.hit_timer.tick(time.delta()).just_finished();
-
         if !attack.active {
-            // first contact = activate but DO NOT spam
             for (enemy, enemy_transform) in &enemies {
-                let distance = attack_transform.translation.distance(enemy_transform.translation);
+                let distance = attack_transform
+                    .translation
+                    .distance(enemy_transform.translation);
 
-                if distance < attack.range{
+                if distance < attack.range {
                     attack.active = true;
-
                     writer.write(DamageEvent {
                         target: enemy,
                         amount: attack.damage,
                     });
 
-                    break; // 👈 CRITICAL
+                    break;
                 }
             }
 
             continue;
         }
 
-        // after activation: only tick-based damage
-        if tick_ready {
+        if tick_ready && !attack.lifetime.is_finished() {
             for (enemy, enemy_transform) in &enemies {
-                let distance = attack_transform.translation.distance(enemy_transform.translation);
+                let distance = attack_transform
+                    .translation
+                    .distance(enemy_transform.translation);
 
-                if distance < attack.range &&! attack.lifetime.is_finished(){
+                if distance < attack.range {
                     writer.write(DamageEvent {
                         target: enemy,
                         amount: attack.damage,
                     });
 
-                    break; // 👈 CRITICAL AGAIN
+                    break;
                 }
             }
         }
@@ -156,8 +190,10 @@ pub fn spawn_attack_system(
                     range: ATTACK_RANGE,
                     lifetime: Timer::from_seconds(0.1, TimerMode::Once),
                     hit_timer: Timer::from_seconds(0.05, TimerMode::Repeating),
-                    follow_entity:None,
-                    active:false,
+                    follow_entity: None,
+                    active: false,
+                    stat_modifiers: vec![],
+                    applied_start_modifiers: true,
                 },
                 Transform::from_translation(origin + offset),
                 Sprite {
@@ -183,10 +219,7 @@ pub fn attack_follow_system(
     }
 }
 
-pub fn despawn_dead_system(
-    mut commands: Commands,
-    query: Query<(Entity, &CombatState)>,
-) {
+pub fn despawn_dead_system(mut commands: Commands, query: Query<(Entity, &CombatState)>) {
     for (entity, state) in &query {
         if *state == CombatState::Dead {
             commands.entity(entity).despawn();
