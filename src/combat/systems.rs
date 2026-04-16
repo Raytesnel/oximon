@@ -1,9 +1,9 @@
 use super::components::*;
 use super::events::*;
-use crate::common::components::{Enemy, ModifierTrigger, Player, StatModifier, StatType, Stats};
-use crate::movement::components::{Dash, Facing};
+use crate::combat::attacks::{quick_attack, simple_beam};
+use crate::common::components::{Enemy, ModifierTrigger, Player, RuntimeModifier, Stats};
+use crate::movement::components::Facing;
 use bevy::prelude::*;
-const ATTACK_RANGE: f32 = 100.0; // ~5 blocks
 
 pub fn attack_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
@@ -22,45 +22,19 @@ pub fn attack_input_system(
 pub fn quick_attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<(Entity, &AttackStats), With<Player>>,
+    query: Query<Entity, With<Player>>,
 ) {
     if !keyboard.just_pressed(KeyCode::KeyQ) {
         return;
     }
 
-    for (entity, stats) in &query {
+    for entity in &query {
+        let def = quick_attack();
+        let sprite = def.spawn.build_sprite();
         commands.spawn((
-            Attack {
-                damage: stats.attack,
-                range: 30.0,
-                lifetime: Timer::from_seconds(2.0, TimerMode::Once),
-                hit_timer: Timer::from_seconds(2.1, TimerMode::Repeating),
-                follow_entity: Some(entity),
-                active: false,
-                applied_start_modifiers: false,
-                stat_modifiers: vec![
-                    StatModifier {
-                        stat_type: StatType::Speed,
-                        flat: 0.0,
-                        multiplier: 2.0,
-                        timer: Some(Timer::from_seconds(2.1, TimerMode::Once)),
-                        trigger: ModifierTrigger::Cast,
-                    },
-                    StatModifier {
-                        stat_type: StatType::Acceleration,
-                        flat: 0.0,
-                        multiplier: 10.0,
-                        timer: Some(Timer::from_seconds(2.1, TimerMode::Once)),
-                        trigger: ModifierTrigger::Cast,
-                    },
-                ],
-            },
+            Attack::from_definition(def, entity),
             Transform::default(),
-            Sprite {
-                color: Color::srgb(1.0, 0.0, 0.0),
-                custom_size: Some(Vec2::new(10.0, 10.0)),
-                ..default()
-            },
+            sprite,
         ));
     }
 }
@@ -100,9 +74,16 @@ pub fn attack_start_system(mut attacks: Query<&mut Attack>, mut stats_query: Que
 
         if let Some(source) = attack.follow_entity {
             if let Ok(mut stats) = stats_query.get_mut(source) {
-                for modifier in &attack.stat_modifiers {
+                for modifier in &attack.definition.stat_modifiers {
                     if matches!(modifier.trigger, ModifierTrigger::Cast) {
-                        stats.add_modifier(modifier.clone());
+                        stats.add_modifier(RuntimeModifier {
+                            stat_type: modifier.stat_type,
+                            flat: modifier.flat,
+                            multiplier: modifier.multiplier,
+                            timer: modifier
+                                .duration
+                                .map(|d| Timer::from_seconds(d, TimerMode::Once)),
+                        });
                     }
                 }
             }
@@ -126,11 +107,11 @@ pub fn attack_hit_system(
                     .translation
                     .distance(enemy_transform.translation);
 
-                if distance < attack.range {
+                if distance < attack.definition.range {
                     attack.active = true;
                     writer.write(DamageEvent {
                         target: enemy,
-                        amount: attack.damage,
+                        amount: attack.definition.damage,
                     });
 
                     break;
@@ -140,16 +121,16 @@ pub fn attack_hit_system(
             continue;
         }
 
-        if tick_ready && !attack.lifetime.is_finished() {
+        if tick_ready && !attack.lifetime_timer.is_finished() {
             for (enemy, enemy_transform) in &enemies {
                 let distance = attack_transform
                     .translation
                     .distance(enemy_transform.translation);
 
-                if distance < attack.range {
+                if distance < attack.definition.range {
                     writer.write(DamageEvent {
                         target: enemy,
-                        amount: attack.damage,
+                        amount: attack.definition.damage,
                     });
 
                     break;
@@ -165,8 +146,8 @@ pub fn attack_lifetime_system(
     mut query: Query<(Entity, &mut Attack)>,
 ) {
     for (entity, mut attack) in &mut query {
-        attack.lifetime.tick(time.delta());
-        if attack.lifetime.is_finished() {
+        attack.lifetime_timer.tick(time.delta());
+        if attack.lifetime_timer.is_finished() {
             commands.entity(entity).despawn();
         }
     }
@@ -175,32 +156,23 @@ pub fn attack_lifetime_system(
 pub fn spawn_attack_system(
     mut commands: Commands,
     mut events: MessageReader<AttackEvent>,
-    query: Query<(&Transform, &Facing, &AttackStats)>,
+    query: Query<(&Transform, &Facing)>,
+    query_player: Query<Entity, With<Player>>,
 ) {
     for event in events.read() {
-        if let Ok((transform, facing, stats)) = query.get(event.entity) {
+        if let Ok((transform, facing)) = query.get(event.entity) {
             let origin = transform.translation;
             let direction = facing.0.normalize();
 
-            let offset = (direction * (ATTACK_RANGE * 0.5)).extend(0.0);
-
+            let offset = (direction * (100.0 * 0.5)).extend(0.0);
+            let def = simple_beam();
+            let sprite = def.spawn.build_sprite();
+            let mut attack_command = Attack::from_definition(def, event.entity);
+            attack_command.definition.offset = offset;
             commands.spawn((
-                Attack {
-                    damage: stats.attack,
-                    range: ATTACK_RANGE,
-                    lifetime: Timer::from_seconds(0.1, TimerMode::Once),
-                    hit_timer: Timer::from_seconds(0.05, TimerMode::Repeating),
-                    follow_entity: None,
-                    active: false,
-                    stat_modifiers: vec![],
-                    applied_start_modifiers: true,
-                },
+                attack_command,
                 Transform::from_translation(origin + offset),
-                Sprite {
-                    color: Color::srgb(1.0, 0.0, 0.0),
-                    custom_size: Some(Vec2::new(ATTACK_RANGE, 20.0)),
-                    ..default()
-                },
+                sprite,
             ));
         }
     }
@@ -213,7 +185,7 @@ pub fn attack_follow_system(
     for (mut transform, attack) in &mut attacks {
         if let Some(entity) = attack.follow_entity {
             if let Ok(target_transform) = targets.get(entity) {
-                transform.translation = target_transform.translation;
+                transform.translation = target_transform.translation + attack.definition.offset;
             }
         }
     }

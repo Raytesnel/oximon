@@ -25,7 +25,7 @@ pub fn update_stat_timers(time: Res<Time>, mut query: Query<&mut Stats>) {
     }
 }
 
-pub fn update_list(list: &mut Vec<StatModifier>, time: &Time) {
+pub fn update_list(list: &mut Vec<RuntimeModifier>, time: &Time) {
     list.retain_mut(|modifier| {
         if let Some(timer) = &mut modifier.timer {
             timer.tick(time.delta());

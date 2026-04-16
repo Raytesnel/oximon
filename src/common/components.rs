@@ -29,13 +29,13 @@ pub struct StatsModifiers {
 
 #[derive(Component)]
 pub struct Stats {
-    pub speed: Vec<StatModifier>,
-    pub acceleration: Vec<StatModifier>,
-    pub friction: Vec<StatModifier>,
-    pub dash_speed: Vec<StatModifier>,
-    pub dash_time: Vec<StatModifier>,
-    pub dash_friction: Vec<StatModifier>,
-    pub dash_stop_time: Vec<StatModifier>,
+    pub speed: Vec<RuntimeModifier>,
+    pub acceleration: Vec<RuntimeModifier>,
+    pub friction: Vec<RuntimeModifier>,
+    pub dash_speed: Vec<RuntimeModifier>,
+    pub dash_time: Vec<RuntimeModifier>,
+    pub dash_friction: Vec<RuntimeModifier>,
+    pub dash_stop_time: Vec<RuntimeModifier>,
 }
 
 #[derive(Component, Default, Debug, Clone)]
@@ -60,11 +60,18 @@ pub struct StatModifier {
     pub stat_type: StatType,
     pub flat: f32,
     pub multiplier: f32,
-    pub timer: Option<Timer>,
+    pub duration: Option<f32>,
     pub trigger: ModifierTrigger,
 }
+#[derive(Clone)]
+pub struct RuntimeModifier {
+    pub stat_type: StatType,
+    pub flat: f32,
+    pub multiplier: f32,
+    pub timer: Option<Timer>,
+}
 impl Stats {
-    fn compute(modifiers: &Vec<StatModifier>) -> f32 {
+    fn compute(modifiers: &Vec<RuntimeModifier>) -> f32 {
         let mut base = 0.0;
 
         for m in modifiers {
@@ -76,7 +83,7 @@ impl Stats {
 }
 
 impl Stats {
-    pub fn add_modifier(&mut self, modifier: StatModifier) {
+    pub fn add_modifier(&mut self, modifier: RuntimeModifier) {
         match modifier.stat_type {
             StatType::Speed => self.speed.push(modifier),
             StatType::Acceleration => self.acceleration.push(modifier),
