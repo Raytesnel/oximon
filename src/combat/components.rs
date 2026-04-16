@@ -1,3 +1,4 @@
+use crate::combat::attacks::AttackDefinition;
 use crate::common::components::StatModifier;
 use bevy::prelude::*;
 
@@ -21,14 +22,24 @@ pub enum CombatState {
 
 #[derive(Component)]
 pub struct Attack {
-    pub damage: f32,
-    pub range: f32,
-    pub lifetime: Timer,
-    pub hit_timer: Timer, // how many seconds per hit
-    pub follow_entity: Option<Entity>,
+    pub definition: AttackDefinition,
+    pub lifetime_timer: Timer,
+    pub hit_timer: Timer,
     pub active: bool,
-    pub stat_modifiers: Vec<StatModifier>,
+    pub follow_entity: Option<Entity>,
     pub applied_start_modifiers: bool,
+}
+impl Attack {
+    pub fn from_definition(def: AttackDefinition, owner: Entity) -> Self {
+        Self {
+            lifetime_timer: Timer::from_seconds(def.lifetime, TimerMode::Once),
+            hit_timer: Timer::from_seconds(def.hit_interval, TimerMode::Repeating),
+            definition: def,
+            active: false,
+            follow_entity: Some(owner),
+            applied_start_modifiers: false,
+        }
+    }
 }
 
 #[derive(Message, Debug)]
