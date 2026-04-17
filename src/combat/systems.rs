@@ -7,14 +7,28 @@ use bevy::prelude::*;
 
 pub fn attack_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
-    player_query: Query<Entity, With<Player>>,
+    mut query: Query<(Entity, &mut Cooldowns), With<Player>>,
     mut writer: MessageWriter<AttackEvent>,
 ) {
     if !keyboard.just_pressed(KeyCode::Space) {
         return;
     }
 
-    for entity in &player_query {
+    for (entity, mut cooldowns) in &mut query {
+        let def = simple_beam();
+
+        // 👇 check cooldown
+        if let Some(timer) = cooldowns.timers.get(&def.name) {
+            if !timer.is_finished() {
+                continue; // still on cooldown
+            }
+        }
+
+        // 👇 start cooldown
+        cooldowns.timers.insert(
+            def.name.clone(),
+            Timer::from_seconds(def.cooldown, TimerMode::Once),
+        );
         writer.write(AttackEvent { entity });
     }
 }
@@ -22,14 +36,26 @@ pub fn attack_input_system(
 pub fn quick_attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<Entity, With<Player>>,
-) {
+    mut query: Query<(Entity, &mut Cooldowns), With<Player>>,
+)  {
     if !keyboard.just_pressed(KeyCode::KeyQ) {
         return;
     }
 
-    for entity in &query {
+    for (entity, mut cooldowns) in &mut query {
         let def = quick_attack();
+        // 👇 check cooldown
+        if let Some(timer) = cooldowns.timers.get(&def.name) {
+            if !timer.is_finished() {
+                continue; // still on cooldown
+            }
+        }
+
+        // 👇 start cooldown
+        cooldowns.timers.insert(
+            def.name.clone(),
+            Timer::from_seconds(def.cooldown, TimerMode::Once),
+        );
         let sprite = def.spawn.build_sprite();
         commands.spawn((
             Attack::from_definition(def, entity),
@@ -196,5 +222,18 @@ pub fn despawn_dead_system(mut commands: Commands, query: Query<(Entity, &Combat
         if *state == CombatState::Dead {
             commands.entity(entity).despawn();
         }
+    }
+}
+
+
+pub fn cooldown_tick_system(
+    time: Res<Time>,
+    mut query: Query<&mut Cooldowns>,
+) {
+    for mut cooldowns in &mut query {
+        cooldowns.timers.retain(|_, timer| {
+            timer.tick(time.delta());
+            !timer.just_finished()
+        });
     }
 }
