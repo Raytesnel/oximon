@@ -72,15 +72,13 @@ pub fn simple_beam() -> AttackDefinition {
         lifetime: 2.0,
         hit_interval: 0.05,
         cooldown: 0.6,
-        stat_modifiers: vec![
-            StatModifier {
-                stat_type: StatType::Speed,
-                flat: 0.0,
-                multiplier: 0.1,
-                duration: Some(2.0),
-                trigger: ModifierTrigger::Cast,
-            },
-        ],
+        stat_modifiers: vec![StatModifier {
+            stat_type: StatType::Speed,
+            flat: 0.0,
+            multiplier: 0.1,
+            duration: Some(2.0),
+            trigger: ModifierTrigger::Cast,
+        }],
         offset: Vec3::ZERO,
         spawn: AttackSpawn::Hitbox {
             color: Color::srgb(1.0, 0.0, 0.0),

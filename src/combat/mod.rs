@@ -19,15 +19,15 @@ impl Plugin for CombatPlugin {
             Update,
             (
                 attack_input_system,
+                quick_attack_input_system,
                 spawn_attack_system,
                 attack_start_system,
                 attack_lifetime_system,
                 attack_hit_system,
                 apply_damage_system,
-                quick_attack_input_system,
                 despawn_dead_system,
                 attack_follow_system,
-                cooldown_tick_system
+                cooldown_tick_system,
             ),
         );
     }

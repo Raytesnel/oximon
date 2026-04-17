@@ -5,12 +5,15 @@ use crate::common::components::{Enemy, ModifierTrigger, Player, RuntimeModifier,
 use crate::movement::components::Facing;
 use bevy::prelude::*;
 
+pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
+pub const QUICK_ATTACK: KeyCode = KeyCode::KeyQ;
+
 pub fn attack_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut query: Query<(Entity, &mut Cooldowns), With<Player>>,
     mut writer: MessageWriter<AttackEvent>,
 ) {
-    if !keyboard.just_pressed(KeyCode::Space) {
+    if !keyboard.just_pressed(JUMP_BUTTON) {
         return;
     }
 
@@ -37,11 +40,11 @@ pub fn quick_attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut query: Query<(Entity, &mut Cooldowns), With<Player>>,
-)  {
-    if !keyboard.just_pressed(KeyCode::KeyQ) {
+) {
+    if !keyboard.just_pressed(QUICK_ATTACK) {
         return;
     }
-
+    println!("q pressed");
     for (entity, mut cooldowns) in &mut query {
         let def = quick_attack();
         // 👇 check cooldown
@@ -225,11 +228,7 @@ pub fn despawn_dead_system(mut commands: Commands, query: Query<(Entity, &Combat
     }
 }
 
-
-pub fn cooldown_tick_system(
-    time: Res<Time>,
-    mut query: Query<&mut Cooldowns>,
-) {
+pub fn cooldown_tick_system(time: Res<Time>, mut query: Query<&mut Cooldowns>) {
     for mut cooldowns in &mut query {
         cooldowns.timers.retain(|_, timer| {
             timer.tick(time.delta());

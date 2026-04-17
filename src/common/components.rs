@@ -37,6 +37,19 @@ pub struct Stats {
     pub dash_friction: Vec<RuntimeModifier>,
     pub dash_stop_time: Vec<RuntimeModifier>,
 }
+impl Default for Stats {
+    fn default() -> Self {
+        Self {
+            speed: vec![],
+            acceleration: vec![],
+            friction: vec![],
+            dash_speed: vec![],
+            dash_time: vec![],
+            dash_friction: vec![],
+            dash_stop_time: vec![],
+        }
+    }
+}
 
 #[derive(Component, Default, Debug, Clone)]
 pub struct ComputedStats {
