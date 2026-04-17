@@ -22,6 +22,7 @@ impl AttackSpawn {
 
 #[derive(Component, Clone)]
 pub struct AttackDefinition {
+    pub name: String,
     pub damage: f32,
     pub range: f32,
     pub lifetime: f32,
@@ -34,10 +35,11 @@ pub struct AttackDefinition {
 
 pub fn quick_attack() -> AttackDefinition {
     AttackDefinition {
+        name: "quick_attack".to_string(),
         damage: 10.0,
         range: 30.0,
         lifetime: 2.0,
-        hit_interval: 2.1,
+        hit_interval: 0.1,
         cooldown: 3.0,
         offset: Vec3::ZERO,
         spawn: AttackSpawn::Hitbox {
@@ -48,14 +50,14 @@ pub fn quick_attack() -> AttackDefinition {
             StatModifier {
                 stat_type: StatType::Speed,
                 flat: 0.0,
-                multiplier: 2.0,
+                multiplier: 3.0,
                 duration: Some(2.0),
                 trigger: ModifierTrigger::Cast,
             },
             StatModifier {
                 stat_type: StatType::Acceleration,
                 flat: 0.0,
-                multiplier: 10.0,
+                multiplier: 15.0,
                 duration: Some(2.0),
                 trigger: ModifierTrigger::Cast,
             },
@@ -64,12 +66,21 @@ pub fn quick_attack() -> AttackDefinition {
 }
 pub fn simple_beam() -> AttackDefinition {
     AttackDefinition {
-        damage: 10.0,
+        name: "simple_beam".to_string(),
+        damage: 1.0,
         range: 100.0,
-        lifetime: 0.1,
+        lifetime: 2.0,
         hit_interval: 0.05,
         cooldown: 0.6,
-        stat_modifiers: vec![],
+        stat_modifiers: vec![
+            StatModifier {
+                stat_type: StatType::Speed,
+                flat: 0.0,
+                multiplier: 0.1,
+                duration: Some(2.0),
+                trigger: ModifierTrigger::Cast,
+            },
+        ],
         offset: Vec3::ZERO,
         spawn: AttackSpawn::Hitbox {
             color: Color::srgb(1.0, 0.0, 0.0),

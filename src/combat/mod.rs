@@ -27,6 +27,7 @@ impl Plugin for CombatPlugin {
                 quick_attack_input_system,
                 despawn_dead_system,
                 attack_follow_system,
+                cooldown_tick_system
             ),
         );
     }

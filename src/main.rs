@@ -2,8 +2,9 @@ mod combat;
 mod common;
 pub mod movement;
 
+use std::collections::HashMap;
 use crate::combat::CombatPlugin;
-use crate::combat::components::{AttackStats, CombatState, Health};
+use crate::combat::components::{AttackStats, CombatState, Cooldowns, Health};
 use crate::common::CommonPlugin;
 use crate::common::components::{
     ComputedStats, ModifierTrigger, Player, RuntimeModifier, StatModifier, StatType, Stats,
@@ -36,6 +37,9 @@ fn setup(mut commands: Commands) {
         },
         Transform::from_xyz(0., 0., 0.),
         Player,
+        Cooldowns {
+            timers: HashMap::new(),
+        },
         ComputedStats {
             speed: 250.0,
             acceleration: 1250.0,

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::combat::attacks::AttackDefinition;
 use crate::common::components::StatModifier;
 use bevy::prelude::*;
@@ -18,6 +19,10 @@ pub enum CombatState {
     Idle,
     Attacking,
     Dead,
+}
+#[derive(Component)]
+pub struct Cooldowns {
+    pub timers: HashMap<String, Timer>,
 }
 
 #[derive(Component)]
