@@ -2,7 +2,6 @@ mod combat;
 mod common;
 pub mod movement;
 
-use std::collections::HashMap;
 use crate::combat::CombatPlugin;
 use crate::combat::components::{AttackStats, CombatState, Cooldowns, Health};
 use crate::common::CommonPlugin;
@@ -14,6 +13,7 @@ use crate::movement::components::Facing;
 use bevy::prelude::*;
 use common::components::Enemy;
 use movement::components::{MovementState, Velocity};
+use std::collections::HashMap;
 
 fn main() {
     App::new()

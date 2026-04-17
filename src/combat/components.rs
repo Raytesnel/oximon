@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use crate::combat::attacks::AttackDefinition;
 use crate::common::components::StatModifier;
 use bevy::prelude::*;
+use std::collections::HashMap;
 
 #[derive(Component, Debug)]
 pub struct Health {
@@ -23,6 +23,13 @@ pub enum CombatState {
 #[derive(Component)]
 pub struct Cooldowns {
     pub timers: HashMap<String, Timer>,
+}
+impl Default for Cooldowns {
+    fn default() -> Self {
+        Self {
+            timers: HashMap::new(),
+        }
+    }
 }
 
 #[derive(Component)]
