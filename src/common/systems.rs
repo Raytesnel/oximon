@@ -1,5 +1,6 @@
 use crate::common::components::*;
 use bevy::prelude::*;
+use crate::combat::components::Hitstop;
 
 pub fn compute_stats_system(mut query: Query<(&Stats, &mut ComputedStats)>) {
     for (stats, mut computed) in &mut query {
@@ -34,4 +35,13 @@ pub fn update_list(list: &mut Vec<RuntimeModifier>, time: &Time) {
             true
         }
     });
+}
+
+pub fn tick_hitstop(
+    mut hitstop: ResMut<Hitstop>,
+    time: Res<Time>,
+) {
+    if hitstop.remaining > 0.0 {
+        hitstop.remaining -= time.delta_secs();
+    }
 }

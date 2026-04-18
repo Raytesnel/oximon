@@ -65,3 +65,8 @@ pub struct AttackEvent {
 pub struct Hitstun {
     pub remaining: f32,
 }
+
+#[derive(Resource)]
+pub struct Hitstop {
+    pub remaining: f32,
+}

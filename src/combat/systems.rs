@@ -126,6 +126,7 @@ pub fn attack_hit_system(
     mut commands: Commands,
     mut attacks: Query<(&Transform, &mut Attack)>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
+    mut hitstop: ResMut<Hitstop>,
     mut writer: MessageWriter<DamageEvent>,
     time: Res<Time>,
 ) {
@@ -143,12 +144,10 @@ pub fn attack_hit_system(
                         target: enemy,
                         amount: attack.definition.damage,
                     });
-                    commands.entity(enemy).insert(Hitstun {
-                        remaining: 0.5,
-                    });
-                    commands.entity(attack.owner).insert(Hitstun {
-                        remaining: 0.1,
-                    });
+                    // commands.entity(enemy).insert(Hitstun {
+                    //     remaining: 0.5,
+                    // });
+                    hitstop.remaining = hitstop.remaining.max(0.05);
                     info!("added hitstun");
                     break;
                 }
@@ -168,6 +167,7 @@ pub fn attack_hit_system(
                         target: enemy,
                         amount: attack.definition.damage,
                     });
+                    hitstop.remaining = hitstop.remaining.max(0.05);
 
                     break;
                 }
@@ -261,4 +261,8 @@ pub fn tick_hitstun(
             info!("hitstun is gone");
         }
     }
+}
+
+pub fn not_in_hitstop(hitstop: Res<Hitstop>) -> bool {
+    hitstop.remaining <= 0.0
 }
