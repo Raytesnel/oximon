@@ -3,7 +3,7 @@ mod common;
 pub mod movement;
 
 use crate::combat::CombatPlugin;
-use crate::combat::components::{AttackStats, CombatState, Cooldowns, Health};
+use crate::combat::components::{AttackStats, CombatState, Cooldowns, Health, Hitstop};
 use crate::common::CommonPlugin;
 use crate::common::components::{
     ComputedStats, ModifierTrigger, Player, RuntimeModifier, StatModifier, StatType, Stats,
@@ -27,7 +27,9 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
-
+    commands.insert_resource(Hitstop {
+        remaining: 0.0,
+    });
     // Player
     commands.spawn((
         Sprite {
