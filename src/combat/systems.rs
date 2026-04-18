@@ -10,14 +10,14 @@ pub const QUICK_ATTACK: KeyCode = KeyCode::KeyQ;
 
 pub fn attack_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(Entity, &mut Cooldowns), With<Player>>,
+    mut query: Query<(Entity, &mut Cooldowns,&mut CombatState), (With<Player>, Without<Hitstun>)>,
     mut writer: MessageWriter<AttackEvent>,
 ) {
     if !keyboard.just_pressed(JUMP_BUTTON) {
         return;
     }
 
-    for (entity, mut cooldowns) in &mut query {
+    for (entity, mut cooldowns, mut combat_state) in &mut query {
         let def = simple_beam();
 
         // 👇 check cooldown
@@ -33,19 +33,19 @@ pub fn attack_input_system(
             Timer::from_seconds(def.cooldown, TimerMode::Once),
         );
         writer.write(AttackEvent { entity });
+        *combat_state=  CombatState::Attacking;
     }
 }
 
 pub fn quick_attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(Entity, &mut Cooldowns), With<Player>>,
+    mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Player>,Without<Hitstun>)>,
 ) {
     if !keyboard.just_pressed(QUICK_ATTACK) {
         return;
     }
-    println!("q pressed");
-    for (entity, mut cooldowns) in &mut query {
+    for (entity, mut cooldowns, mut combat_state) in &mut query {
         let def = quick_attack();
         // 👇 check cooldown
         if let Some(timer) = cooldowns.timers.get(&def.name) {
@@ -54,7 +54,6 @@ pub fn quick_attack_input_system(
             }
         }
 
-        // 👇 start cooldown
         cooldowns.timers.insert(
             def.name.clone(),
             Timer::from_seconds(def.cooldown, TimerMode::Once),
@@ -65,6 +64,7 @@ pub fn quick_attack_input_system(
             Transform::default(),
             sprite,
         ));
+        *combat_state=  CombatState::Attacking;
     }
 }
 
@@ -123,6 +123,7 @@ pub fn attack_start_system(mut attacks: Query<&mut Attack>, mut stats_query: Que
 }
 
 pub fn attack_hit_system(
+    mut commands: Commands,
     mut attacks: Query<(&Transform, &mut Attack)>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     mut writer: MessageWriter<DamageEvent>,
@@ -142,7 +143,13 @@ pub fn attack_hit_system(
                         target: enemy,
                         amount: attack.definition.damage,
                     });
-
+                    commands.entity(enemy).insert(Hitstun {
+                        remaining: 0.5,
+                    });
+                    commands.entity(attack.owner).insert(Hitstun {
+                        remaining: 0.1,
+                    });
+                    info!("added hitstun");
                     break;
                 }
             }
@@ -172,12 +179,17 @@ pub fn attack_hit_system(
 pub fn attack_lifetime_system(
     mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(Entity, &mut Attack)>,
+    mut attack_query: Query<(Entity, &mut Attack)>,
+    mut combat_query: Query<&mut CombatState>,
 ) {
-    for (entity, mut attack) in &mut query {
+    for (attack_entity, mut attack) in &mut attack_query {
         attack.lifetime_timer.tick(time.delta());
+
         if attack.lifetime_timer.is_finished() {
-            commands.entity(entity).despawn();
+            if let Ok(mut combat_state) = combat_query.get_mut(attack.owner) {
+                *combat_state = CombatState::Idle;
+            }
+            commands.entity(attack_entity).despawn();
         }
     }
 }
@@ -186,7 +198,6 @@ pub fn spawn_attack_system(
     mut commands: Commands,
     mut events: MessageReader<AttackEvent>,
     query: Query<(&Transform, &Facing)>,
-    query_player: Query<Entity, With<Player>>,
 ) {
     for event in events.read() {
         if let Ok((transform, facing)) = query.get(event.entity) {
@@ -234,5 +245,20 @@ pub fn cooldown_tick_system(time: Res<Time>, mut query: Query<&mut Cooldowns>) {
             timer.tick(time.delta());
             !timer.just_finished()
         });
+    }
+}
+
+pub fn tick_hitstun(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut Hitstun)>
+) {
+    for (entity, mut hitstun) in &mut query {
+        hitstun.remaining -= time.delta_secs();
+
+        if hitstun.remaining <= 0.0 {
+            commands.entity(entity).remove::<Hitstun>();
+            info!("hitstun is gone");
+        }
     }
 }
