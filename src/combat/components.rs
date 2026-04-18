@@ -34,6 +34,7 @@ impl Default for Cooldowns {
 
 #[derive(Component)]
 pub struct Attack {
+    pub owner: Entity,
     pub definition: AttackDefinition,
     pub lifetime_timer: Timer,
     pub hit_timer: Timer,
@@ -44,6 +45,7 @@ pub struct Attack {
 impl Attack {
     pub fn from_definition(def: AttackDefinition, owner: Entity) -> Self {
         Self {
+            owner,
             lifetime_timer: Timer::from_seconds(def.lifetime, TimerMode::Once),
             hit_timer: Timer::from_seconds(def.hit_interval, TimerMode::Repeating),
             definition: def,
@@ -57,4 +59,9 @@ impl Attack {
 #[derive(Message, Debug)]
 pub struct AttackEvent {
     pub entity: Entity,
+}
+
+#[derive(Component, Debug)]
+pub struct Hitstun {
+    pub remaining: f32,
 }

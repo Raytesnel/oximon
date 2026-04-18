@@ -2,6 +2,7 @@ use super::components::*;
 use crate::common::components::{ComputedStats, Player, Stats};
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
+use crate::combat::components::Hitstun;
 
 const UP_BUTTON: KeyCode = KeyCode::ArrowUp;
 const DOWN_BUTTON: KeyCode = KeyCode::ArrowDown;
@@ -21,7 +22,7 @@ pub struct MovementData {
 pub fn apply_acceleration(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(&mut Velocity, &MovementState, Option<&Dash>, &ComputedStats), With<Player>>,
+    mut query: Query<(&mut Velocity, &MovementState, Option<&Dash>, &ComputedStats), (With<Player>, Without<Hitstun>)>,
 ) {
     let input_dir = compute_direction(&keyboard);
     for (mut velocity, state, dash, stats) in &mut query {
@@ -103,12 +104,11 @@ pub fn compute_direction(input: &ButtonInput<KeyCode>) -> Vec3 {
 pub fn handle_dash_input(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<(Entity, &MovementState, &ComputedStats), With<Player>>,
+    query: Query<(Entity, &MovementState, &ComputedStats), (With<Player>, Without<Hitstun>)>,
 ) {
     if !keyboard.pressed(DASH_BUTTON) {
         return;
     }
-
     for (entity, state, stats) in &query {
         if *state == MovementState::Dashing {
             continue;

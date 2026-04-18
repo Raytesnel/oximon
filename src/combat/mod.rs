@@ -28,6 +28,7 @@ impl Plugin for CombatPlugin {
                 despawn_dead_system,
                 attack_follow_system,
                 cooldown_tick_system,
+                tick_hitstun,
             ),
         );
     }
