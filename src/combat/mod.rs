@@ -35,10 +35,9 @@ impl Plugin for CombatPlugin {
                 cooldown_tick_system,
             ).run_if(not_in_hitstop)
         );
-        app.add_systems(Update, (
+        app.add_systems(FixedUpdate, (
             ai_decision_system,
-            ai_movement_system,
             ai_attack_system,
-        ).chain());
+        ));
     }
 }
