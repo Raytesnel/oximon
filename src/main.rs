@@ -8,8 +8,9 @@ use crate::common::CommonPlugin;
 use crate::common::components::{
     ComputedStats, ModifierTrigger, Player, RuntimeModifier, StatModifier, StatType, Stats,
 };
+use crate::combat::ai::{AI, AIState, AIConfig, AIIntent, Target};
 use crate::movement::MovementPlugin;
-use crate::movement::components::Facing;
+use crate::movement::components::{Facing, Movable};
 use bevy::prelude::*;
 use common::components::Enemy;
 use movement::components::{MovementState, Velocity};
@@ -31,7 +32,7 @@ fn setup(mut commands: Commands) {
         remaining: 0.0,
     });
     // Player
-    commands.spawn((
+    let player_entity= commands.spawn((
         Sprite {
             color: Color::WHITE,
             custom_size: Some(Vec2::new(20.0, 20.0)),
@@ -39,6 +40,7 @@ fn setup(mut commands: Commands) {
         },
         Transform::from_xyz(0., 0., 0.),
         Player,
+        Movable,
         Cooldowns {
             timers: HashMap::new(),
         },
@@ -104,17 +106,42 @@ fn setup(mut commands: Commands) {
         },
         AttackStats { attack: 25.0 },
         CombatState::Idle,
-    ));
+    )).id();;
 
-    // Dummy enemy
+    spawn_enemy(&mut commands, player_entity, Vec3::new(100.0, 0.0, 0.0));
+}
+
+
+pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
     commands.spawn((
+        Transform::from_translation(pos),
+        Enemy,
+        Movable,
         Sprite {
             color: Color::srgb(0., 0., 1.0),
             custom_size: Some(Vec2::new(20.0, 20.0)),
             ..default()
         },
-        Transform::from_xyz(100.0, 0.0, 0.0),
-        Enemy,
+        AI {
+            state: AIState::Wander,
+            timer: 0.0,
+        },
+        AIConfig {
+            vision_range: 250.0,
+            attack_range: 40.0,
+            wander_speed: 50.0,
+            chase_speed: 120.0,
+        },
+        AIIntent {
+            move_dir: Vec2::ZERO,
+            wants_attack: false,
+        },
+        Target { entity: target },
+
+        Velocity::default(),
+        MovementState::Idle,
+        Facing(Vec2::X),
+
         Health {
             current: 100.0,
             max: 100.0,

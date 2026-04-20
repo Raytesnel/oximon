@@ -22,17 +22,17 @@ pub struct MovementData {
 pub fn apply_acceleration(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(&mut Velocity, &MovementState, Option<&Dash>, &ComputedStats), (With<Player>, Without<Hitstun>)>,
+    mut query: Query<(&mut Velocity, &MovementState, Option<&Dash>, &ComputedStats), (With<Movable>, Without<Hitstun>)>,
 ) {
     let input_dir = compute_direction(&keyboard);
     for (mut velocity, state, dash, stats) in &mut query {
         match state {
             MovementState::Dashing => {
                 let dash = dash.expect("Dashing state must have Dash component");
-                velocity.0 = dash.direction * stats.dash_speed;
+                velocity.value = dash.direction * stats.dash_speed;
 
-                if velocity.0.length() > stats.dash_speed {
-                    velocity.0 = velocity.0.normalize() * stats.dash_speed;
+                if velocity.value.length() > stats.dash_speed {
+                    velocity.value = velocity.value.normalize() * stats.dash_speed;
                 }
             }
 
@@ -42,10 +42,10 @@ pub fn apply_acceleration(
                 let acceleration = stats.acceleration;
                 let speed = stats.speed;
 
-                velocity.0 += input_dir * acceleration * time.delta_secs();
+                velocity.value += input_dir * acceleration * time.delta_secs();
 
-                if velocity.0.length() > speed {
-                    velocity.0 = velocity.0.normalize() * speed;
+                if velocity.value.length() > speed {
+                    velocity.value = velocity.value.normalize() * speed;
                 }
             }
         }
@@ -54,10 +54,10 @@ pub fn apply_acceleration(
 
 pub fn apply_friction(
     time: Res<Time>,
-    mut query: Query<(&mut Velocity, &MovementState, &ComputedStats), With<Player>>,
+    mut query: Query<(&mut Velocity, &MovementState, &ComputedStats), With<Movable>>,
 ) {
     for (mut velocity, state, stats) in &mut query {
-        let speed = velocity.0.length();
+        let speed = velocity.value.length();
 
         let friction = match state {
             MovementState::Dashing => stats.dash_friction,
@@ -69,16 +69,16 @@ pub fn apply_friction(
             let drop = friction * time.delta_secs();
             let new_speed = (speed - drop).max(0.0);
 
-            velocity.0 = velocity.0.normalize_or_zero() * new_speed;
+            velocity.value = velocity.value.normalize_or_zero() * new_speed;
         }
     }
 }
 pub fn apply_velocity(
     time: Res<Time>,
-    mut query: Query<(&mut Transform, &Velocity), With<Player>>,
+    mut query: Query<(&mut Transform, &Velocity), With<Movable>>,
 ) {
     for (mut transform, velocity) in &mut query {
-        transform.translation += velocity.0 * time.delta_secs();
+        transform.translation += velocity.value * time.delta_secs();
     }
 }
 
@@ -104,7 +104,7 @@ pub fn compute_direction(input: &ButtonInput<KeyCode>) -> Vec3 {
 pub fn handle_dash_input(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<(Entity, &MovementState, &ComputedStats), (With<Player>, Without<Hitstun>)>,
+    query: Query<(Entity, &MovementState, &ComputedStats), (With<Movable>, Without<Hitstun>)>,
 ) {
     if !keyboard.pressed(DASH_BUTTON) {
         return;
@@ -164,12 +164,12 @@ pub fn update_movement_state(
             Option<&Dash>,
             Option<&Recover>,
         ),
-        With<Player>,
+        With<Movable>,
     >,
 ) {
     for (mut velocity, mut movement_state, dash, recover) in &mut query {
         let input_dir = compute_direction(&keyboard);
-        let speed = velocity.0.length();
+        let speed = velocity.value.length();
         let new_state = if dash.is_some() {
             MovementState::Dashing
         } else if recover.is_some() {
@@ -192,7 +192,7 @@ pub fn update_movement_state(
 
 pub fn update_facing(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<&mut Facing, With<Player>>,
+    mut query: Query<&mut Facing, With<Movable>>,
 ) {
     let input_dir = compute_direction(&keyboard).truncate();
 

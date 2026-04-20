@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 
 #[derive(Component, Default, Debug)]
-pub struct Velocity(pub Vec3);
+pub struct Velocity {
+    pub value: Vec3,
+}
 #[derive(Component, Debug)]
 pub struct Dash {
     pub direction: Vec3,
@@ -22,3 +24,6 @@ pub enum MovementState {
 
 #[derive(Component, Debug, Clone, Copy, PartialEq)]
 pub struct Facing(pub Vec2);
+
+#[derive(Component)]
+pub struct Movable;

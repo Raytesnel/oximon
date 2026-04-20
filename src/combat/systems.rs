@@ -1,8 +1,8 @@
 use super::components::*;
 use super::events::*;
 use crate::combat::attacks::{quick_attack, simple_beam};
-use crate::common::components::{Enemy, ModifierTrigger, Player, RuntimeModifier, Stats};
-use crate::movement::components::Facing;
+use crate::common::components::{Enemy, ModifierTrigger, RuntimeModifier, Stats};
+use crate::movement::components::{Facing, Movable};
 use bevy::prelude::*;
 
 pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
@@ -10,7 +10,7 @@ pub const QUICK_ATTACK: KeyCode = KeyCode::KeyQ;
 
 pub fn attack_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(Entity, &mut Cooldowns,&mut CombatState), (With<Player>, Without<Hitstun>)>,
+    mut query: Query<(Entity, &mut Cooldowns,&mut CombatState), (With<Movable>, Without<Hitstun>)>,
     mut writer: MessageWriter<AttackEvent>,
 ) {
     if !keyboard.just_pressed(JUMP_BUTTON) {
@@ -40,7 +40,7 @@ pub fn attack_input_system(
 pub fn quick_attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Player>,Without<Hitstun>)>,
+    mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Movable>,Without<Hitstun>)>,
 ) {
     if !keyboard.just_pressed(QUICK_ATTACK) {
         return;
@@ -139,14 +139,15 @@ pub fn attack_hit_system(
                     .distance(enemy_transform.translation);
 
                 if distance < attack.definition.range {
+                    info!("writen {:?} damge to :{:?}", attack.definition.damage, enemy);
                     attack.active = true;
                     writer.write(DamageEvent {
                         target: enemy,
                         amount: attack.definition.damage,
                     });
-                    // commands.entity(enemy).insert(Hitstun {
-                    //     remaining: 0.5,
-                    // });
+                    commands.entity(enemy).insert(Hitstun {
+                        remaining: 0.5,
+                    });
                     hitstop.remaining = hitstop.remaining.max(0.05);
                     info!("added hitstun");
                     break;
@@ -166,6 +167,9 @@ pub fn attack_hit_system(
                     writer.write(DamageEvent {
                         target: enemy,
                         amount: attack.definition.damage,
+                    });
+                    commands.entity(enemy).insert(Hitstun {
+                        remaining: 0.5,
                     });
                     hitstop.remaining = hitstop.remaining.max(0.05);
 

@@ -62,7 +62,7 @@ fn run_movement(keys: &[KeyCode]) -> Vec3 {
     let mut query = world.query::<&Velocity>();
     let transform = query.single(world);
 
-    transform.unwrap().0
+    transform.unwrap().value
 }
 
 #[test]
@@ -357,7 +357,7 @@ fn dash_is_triggered() {
 
     let dash_count = q.iter(world).count();
 
-    assert!(dash_count == 1, "Dash was not created");
+    assert_eq!(dash_count, 1, "Dash was not created");
 }
 #[test]
 fn dash_has_correct_direction() {
@@ -398,7 +398,7 @@ fn dash_increases_movement_speed() {
     let mut q = world.query::<&Velocity>();
     let velocity = q.single(world).unwrap();
     assert!(
-        velocity.0.x > normal.x,
+        velocity.value.x > normal.x,
         "Dash did not increase movement speed"
     );
 }
@@ -420,7 +420,7 @@ fn dash_respects_max_speed() {
     let mut q = world.query::<(&Velocity, &Stats)>();
     let (velocity, stats) = q.single(world).unwrap();
     assert!(
-        velocity.0.length() <= stats.dash_speed() + 1.0, // tolerance
+        velocity.value.length() <= stats.dash_speed() + 1.0, // tolerance
         "Dash exceeded max speed"
     );
 }
