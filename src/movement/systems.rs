@@ -23,7 +23,7 @@ pub fn apply_acceleration(
     time: Res<Time>,
     mut query: Query<(&mut Velocity, &MovementState, Option<&Dash>, &ComputedStats,&MoveIntent), (With<Movable>, Without<Hitstun>)>,
 ) {
-    for (mut velocity, state, dash, stats,move_intend) in &mut query {
+    for (mut velocity, state, dash, stats, move_intent) in &mut query {
         match state {
             MovementState::Dashing => {
                 let dash = dash.expect("Dashing state must have Dash component");
@@ -39,7 +39,7 @@ pub fn apply_acceleration(
             MovementState::Moving | MovementState::Idle => {
                 let acceleration = stats.acceleration;
                 let speed = stats.speed;
-                let input_dir = move_intend.direction;
+                let input_dir = move_intent.direction;
                 velocity.value += input_dir * acceleration * time.delta_secs();
 
                 if velocity.value.length() > speed {

@@ -1,5 +1,5 @@
 use crate::combat::components::Attack;
-use crate::movement::components::Velocity;
+use crate::movement::components::{MoveIntent, Velocity};
 use bevy::prelude::*;
 
 #[derive(Component, Debug, PartialEq, Eq)]
@@ -22,7 +22,7 @@ pub struct AIConfig {
 }
 #[derive(Component, Debug)]
 pub struct AIIntent {
-    pub move_dir: Vec2,
+    pub move_dir: Vec3,
     pub wants_attack: bool,
 }
 #[derive(Component)]
@@ -31,13 +31,23 @@ pub struct Target {
 }
 
 pub fn ai_decision_system(
-    time: Res<Time>,
-    mut query: Query<(&mut AI, &AIConfig, &Transform, &Target, &mut AIIntent)>,
+    time: Res<Time<Fixed>>,
+    mut query: Query<(
+        &mut AI,
+        &AIConfig, // TODO: replace this with computed state.
+        &Transform,
+        &Target,
+        &mut MoveIntent,
+        &mut AIIntent,
+    )>,
     transforms: Query<&Transform>,
 ) {
-    for (mut ai, config, transform, target, mut intent) in &mut query {
+
+    for (mut ai, config, transform, target, mut move_intent, mut ai_intent) in &mut query {
+
         let target_pos = transforms.get(target.entity).unwrap().translation;
         let dist = transform.translation.distance(target_pos);
+        ai_intent.wants_attack = false;
 
         match ai.state {
             AIState::Wander => {
@@ -45,15 +55,16 @@ pub fn ai_decision_system(
                     ai.state = AIState::Chase;
                 }
 
-                ai.timer -= time.delta_secs();
+                ai.timer -= time.delta().as_secs_f32();
 
                 if ai.timer <= 0.0 {
-                    intent.move_dir = Vec2::new(
+                    move_intent.direction = Vec3::new(
                         rand::random::<f32>() * 2.0 - 1.0,
                         rand::random::<f32>() * 2.0 - 1.0,
-                    )
-                        .normalize_or_zero();
-
+                        0.0,
+                    ).normalize_or_zero();
+                    info!("new route chosen");
+                    info!("AI intent dir: {:?}", move_intent.direction);
                     ai.timer = 1.5;
                 }
             }
@@ -65,48 +76,28 @@ pub fn ai_decision_system(
                     ai.state = AIState::Wander;
                 }
 
-                intent.move_dir =
-                    (target_pos.truncate() - transform.translation.truncate()).normalize_or_zero();
+                move_intent.direction =
+                    (target_pos - transform.translation).normalize_or_zero();
             }
 
             AIState::Attack => {
                 if dist > config.attack_range {
                     ai.state = AIState::Chase;
                 }
-
-                intent.move_dir = Vec2::ZERO;
-                intent.wants_attack = true;
+                move_intent.direction = Vec3::ZERO;
+                ai_intent.wants_attack = true;
             }
         }
     }
 }
 
-pub fn ai_movement_system(mut query: Query<(&AI, &AIConfig, &mut AIIntent, &mut Velocity)>) {
-    for (ai, config, intent, mut vel) in &mut query {
-        match ai.state {
-            AIState::Wander => {
-                vel.value.x = intent.move_dir.x * config.wander_speed;
-                vel.value.y = intent.move_dir.y * config.wander_speed;
-            }
 
-            AIState::Chase => {
-                vel.value.x = intent.move_dir.x * config.chase_speed;
-                vel.value.y = intent.move_dir.y * config.chase_speed;
-            }
-
-            AIState::Attack => {
-                vel.value.x = 0.0;
-                vel.value.y = 0.0;
-            }
-        }
-    }
-}
 
 pub fn ai_attack_system(mut query: Query<(&AI, &mut AIIntent, &mut Attack)>) {
     for (ai, intent, mut attack) in &mut query {
         if intent.wants_attack {
             if ai.state == AIState::Attack && attack.hit_timer.is_finished() {
-                attack.active = true;
+                info!("attacking!");
             }
         }
     }
