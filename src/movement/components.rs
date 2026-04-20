@@ -27,3 +27,8 @@ pub struct Facing(pub Vec2);
 
 #[derive(Component)]
 pub struct Movable;
+
+#[derive(Component, Debug, Default)]
+pub struct MoveIntent {
+    pub direction: Vec3,
+}

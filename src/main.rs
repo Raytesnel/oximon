@@ -10,7 +10,7 @@ use crate::common::components::{
 };
 use crate::combat::ai::{AI, AIState, AIConfig, AIIntent, Target};
 use crate::movement::MovementPlugin;
-use crate::movement::components::{Facing, Movable};
+use crate::movement::components::{Facing, Movable, MoveIntent};
 use bevy::prelude::*;
 use common::components::Enemy;
 use movement::components::{MovementState, Velocity};
@@ -106,6 +106,7 @@ fn setup(mut commands: Commands) {
         },
         AttackStats { attack: 25.0 },
         CombatState::Idle,
+        MoveIntent {direction:Vec3::ZERO}
     )).id();;
 
     spawn_enemy(&mut commands, player_entity, Vec3::new(100.0, 0.0, 0.0));
@@ -148,5 +149,6 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
         },
         AttackStats { attack: 25.0 },
         CombatState::Idle,
+        MoveIntent {direction:Vec3::ZERO}
     ));
 }

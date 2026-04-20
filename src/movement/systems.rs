@@ -21,11 +21,9 @@ pub struct MovementData {
 
 pub fn apply_acceleration(
     time: Res<Time>,
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(&mut Velocity, &MovementState, Option<&Dash>, &ComputedStats), (With<Movable>, Without<Hitstun>)>,
+    mut query: Query<(&mut Velocity, &MovementState, Option<&Dash>, &ComputedStats,&MoveIntent), (With<Movable>, Without<Hitstun>)>,
 ) {
-    let input_dir = compute_direction(&keyboard);
-    for (mut velocity, state, dash, stats) in &mut query {
+    for (mut velocity, state, dash, stats,move_intend) in &mut query {
         match state {
             MovementState::Dashing => {
                 let dash = dash.expect("Dashing state must have Dash component");
@@ -41,7 +39,7 @@ pub fn apply_acceleration(
             MovementState::Moving | MovementState::Idle => {
                 let acceleration = stats.acceleration;
                 let speed = stats.speed;
-
+                let input_dir = move_intend.direction;
                 velocity.value += input_dir * acceleration * time.delta_secs();
 
                 if velocity.value.length() > speed {
@@ -156,19 +154,19 @@ pub fn update_recover(
 
 #[allow(clippy::type_complexity)]
 pub fn update_movement_state(
-    keyboard: Res<ButtonInput<KeyCode>>,
     mut query: Query<
         (
             &Velocity,
             &mut MovementState,
             Option<&Dash>,
             Option<&Recover>,
+            &MoveIntent
         ),
         With<Movable>,
     >,
 ) {
-    for (mut velocity, mut movement_state, dash, recover) in &mut query {
-        let input_dir = compute_direction(&keyboard);
+    for (mut velocity, mut movement_state, dash, recover, move_intent) in &mut query {
+        let input_dir = move_intent.direction;
         let speed = velocity.value.length();
         let new_state = if dash.is_some() {
             MovementState::Dashing
@@ -210,5 +208,29 @@ pub fn debug_movement_state_changes(
 ) {
     for (entity, state) in &mut query {
         debug!("Entity {:?} changed state to {:?}", entity, state);
+    }
+}
+
+pub fn player_input_system(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut query: Query<&mut MoveIntent, With<Player>>,
+) {
+    let mut direction = Vec3::ZERO;
+
+    if keyboard.pressed(UP_BUTTON) {
+        direction.y += 1.0;
+    }
+    if keyboard.pressed(DOWN_BUTTON) {
+        direction.y -= 1.0;
+    }
+    if keyboard.pressed(LEFT_BUTTON) {
+        direction.x -= 1.0;
+    }
+    if keyboard.pressed(RIGHT_BUTTON) {
+        direction.x += 1.0;
+    }
+
+    for mut intent in &mut query {
+        intent.direction = direction.normalize_or_zero();
     }
 }
