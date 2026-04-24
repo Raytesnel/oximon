@@ -34,6 +34,7 @@ impl Default for Cooldowns {
 
 #[derive(Component)]
 pub struct Attack {
+    pub id: AttackId,
     pub owner: Entity,
     pub definition: AttackDefinition,
     pub lifetime_timer: Timer,
@@ -41,19 +42,31 @@ pub struct Attack {
     pub active: bool,
     pub follow_entity: Option<Entity>,
     pub applied_start_modifiers: bool,
+    pub hits_done: u32,
+    pub has_hit: bool,
 }
 impl Attack {
-    pub fn from_definition(def: AttackDefinition, owner: Entity) -> Self {
+    pub fn from_definition(def: AttackDefinition, owner: Entity, id: AttackId) -> Self {
         Self {
+            id,
             owner,
             lifetime_timer: Timer::from_seconds(def.lifetime, TimerMode::Once),
             hit_timer: Timer::from_seconds(def.hit_interval, TimerMode::Repeating),
             definition: def,
             active: false,
+            hits_done: 0,
+            has_hit: false,
             follow_entity: Some(owner),
             applied_start_modifiers: false,
         }
     }
+}
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct AttackId(pub u32);
+
+#[derive(Resource, Default)]
+pub struct AttackIdCounter {
+    pub next: u32,
 }
 
 #[derive(Message, Debug)]
@@ -69,4 +82,9 @@ pub struct Hitstun {
 #[derive(Resource)]
 pub struct Hitstop {
     pub remaining: f32,
+}
+#[derive(Component)]
+pub struct KnockbackEffect {
+    pub velocity: Vec3,
+    pub timer: Timer,
 }

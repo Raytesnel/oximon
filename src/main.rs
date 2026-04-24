@@ -4,10 +4,13 @@ pub mod movement;
 
 use crate::combat::CombatPlugin;
 use crate::combat::ai::{AI, AIConfig, AIIntent, AIState, Target};
-use crate::combat::components::{AttackStats, CombatState, Cooldowns, Health, Hitstop};
+use crate::combat::components::{
+    AttackId, AttackIdCounter, AttackStats, CombatState, Cooldowns, Health, Hitstop,
+};
 use crate::common::CommonPlugin;
 use crate::common::components::{
-    ComputedStats, ModifierTrigger, Player, RuntimeModifier, StatModifier, StatType, Stats,
+    ComputedStats, ModifierLifetime, ModifierTrigger, Player, RuntimeModifier, StatModifier,
+    StatType, Stats,
 };
 use crate::movement::MovementPlugin;
 use crate::movement::components::{Facing, Movable, MoveIntent};
@@ -23,6 +26,7 @@ fn main() {
         .add_plugins(CombatPlugin)
         .add_plugins(CommonPlugin)
         .add_systems(Startup, setup)
+        .insert_resource(AttackIdCounter::default())
         .run();
 }
 
@@ -54,45 +58,59 @@ fn setup(mut commands: Commands) {
             },
             Stats {
                 speed: vec![RuntimeModifier {
+                    source: AttackId(0),
                     flat: 250.0,
                     multiplier: 1.0,
                     timer: None,
                     stat_type: StatType::Speed,
+                    lifetime: ModifierLifetime::Permanent,
                 }],
                 acceleration: vec![RuntimeModifier {
+                    source: AttackId(0),
                     flat: 1250.0,
                     multiplier: 1.0,
                     timer: None,
+                    lifetime: ModifierLifetime::Permanent,
                     stat_type: StatType::Acceleration,
                 }],
                 friction: vec![RuntimeModifier {
+                    source: AttackId(0),
                     flat: 625.0,
                     multiplier: 1.0,
                     timer: None,
+                    lifetime: ModifierLifetime::Permanent,
                     stat_type: StatType::Friction,
                 }],
                 dash_speed: vec![RuntimeModifier {
+                    source: AttackId(0),
                     flat: 600.0,
                     multiplier: 1.0,
                     timer: None,
+                    lifetime: ModifierLifetime::Permanent,
                     stat_type: StatType::DashSpeed,
                 }],
                 dash_time: vec![RuntimeModifier {
+                    source: AttackId(0),
                     flat: 0.01,
                     multiplier: 1.0,
                     timer: None,
+                    lifetime: ModifierLifetime::Permanent,
                     stat_type: StatType::DashTime,
                 }],
                 dash_friction: vec![RuntimeModifier {
+                    source: AttackId(0),
                     flat: 500.0,
                     multiplier: 1.0,
                     timer: None,
+                    lifetime: ModifierLifetime::Permanent,
                     stat_type: StatType::DashFriction,
                 }],
                 dash_stop_time: vec![RuntimeModifier {
+                    source: AttackId(0),
                     flat: 0.01,
                     multiplier: 1.0,
                     timer: None,
+                    lifetime: ModifierLifetime::Permanent,
                     stat_type: StatType::DashStopTime,
                 }],
             },
@@ -148,45 +166,59 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
 
         stats: Stats {
             speed: vec![RuntimeModifier {
+                source: AttackId(0),
                 flat: 250.0,
                 multiplier: 1.0,
                 timer: None,
+                lifetime: ModifierLifetime::Permanent,
                 stat_type: StatType::Speed,
             }],
             acceleration: vec![RuntimeModifier {
+                source: AttackId(0),
                 flat: 1250.0,
                 multiplier: 1.0,
                 timer: None,
+                lifetime: ModifierLifetime::Permanent,
                 stat_type: StatType::Acceleration,
             }],
             friction: vec![RuntimeModifier {
+                source: AttackId(0),
                 flat: 625.0,
                 multiplier: 1.0,
                 timer: None,
+                lifetime: ModifierLifetime::Permanent,
                 stat_type: StatType::Friction,
             }],
             dash_speed: vec![RuntimeModifier {
+                source: AttackId(0),
                 flat: 600.0,
                 multiplier: 1.0,
                 timer: None,
+                lifetime: ModifierLifetime::Permanent,
                 stat_type: StatType::DashSpeed,
             }],
             dash_time: vec![RuntimeModifier {
+                source: AttackId(0),
                 flat: 0.01,
                 multiplier: 1.0,
                 timer: None,
+                lifetime: ModifierLifetime::Permanent,
                 stat_type: StatType::DashTime,
             }],
             dash_friction: vec![RuntimeModifier {
+                source: AttackId(0),
                 flat: 500.0,
                 multiplier: 1.0,
                 timer: None,
+                lifetime: ModifierLifetime::Permanent,
                 stat_type: StatType::DashFriction,
             }],
             dash_stop_time: vec![RuntimeModifier {
+                source: AttackId(0),
                 flat: 0.01,
                 multiplier: 1.0,
                 timer: None,
+                lifetime: ModifierLifetime::Permanent,
                 stat_type: StatType::DashStopTime,
             }],
         },

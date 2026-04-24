@@ -1,4 +1,4 @@
-use crate::common::components::{ModifierTrigger, StatModifier, StatType};
+use crate::common::components::{ModifierLifetime, ModifierTrigger, StatModifier, StatType};
 use bevy::prelude::*;
 
 #[derive(Clone)]
@@ -20,6 +20,32 @@ impl AttackSpawn {
     }
 }
 
+#[derive(Clone)]
+pub enum KnockbackMode {
+    Additive, // adds to velocity (smooth, keeps momentum)
+    Override, // replaces velocity (sharp hits)
+    Impulse,  // instant burst (like smash knockback)
+}
+#[derive(Clone)]
+pub enum KnockbackDirection {
+    SourceToTarget, // classic hit
+    TargetToSource, // recoil pull
+    Fixed(Vec3),    // e.g. always upward
+}
+#[derive(Clone)]
+pub struct KnockbackDefinition {
+    pub force: f32,
+    pub direction: KnockbackDirection,
+    pub mode: KnockbackMode,
+    pub hitstun: f32,
+}
+#[derive(Clone)]
+pub enum HitBehavior {
+    Single,       // stop after first hit (Quick Attack)
+    MultiHit,     // keep hitting (beam / fire)
+    Limited(u32), // e.g. triple kick (3 hits max)
+}
+
 #[derive(Component, Clone)]
 pub struct AttackDefinition {
     pub name: String,
@@ -31,6 +57,10 @@ pub struct AttackDefinition {
     pub stat_modifiers: Vec<StatModifier>,
     pub spawn: AttackSpawn,
     pub offset: Vec3,
+    pub hit_behavior: HitBehavior,
+
+    pub knockback_target: Option<KnockbackDefinition>,
+    pub knockback_self: Option<KnockbackDefinition>,
 }
 
 pub fn quick_attack() -> AttackDefinition {
@@ -41,11 +71,24 @@ pub fn quick_attack() -> AttackDefinition {
         lifetime: 2.0,
         hit_interval: 0.1,
         cooldown: 3.0,
+        hit_behavior: HitBehavior::Single,
         offset: Vec3::ZERO,
         spawn: AttackSpawn::Hitbox {
             color: Color::srgb(1.0, 0.0, 0.0),
             size: Vec2::new(10.0, 10.0),
         },
+        knockback_target: Some(KnockbackDefinition {
+            force: 3000.0,
+            direction: KnockbackDirection::SourceToTarget,
+            mode: KnockbackMode::Override,
+            hitstun: 2.0,
+        }),
+        knockback_self: Some(KnockbackDefinition {
+            force: 1.0,
+            direction: KnockbackDirection::Fixed(Vec3::ZERO),
+            mode: KnockbackMode::Override, // stops player
+            hitstun: 2.0,
+        }),
         stat_modifiers: vec![
             StatModifier {
                 stat_type: StatType::Speed,
@@ -53,6 +96,7 @@ pub fn quick_attack() -> AttackDefinition {
                 multiplier: 3.0,
                 duration: Some(2.0),
                 trigger: ModifierTrigger::Cast,
+                lifetime: ModifierLifetime::OnAttackEnd,
             },
             StatModifier {
                 stat_type: StatType::Acceleration,
@@ -60,6 +104,7 @@ pub fn quick_attack() -> AttackDefinition {
                 multiplier: 15.0,
                 duration: Some(2.0),
                 trigger: ModifierTrigger::Cast,
+                lifetime: ModifierLifetime::OnAttackEnd,
             },
         ],
     }
@@ -72,17 +117,26 @@ pub fn simple_beam() -> AttackDefinition {
         lifetime: 2.0,
         hit_interval: 0.05,
         cooldown: 0.6,
+        hit_behavior: HitBehavior::MultiHit,
         stat_modifiers: vec![StatModifier {
             stat_type: StatType::Speed,
             flat: 0.0,
             multiplier: 0.1,
             duration: Some(2.0),
             trigger: ModifierTrigger::Cast,
+            lifetime: ModifierLifetime::OnAttackEnd,
         }],
         offset: Vec3::ZERO,
         spawn: AttackSpawn::Hitbox {
             color: Color::srgb(1.0, 0.0, 0.0),
             size: Vec2::new(100.0, 10.0),
         },
+        knockback_target: Some(KnockbackDefinition {
+            force: 300.0,
+            direction: KnockbackDirection::SourceToTarget,
+            mode: KnockbackMode::Impulse,
+            hitstun: 0.05,
+        }),
+        knockback_self: None,
     }
 }

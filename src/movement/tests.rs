@@ -252,50 +252,6 @@ fn test_app() -> App {
             dash_friction: 200.0,
             dash_stop_time: 0.3,
         },
-        Stats {
-            speed: vec![RuntimeModifier {
-                flat: 250.0,
-                multiplier: 1.0,
-                timer: None,
-                stat_type: StatType::Speed,
-            }],
-            acceleration: vec![RuntimeModifier {
-                flat: 1250.0,
-                multiplier: 1.0,
-                timer: None,
-                stat_type: StatType::Acceleration,
-            }],
-            friction: vec![RuntimeModifier {
-                flat: 625.0,
-                multiplier: 1.0,
-                timer: None,
-                stat_type: StatType::Friction,
-            }],
-            dash_speed: vec![RuntimeModifier {
-                flat: 600.0,
-                multiplier: 1.0,
-                timer: None,
-                stat_type: StatType::DashSpeed,
-            }],
-            dash_time: vec![RuntimeModifier {
-                flat: 0.01,
-                multiplier: 1.0,
-                timer: None,
-                stat_type: StatType::DashTime,
-            }],
-            dash_friction: vec![RuntimeModifier {
-                flat: 500.0,
-                multiplier: 1.0,
-                timer: None,
-                stat_type: StatType::DashFriction,
-            }],
-            dash_stop_time: vec![RuntimeModifier {
-                flat: 0.01,
-                multiplier: 1.0,
-                timer: None,
-                stat_type: StatType::DashStopTime,
-            }],
-        },
     ));
     // tick(&mut app, 0.016);
     app.update();

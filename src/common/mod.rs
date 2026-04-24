@@ -7,6 +7,9 @@ pub struct CommonPlugin;
 
 impl Plugin for CommonPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (compute_stats_system, update_stat_timers,tick_hitstop));
+        app.add_systems(
+            Update,
+            (compute_stats_system, update_stat_timers, tick_hitstop),
+        );
     }
 }

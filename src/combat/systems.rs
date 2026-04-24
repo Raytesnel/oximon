@@ -1,8 +1,14 @@
 use super::components::*;
 use super::events::*;
-use crate::combat::attacks::{quick_attack, simple_beam};
-use crate::common::components::{Enemy, ModifierTrigger, RuntimeModifier, Stats};
-use crate::movement::components::{Facing, Movable};
+use crate::combat::attacks::{
+    AttackDefinition, HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode,
+    quick_attack, simple_beam,
+};
+use crate::common::components::{
+    Enemy, ModifierLifetime, ModifierTrigger, Player, RuntimeModifier, Stats,
+};
+use crate::movement::components::{Facing, Movable, Velocity};
+use bevy::ecs::error::info;
 use bevy::prelude::*;
 
 pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
@@ -10,7 +16,7 @@ pub const QUICK_ATTACK: KeyCode = KeyCode::KeyQ;
 
 pub fn attack_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(Entity, &mut Cooldowns,&mut CombatState), (With<Movable>, Without<Hitstun>)>,
+    mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Movable>, Without<Hitstun>)>,
     mut writer: MessageWriter<AttackEvent>,
 ) {
     if !keyboard.just_pressed(JUMP_BUTTON) {
@@ -33,14 +39,15 @@ pub fn attack_input_system(
             Timer::from_seconds(def.cooldown, TimerMode::Once),
         );
         writer.write(AttackEvent { entity });
-        *combat_state=  CombatState::Attacking;
+        *combat_state = CombatState::Attacking;
     }
 }
 
 pub fn quick_attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Movable>,Without<Hitstun>)>,
+    mut id_counter: ResMut<AttackIdCounter>,
+    mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Movable>, Without<Hitstun>)>,
 ) {
     if !keyboard.just_pressed(QUICK_ATTACK) {
         return;
@@ -59,12 +66,14 @@ pub fn quick_attack_input_system(
             Timer::from_seconds(def.cooldown, TimerMode::Once),
         );
         let sprite = def.spawn.build_sprite();
+        let id = AttackId(id_counter.next);
+        id_counter.next += 1;
         commands.spawn((
-            Attack::from_definition(def, entity),
+            Attack::from_definition(def, entity, id),
             Transform::default(),
             sprite,
         ));
-        *combat_state=  CombatState::Attacking;
+        *combat_state = CombatState::Attacking;
     }
 }
 
@@ -106,9 +115,11 @@ pub fn attack_start_system(mut attacks: Query<&mut Attack>, mut stats_query: Que
                 for modifier in &attack.definition.stat_modifiers {
                     if matches!(modifier.trigger, ModifierTrigger::Cast) {
                         stats.add_modifier(RuntimeModifier {
+                            source: attack.id,
                             stat_type: modifier.stat_type,
                             flat: modifier.flat,
                             multiplier: modifier.multiplier,
+                            lifetime: modifier.lifetime.clone(),
                             timer: modifier
                                 .duration
                                 .map(|d| Timer::from_seconds(d, TimerMode::Once)),
@@ -126,58 +137,185 @@ pub fn attack_hit_system(
     mut commands: Commands,
     mut attacks: Query<(&Transform, &mut Attack)>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
+    player: Query<&Transform, With<Player>>,
     mut hitstop: ResMut<Hitstop>,
     mut writer: MessageWriter<DamageEvent>,
     time: Res<Time>,
 ) {
     for (attack_transform, mut attack) in &mut attacks {
-        let tick_ready = attack.hit_timer.tick(time.delta()).just_finished();
-        if !attack.active {
-            for (enemy, enemy_transform) in &enemies {
-                let distance = attack_transform
-                    .translation
-                    .distance(enemy_transform.translation);
+        let attack_pos = attack_transform.translation;
 
-                if distance < attack.definition.range {
-                    info!("writen {:?} damge to :{:?}", attack.definition.damage, enemy);
-                    attack.active = true;
-                    writer.write(DamageEvent {
-                        target: enemy,
-                        amount: attack.definition.damage,
-                    });
-                    commands.entity(enemy).insert(Hitstun {
-                        remaining: 0.5,
-                    });
-                    hitstop.remaining = hitstop.remaining.max(0.05);
-                    info!("added hitstun");
-                    break;
-                }
+        let tick_ready = attack.hit_timer.tick(time.delta()).just_finished();
+
+        for (enemy, enemy_transform) in &enemies {
+            let enemy_pos = enemy_transform.translation;
+            let Ok(player_transform) = player.single() else {
+                continue;
+            };
+            let player_pos = player_transform.translation;
+            if attack_pos.distance(enemy_pos) >= attack.definition.range {
+                continue;
             }
 
-            continue;
-        }
+            match attack.definition.hit_behavior {
+                HitBehavior::Single => {
+                    if attack.has_hit {
+                        continue;
+                    }
+                    apply_hit_effects(
+                        &mut commands,
+                        &attack,
+                        enemy,
+                        enemy_pos,
+                        attack_pos,
+                        player_pos,
+                        &mut hitstop,
+                        &mut writer,
+                    );
 
-        if tick_ready && !attack.lifetime_timer.is_finished() {
-            for (enemy, enemy_transform) in &enemies {
-                let distance = attack_transform
-                    .translation
-                    .distance(enemy_transform.translation);
+                    attack.has_hit = true;
+                    attack.hit_timer.finish();
+                    attack.lifetime_timer.finish();
+                }
 
-                if distance < attack.definition.range {
-                    writer.write(DamageEvent {
-                        target: enemy,
-                        amount: attack.definition.damage,
-                    });
-                    commands.entity(enemy).insert(Hitstun {
-                        remaining: 0.5,
-                    });
-                    hitstop.remaining = hitstop.remaining.max(0.05);
+                HitBehavior::MultiHit => {
+                    if tick_ready {
+                        apply_hit_effects(
+                            &mut commands,
+                            &attack,
+                            enemy,
+                            enemy_pos,
+                            attack_pos,
+                            player_pos,
+                            &mut hitstop,
+                            &mut writer,
+                        );
+                    }
+                }
 
-                    break;
+                HitBehavior::Limited(max_hits) => {
+                    if attack.hits_done >= max_hits {
+                        continue;
+                    }
+
+                    if tick_ready {
+                        apply_hit_effects(
+                            &mut commands,
+                            &attack,
+                            enemy,
+                            enemy_pos,
+                            attack_pos,
+                            player_pos,
+                            &mut hitstop,
+                            &mut writer,
+                        );
+
+                        attack.hits_done += 1;
+
+                        if attack.hits_done >= max_hits {
+                            attack.hit_timer.finish();
+                            attack.lifetime_timer.finish();
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+fn apply_hit_effects(
+    commands: &mut Commands,
+    attack: &Attack,
+    target: Entity,
+    target_position: Vec3,
+    position_attacker: Vec3,
+    attack_pos: Vec3,
+    hitstop: &mut Hitstop,
+    writer: &mut MessageWriter<DamageEvent>,
+) {
+    // DAMAGE
+    writer.write(DamageEvent {
+        target,
+        amount: attack.definition.damage,
+    });
+    hitstop.remaining = hitstop.remaining.max(0.05);
+
+    // KNOCKBACK + HITSTUN
+    let knockbacks = [
+        (&attack.definition.knockback_target, target),
+        (&attack.definition.knockback_self, attack.owner),
+    ];
+
+    for (kb_opt, entity) in knockbacks {
+        if let Some(kb) = kb_opt {
+            let dir = match kb.direction {
+                KnockbackDirection::SourceToTarget => {
+                    (target_position - attack_pos).normalize_or_zero()
+                }
+                KnockbackDirection::TargetToSource => {
+                    (attack_pos - target_position).normalize_or_zero()
+                }
+                KnockbackDirection::Fixed(v) => v.normalize_or_zero(),
+            };
+
+            let velocity = dir * kb.force;
+
+            commands.entity(entity).insert(KnockbackEffect {
+                velocity,
+                timer: Timer::from_seconds(0.2, TimerMode::Once),
+            });
+
+            commands.entity(target).insert(Hitstun {
+                remaining: kb.hitstun,
+            });
+        }
+    }
+}
+
+fn remove_attack_modifiers(stats: &mut Stats, attack_id: AttackId) {
+    stats
+        .speed
+        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
+    stats
+        .acceleration
+        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
+    stats
+        .friction
+        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
+    stats
+        .dash_speed
+        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
+    stats
+        .dash_time
+        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
+    stats
+        .dash_friction
+        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
+    stats
+        .dash_stop_time
+        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
+}
+
+fn cleanup_attack(
+    commands: &mut Commands,
+    stats_query: &mut Query<&mut Stats>,
+    combat_query: &mut Query<&mut CombatState>,
+    attack_entity: Entity,
+    attack: &Attack,
+) {
+    // reset state
+    if let Ok(mut combat_state) = combat_query.get_mut(attack.owner) {
+        *combat_state = CombatState::Idle;
+    }
+
+    // remove modifiers
+    if let Ok(mut stats) = stats_query.get_mut(attack.owner) {
+        remove_attack_modifiers(&mut stats, attack.id);
+        info!("new stats are: {:?}", stats)
+    }
+
+    // despawn attack
+    commands.entity(attack_entity).despawn();
 }
 
 pub fn attack_lifetime_system(
@@ -185,15 +323,19 @@ pub fn attack_lifetime_system(
     time: Res<Time>,
     mut attack_query: Query<(Entity, &mut Attack)>,
     mut combat_query: Query<&mut CombatState>,
+    mut stats_query: Query<&mut Stats>,
 ) {
     for (attack_entity, mut attack) in &mut attack_query {
         attack.lifetime_timer.tick(time.delta());
 
         if attack.lifetime_timer.is_finished() {
-            if let Ok(mut combat_state) = combat_query.get_mut(attack.owner) {
-                *combat_state = CombatState::Idle;
-            }
-            commands.entity(attack_entity).despawn();
+            cleanup_attack(
+                &mut commands,
+                &mut stats_query,
+                &mut combat_query,
+                attack_entity,
+                &attack,
+            );
         }
     }
 }
@@ -201,6 +343,7 @@ pub fn attack_lifetime_system(
 pub fn spawn_attack_system(
     mut commands: Commands,
     mut events: MessageReader<AttackEvent>,
+    mut id_counter: ResMut<AttackIdCounter>,
     query: Query<(&Transform, &Facing)>,
 ) {
     for event in events.read() {
@@ -211,7 +354,9 @@ pub fn spawn_attack_system(
             let offset = (direction * (100.0 * 0.5)).extend(0.0);
             let def = simple_beam();
             let sprite = def.spawn.build_sprite();
-            let mut attack_command = Attack::from_definition(def, event.entity);
+            let id = AttackId(id_counter.next);
+            id_counter.next += 1;
+            let mut attack_command = Attack::from_definition(def, event.entity, id);
             attack_command.definition.offset = offset;
             commands.spawn((
                 attack_command,
@@ -255,7 +400,7 @@ pub fn cooldown_tick_system(time: Res<Time>, mut query: Query<&mut Cooldowns>) {
 pub fn tick_hitstun(
     mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(Entity, &mut Hitstun)>
+    mut query: Query<(Entity, &mut Hitstun)>,
 ) {
     for (entity, mut hitstun) in &mut query {
         hitstun.remaining -= time.delta_secs();
@@ -269,4 +414,22 @@ pub fn tick_hitstun(
 
 pub fn not_in_hitstop(hitstop: Res<Hitstop>) -> bool {
     hitstop.remaining <= 0.0
+}
+
+pub fn apply_knockback_system(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut Velocity, &mut KnockbackEffect)>,
+) {
+    for (entity, mut velocity, mut knockback) in &mut query {
+        // Apply knockback velocity
+        velocity.value = knockback.velocity;
+        knockback.velocity *= 0.9;
+
+        knockback.timer.tick(time.delta());
+
+        if knockback.timer.is_finished() {
+            commands.entity(entity).remove::<KnockbackEffect>();
+        }
+    }
 }
