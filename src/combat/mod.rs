@@ -1,12 +1,12 @@
+pub mod ai;
 mod attacks;
 pub mod components;
 pub mod events;
 pub mod systems;
-pub mod ai;
 mod tests;
 
-use crate::combat::components::AttackEvent;
 use crate::combat::ai::*;
+use crate::combat::components::AttackEvent;
 use crate::combat::events::DamageEvent;
 use bevy::prelude::*;
 use systems::*;
@@ -17,11 +17,15 @@ impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_message::<DamageEvent>();
         app.add_message::<AttackEvent>();
-        app.add_systems(Update,(
-            apply_damage_system,
-            despawn_dead_system,
-            tick_hitstun,
-        ));
+        app.add_systems(
+            Update,
+            (
+                apply_damage_system,
+                despawn_dead_system,
+                tick_hitstun,
+                apply_knockback_system,
+            ),
+        );
         app.add_systems(
             Update,
             (
@@ -33,11 +37,9 @@ impl Plugin for CombatPlugin {
                 attack_hit_system,
                 attack_follow_system,
                 cooldown_tick_system,
-            ).run_if(not_in_hitstop)
+            )
+                .run_if(not_in_hitstop),
         );
-        app.add_systems(FixedUpdate, (
-            ai_decision_system,
-            ai_attack_system,
-        ));
+        app.add_systems(FixedUpdate, (ai_decision_system, ai_attack_system));
     }
 }

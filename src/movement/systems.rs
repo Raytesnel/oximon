@@ -1,8 +1,8 @@
 use super::components::*;
+use crate::combat::components::Hitstun;
 use crate::common::components::{ComputedStats, Player, Stats};
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
-use crate::combat::components::Hitstun;
 
 const UP_BUTTON: KeyCode = KeyCode::ArrowUp;
 const DOWN_BUTTON: KeyCode = KeyCode::ArrowDown;
@@ -21,7 +21,16 @@ pub struct MovementData {
 
 pub fn apply_acceleration(
     time: Res<Time>,
-    mut query: Query<(&mut Velocity, &MovementState, Option<&Dash>, &ComputedStats,&MoveIntent), (With<Movable>, Without<Hitstun>)>,
+    mut query: Query<
+        (
+            &mut Velocity,
+            &MovementState,
+            Option<&Dash>,
+            &ComputedStats,
+            &MoveIntent,
+        ),
+        (With<Movable>, Without<Hitstun>),
+    >,
 ) {
     for (mut velocity, state, dash, stats, move_intent) in &mut query {
         match state {
@@ -52,7 +61,7 @@ pub fn apply_acceleration(
 
 pub fn apply_friction(
     time: Res<Time>,
-    mut query: Query<(&mut Velocity, &MovementState, &ComputedStats), With<Movable>>,
+    mut query: Query<(&mut Velocity, &MovementState, &ComputedStats), (With<Movable>)>,
 ) {
     for (mut velocity, state, stats) in &mut query {
         let speed = velocity.value.length();
@@ -160,9 +169,9 @@ pub fn update_movement_state(
             &mut MovementState,
             Option<&Dash>,
             Option<&Recover>,
-            &MoveIntent
+            &MoveIntent,
         ),
-        With<Movable>,
+        (With<Movable>, Without<Hitstun>),
     >,
 ) {
     for (mut velocity, mut movement_state, dash, recover, move_intent) in &mut query {
@@ -213,7 +222,7 @@ pub fn debug_movement_state_changes(
 
 pub fn player_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<&mut MoveIntent, With<Player>>,
+    mut query: Query<&mut MoveIntent, (With<Movable>, Without<Hitstun>)>,
 ) {
     let mut direction = Vec3::ZERO;
 

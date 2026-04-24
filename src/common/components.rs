@@ -1,11 +1,13 @@
+use crate::combat::components::AttackId;
 use bevy::prelude::*;
+
 #[derive(Component)]
 pub struct Player;
 
 #[derive(Component)]
 pub struct Enemy;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum StatType {
     Speed,
     Acceleration,
@@ -27,7 +29,7 @@ pub struct StatsModifiers {
     pub dash_stop_time: Vec<StatModifier>,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Stats {
     pub speed: Vec<RuntimeModifier>,
     pub acceleration: Vec<RuntimeModifier>,
@@ -67,7 +69,12 @@ pub enum ModifierTrigger {
     OnHit,
     After,
 }
-
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub enum ModifierLifetime {
+    WhileAttacking,
+    OnAttackEnd,
+    Permanent,
+}
 #[derive(Clone)]
 pub struct StatModifier {
     pub stat_type: StatType,
@@ -75,13 +82,16 @@ pub struct StatModifier {
     pub multiplier: f32,
     pub duration: Option<f32>,
     pub trigger: ModifierTrigger,
+    pub lifetime: ModifierLifetime,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RuntimeModifier {
+    pub source: AttackId,
     pub stat_type: StatType,
     pub flat: f32,
     pub multiplier: f32,
     pub timer: Option<Timer>,
+    pub lifetime: ModifierLifetime,
 }
 impl Stats {
     fn compute(modifiers: &Vec<RuntimeModifier>) -> f32 {

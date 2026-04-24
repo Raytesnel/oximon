@@ -42,9 +42,7 @@ pub fn ai_decision_system(
     )>,
     transforms: Query<&Transform>,
 ) {
-
     for (mut ai, config, transform, target, mut move_intent, mut ai_intent) in &mut query {
-
         let target_pos = transforms.get(target.entity).unwrap().translation;
         let dist = transform.translation.distance(target_pos);
         ai_intent.wants_attack = false;
@@ -62,7 +60,8 @@ pub fn ai_decision_system(
                         rand::random::<f32>() * 2.0 - 1.0,
                         rand::random::<f32>() * 2.0 - 1.0,
                         0.0,
-                    ).normalize_or_zero();
+                    )
+                    .normalize_or_zero();
                     info!("new route chosen");
                     info!("AI intent dir: {:?}", move_intent.direction);
                     ai.timer = 1.5;
@@ -76,8 +75,7 @@ pub fn ai_decision_system(
                     ai.state = AIState::Wander;
                 }
 
-                move_intent.direction =
-                    (target_pos - transform.translation).normalize_or_zero();
+                move_intent.direction = (target_pos - transform.translation).normalize_or_zero();
             }
 
             AIState::Attack => {
@@ -90,8 +88,6 @@ pub fn ai_decision_system(
         }
     }
 }
-
-
 
 pub fn ai_attack_system(mut query: Query<(&AI, &mut AIIntent, &mut Attack)>) {
     for (ai, intent, mut attack) in &mut query {
