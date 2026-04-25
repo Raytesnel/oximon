@@ -71,6 +71,7 @@ pub enum ModifierTrigger {
 }
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum ModifierLifetime {
+    Duration, // ignores all, always waiting till defined lifetime.
     WhileAttacking,
     OnAttackEnd,
     Permanent,

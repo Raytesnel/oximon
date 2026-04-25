@@ -41,6 +41,8 @@ pub struct KnockbackDefinition {
 }
 #[derive(Clone)]
 pub enum HitBehavior {
+    Debuff,       // Attack only changes stats of enemy
+    Buff,         // no Attack only stat modifiers
     Single,       // stop after first hit (Quick Attack)
     MultiHit,     // keep hitting (beam / fire)
     Limited(u32), // e.g. triple kick (3 hits max)
@@ -113,6 +115,74 @@ pub fn simple_beam() -> AttackDefinition {
     AttackDefinition {
         name: "simple_beam".to_string(),
         damage: 1.0,
+        range: 100.0,
+        lifetime: 2.0,
+        hit_interval: 0.05,
+        cooldown: 0.6,
+        hit_behavior: HitBehavior::MultiHit,
+        stat_modifiers: vec![StatModifier {
+            stat_type: StatType::Speed,
+            flat: 0.0,
+            multiplier: 0.1,
+            duration: Some(2.0),
+            trigger: ModifierTrigger::Cast,
+            lifetime: ModifierLifetime::OnAttackEnd,
+        }],
+        offset: Vec3::ZERO,
+        spawn: AttackSpawn::Hitbox {
+            color: Color::srgb(1.0, 0.0, 0.0),
+            size: Vec2::new(100.0, 10.0),
+        },
+        knockback_target: Some(KnockbackDefinition {
+            force: 300.0,
+            direction: KnockbackDirection::SourceToTarget,
+            mode: KnockbackMode::Impulse,
+            hitstun: 0.05,
+        }),
+        knockback_self: None,
+    }
+}
+pub fn speedo() -> AttackDefinition {
+    AttackDefinition {
+        name: "speedo".to_string(),
+        damage: 0.0,
+        range: 0.0,
+        lifetime: 3.0,
+        hit_interval: 0.00,
+        cooldown: 3.0,
+        hit_behavior: HitBehavior::Buff,
+        stat_modifiers: vec![
+            StatModifier {
+                stat_type: StatType::Speed,
+                flat: 0.0,
+                multiplier: 2.0,
+                duration: Some(20.0),
+                trigger: ModifierTrigger::Cast,
+                lifetime: ModifierLifetime::Duration,
+            },
+            StatModifier {
+                stat_type: StatType::Acceleration,
+                flat: 0.0,
+                multiplier: 2.0,
+                duration: Some(20.0),
+                trigger: ModifierTrigger::Cast,
+                lifetime: ModifierLifetime::Duration,
+            },
+        ],
+        offset: Vec3::ZERO,
+        spawn: AttackSpawn::Hitbox {
+            color: Color::srgb(0.0, 1.0, 0.0),
+            size: Vec2::new(10.0, 10.0),
+        },
+        knockback_target: None,
+        knockback_self: None,
+    }
+}
+
+pub fn slow_attack() -> AttackDefinition {
+    AttackDefinition {
+        name: "simple_beam".to_string(),
+        damage: 0.0,
         range: 100.0,
         lifetime: 2.0,
         hit_interval: 0.05,

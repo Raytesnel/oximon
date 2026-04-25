@@ -1,9 +1,6 @@
 use super::components::*;
 use super::events::*;
-use crate::combat::attacks::{
-    AttackDefinition, HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode,
-    quick_attack, simple_beam,
-};
+use crate::combat::attacks::{AttackDefinition, HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode, quick_attack, simple_beam, speedo};
 use crate::common::components::{
     Enemy, ModifierLifetime, ModifierTrigger, Player, RuntimeModifier, Stats,
 };
@@ -14,66 +11,74 @@ use bevy::prelude::*;
 pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
 pub const QUICK_ATTACK: KeyCode = KeyCode::KeyQ;
 
-pub fn attack_input_system(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Movable>, Without<Hitstun>)>,
-    mut writer: MessageWriter<AttackEvent>,
-) {
-    if !keyboard.just_pressed(JUMP_BUTTON) {
-        return;
-    }
 
-    for (entity, mut cooldowns, mut combat_state) in &mut query {
-        let def = simple_beam();
-
-        // 👇 check cooldown
-        if let Some(timer) = cooldowns.timers.get(&def.name) {
+pub struct AttackContext<'a> {
+    pub cooldowns: &'a mut Cooldowns,
+    pub combat_state: &'a mut CombatState,
+    pub id_counter: &'a mut AttackIdCounter,
+    pub owner: Entity,
+}
+impl<'a> AttackContext<'a> {
+    pub fn try_spawn(
+        &mut self,
+        commands: &mut Commands,
+        def: AttackDefinition,
+    ) {
+        // cooldown check
+        if let Some(timer) = self.cooldowns.timers.get(&def.name) {
             if !timer.is_finished() {
-                continue; // still on cooldown
+                return;
             }
         }
 
-        // 👇 start cooldown
-        cooldowns.timers.insert(
+        // start cooldown
+        self.cooldowns.timers.insert(
             def.name.clone(),
             Timer::from_seconds(def.cooldown, TimerMode::Once),
         );
-        writer.write(AttackEvent { entity });
-        *combat_state = CombatState::Attacking;
+
+        // id
+        let id = AttackId(self.id_counter.next);
+        self.id_counter.next += 1;
+
+        let sprite = def.spawn.build_sprite();
+
+        commands.spawn((
+            Attack::from_definition(def, self.owner, id),
+            Transform::default(),
+            sprite,
+        ));
+
+        *self.combat_state = CombatState::Attacking;
     }
 }
-
-pub fn quick_attack_input_system(
+fn get_attack_for_key(key: KeyCode) -> Option<AttackDefinition> {
+    match key {
+        QUICK_ATTACK => Some(quick_attack()),
+        JUMP_BUTTON => Some(speedo()),
+        _ => None,
+    }
+}
+pub fn attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut id_counter: ResMut<AttackIdCounter>,
     mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Movable>, Without<Hitstun>)>,
 ) {
-    if !keyboard.just_pressed(QUICK_ATTACK) {
-        return;
-    }
     for (entity, mut cooldowns, mut combat_state) in &mut query {
-        let def = quick_attack();
-        // 👇 check cooldown
-        if let Some(timer) = cooldowns.timers.get(&def.name) {
-            if !timer.is_finished() {
-                continue; // still on cooldown
+
+        let mut ctx = AttackContext {
+            cooldowns: &mut cooldowns,
+            combat_state: &mut combat_state,
+            id_counter: &mut id_counter,
+            owner: entity,
+        };
+
+        for key in keyboard.get_just_pressed() {
+            if let Some(def) = get_attack_for_key(*key) {
+                ctx.try_spawn(&mut commands, def);
             }
         }
-
-        cooldowns.timers.insert(
-            def.name.clone(),
-            Timer::from_seconds(def.cooldown, TimerMode::Once),
-        );
-        let sprite = def.spawn.build_sprite();
-        let id = AttackId(id_counter.next);
-        id_counter.next += 1;
-        commands.spawn((
-            Attack::from_definition(def, entity, id),
-            Transform::default(),
-            sprite,
-        ));
-        *combat_state = CombatState::Attacking;
     }
 }
 
@@ -109,8 +114,7 @@ pub fn attack_start_system(mut attacks: Query<&mut Attack>, mut stats_query: Que
         if attack.applied_start_modifiers {
             continue;
         }
-
-        if let Some(source) = attack.follow_entity {
+        let source = attack.owner;
             if let Ok(mut stats) = stats_query.get_mut(source) {
                 for modifier in &attack.definition.stat_modifiers {
                     if matches!(modifier.trigger, ModifierTrigger::Cast) {
@@ -127,7 +131,6 @@ pub fn attack_start_system(mut attacks: Query<&mut Attack>, mut stats_query: Que
                     }
                 }
             }
-        }
 
         attack.applied_start_modifiers = true;
     }
@@ -158,6 +161,8 @@ pub fn attack_hit_system(
             }
 
             match attack.definition.hit_behavior {
+                HitBehavior::Debuff=>{}
+                HitBehavior::Buff=>{}
                 HitBehavior::Single => {
                     if attack.has_hit {
                         continue;
@@ -273,29 +278,19 @@ fn apply_hit_effects(
 }
 
 fn remove_attack_modifiers(stats: &mut Stats, attack_id: AttackId) {
-    stats
-        .speed
-        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
-    stats
-        .acceleration
-        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
-    stats
-        .friction
-        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
-    stats
-        .dash_speed
-        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
-    stats
-        .dash_time
-        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
-    stats
-        .dash_friction
-        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
-    stats
-        .dash_stop_time
-        .retain(|m| m.source != attack_id || m.lifetime == ModifierLifetime::Permanent);
-}
+    let should_remove = |m: &RuntimeModifier| {
+        m.source == attack_id &&
+            matches!(m.lifetime, ModifierLifetime::WhileAttacking | ModifierLifetime::OnAttackEnd)
+    };
 
+    stats.speed.retain(|m| !should_remove(m));
+    stats.acceleration.retain(|m| !should_remove(m));
+    stats.friction.retain(|m| !should_remove(m));
+    stats.dash_speed.retain(|m| !should_remove(m));
+    stats.dash_time.retain(|m| !should_remove(m));
+    stats.dash_friction.retain(|m| !should_remove(m));
+    stats.dash_stop_time.retain(|m| !should_remove(m));
+}
 fn cleanup_attack(
     commands: &mut Commands,
     stats_query: &mut Query<&mut Stats>,
@@ -340,32 +335,6 @@ pub fn attack_lifetime_system(
     }
 }
 
-pub fn spawn_attack_system(
-    mut commands: Commands,
-    mut events: MessageReader<AttackEvent>,
-    mut id_counter: ResMut<AttackIdCounter>,
-    query: Query<(&Transform, &Facing)>,
-) {
-    for event in events.read() {
-        if let Ok((transform, facing)) = query.get(event.entity) {
-            let origin = transform.translation;
-            let direction = facing.0.normalize();
-
-            let offset = (direction * (100.0 * 0.5)).extend(0.0);
-            let def = simple_beam();
-            let sprite = def.spawn.build_sprite();
-            let id = AttackId(id_counter.next);
-            id_counter.next += 1;
-            let mut attack_command = Attack::from_definition(def, event.entity, id);
-            attack_command.definition.offset = offset;
-            commands.spawn((
-                attack_command,
-                Transform::from_translation(origin + offset),
-                sprite,
-            ));
-        }
-    }
-}
 
 pub fn attack_follow_system(
     mut attacks: Query<(&mut Transform, &Attack)>,

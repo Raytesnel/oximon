@@ -30,8 +30,6 @@ impl Plugin for CombatPlugin {
             Update,
             (
                 attack_input_system,
-                quick_attack_input_system,
-                spawn_attack_system,
                 attack_start_system,
                 attack_lifetime_system,
                 attack_hit_system,
