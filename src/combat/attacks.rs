@@ -220,3 +220,36 @@ pub fn speedo() -> AttackDefinition {
         },
     }
 }
+
+pub fn slow_down() -> AttackDefinition {
+    AttackDefinition {
+        name: "speedo".to_string(),
+        range: 0.0,
+        lifetime: 2.0,
+        hit_interval: 2.0,
+        cooldown: 3.0,
+
+        hit_behavior: HitBehavior::Single,
+        offset: Vec3::ZERO,
+        spawn: AttackSpawn::Hitbox {
+            color: Color::srgb(1.0, 0.0, 0.0),
+            size: Vec2::new(100.0, 10.0),
+        },
+        effects: vec![
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::StatModifier(StatModifierEffect {
+                    target: ModifierTarget::TargetEntity,
+                    modifier: StatModifier {
+                        stat_type: StatType::Speed,
+                        flat: 0.0,
+                        multiplier: 0.2,
+                        duration: Some(20.0),
+                        lifetime: ModifierLifetime::Duration,
+                        trigger: ModifierTrigger::Cast,
+                    },
+                }),
+            },
+        ]
+    }
+    }

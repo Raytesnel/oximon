@@ -3,7 +3,7 @@ use super::events::*;
 use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget,
 };
-use crate::combat::attacks::{HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode, quick_attack, simple_beam, speedo, AttackSpawn};
+use crate::combat::attacks::{HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode, quick_attack, simple_beam, speedo, AttackSpawn, slow_down};
 use crate::common::components::{
     Enemy, ModifierLifetime, ModifierTrigger, Player, RuntimeModifier, Stats,
 };
@@ -25,7 +25,7 @@ fn get_attack_for_key(key: KeyCode) -> Option<AttackDefinition> {
     match key {
         QUICK_ATTACK => Some(quick_attack()),
         JUMP_BUTTON => Some(speedo()),
-        PEWPEW => Some(simple_beam()),
+        PEWPEW => Some(slow_down()),
         _ => None,
     }
 }
