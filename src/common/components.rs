@@ -85,6 +85,20 @@ pub struct StatModifier {
     pub trigger: ModifierTrigger,
     pub lifetime: ModifierLifetime,
 }
+impl StatModifier {
+    pub fn to_runtime(&self, source: AttackId) -> RuntimeModifier {
+        RuntimeModifier {
+            source,
+            stat_type: self.stat_type,
+            flat: self.flat,
+            multiplier: self.multiplier,
+            lifetime: self.lifetime.clone(),
+            timer: self
+                .duration
+                .map(|d| Timer::from_seconds(d, TimerMode::Once)),
+        }
+    }
+}
 #[derive(Clone, Debug)]
 pub struct RuntimeModifier {
     pub source: AttackId,

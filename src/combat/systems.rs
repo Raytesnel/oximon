@@ -1,6 +1,12 @@
 use super::components::*;
 use super::events::*;
-use crate::combat::attacks::{AttackDefinition, HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode, quick_attack, simple_beam, speedo};
+use crate::combat::attack_definition::{
+    AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget,
+};
+use crate::combat::attacks::{
+    HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode, quick_attack, simple_beam,
+    speedo,
+};
 use crate::common::components::{
     Enemy, ModifierLifetime, ModifierTrigger, Player, RuntimeModifier, Stats,
 };
@@ -10,7 +16,7 @@ use bevy::prelude::*;
 
 pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
 pub const QUICK_ATTACK: KeyCode = KeyCode::KeyQ;
-
+pub const PEWPEW: KeyCode = KeyCode::KeyW;
 
 pub struct AttackContext<'a> {
     pub cooldowns: &'a mut Cooldowns,
@@ -19,11 +25,7 @@ pub struct AttackContext<'a> {
     pub owner: Entity,
 }
 impl<'a> AttackContext<'a> {
-    pub fn try_spawn(
-        &mut self,
-        commands: &mut Commands,
-        def: AttackDefinition,
-    ) {
+    pub fn try_spawn(&mut self, commands: &mut Commands, def: AttackDefinition) {
         // cooldown check
         if let Some(timer) = self.cooldowns.timers.get(&def.name) {
             if !timer.is_finished() {
@@ -56,6 +58,7 @@ fn get_attack_for_key(key: KeyCode) -> Option<AttackDefinition> {
     match key {
         QUICK_ATTACK => Some(quick_attack()),
         JUMP_BUTTON => Some(speedo()),
+        PEWPEW => Some(simple_beam()),
         _ => None,
     }
 }
@@ -66,7 +69,6 @@ pub fn attack_input_system(
     mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Movable>, Without<Hitstun>)>,
 ) {
     for (entity, mut cooldowns, mut combat_state) in &mut query {
-
         let mut ctx = AttackContext {
             cooldowns: &mut cooldowns,
             combat_state: &mut combat_state,
@@ -114,23 +116,27 @@ pub fn attack_start_system(mut attacks: Query<&mut Attack>, mut stats_query: Que
         if attack.applied_start_modifiers {
             continue;
         }
-        let source = attack.owner;
-            if let Ok(mut stats) = stats_query.get_mut(source) {
-                for modifier in &attack.definition.stat_modifiers {
-                    if matches!(modifier.trigger, ModifierTrigger::Cast) {
-                        stats.add_modifier(RuntimeModifier {
-                            source: attack.id,
-                            stat_type: modifier.stat_type,
-                            flat: modifier.flat,
-                            multiplier: modifier.multiplier,
-                            lifetime: modifier.lifetime.clone(),
-                            timer: modifier
-                                .duration
-                                .map(|d| Timer::from_seconds(d, TimerMode::Once)),
-                        });
+
+        for timed in &attack.definition.effects {
+            if !matches!(timed.trigger, EffectTrigger::OnCast) {
+                continue;
+            }
+
+            match &timed.effect {
+                AttackEffect::StatModifier(stat) => {
+                    let entity = match stat.target {
+                        ModifierTarget::SelfEntity => attack.owner,
+                        ModifierTarget::TargetEntity => continue, // meestal niet logisch bij cast
+                    };
+
+                    if let Ok(mut stats) = stats_query.get_mut(entity) {
+                        stats.add_modifier(stat.modifier.to_runtime(attack.id));
                     }
                 }
+
+                _ => {} // andere effects doen niks bij cast
             }
+        }
 
         attack.applied_start_modifiers = true;
     }
@@ -143,6 +149,7 @@ pub fn attack_hit_system(
     player: Query<&Transform, With<Player>>,
     mut hitstop: ResMut<Hitstop>,
     mut writer: MessageWriter<DamageEvent>,
+    mut stats_query: Query<&mut Stats>,
     time: Res<Time>,
 ) {
     for (attack_transform, mut attack) in &mut attacks {
@@ -155,14 +162,11 @@ pub fn attack_hit_system(
             let Ok(player_transform) = player.single() else {
                 continue;
             };
-            let player_pos = player_transform.translation;
             if attack_pos.distance(enemy_pos) >= attack.definition.range {
                 continue;
             }
 
             match attack.definition.hit_behavior {
-                HitBehavior::Debuff=>{}
-                HitBehavior::Buff=>{}
                 HitBehavior::Single => {
                     if attack.has_hit {
                         continue;
@@ -173,9 +177,9 @@ pub fn attack_hit_system(
                         enemy,
                         enemy_pos,
                         attack_pos,
-                        player_pos,
                         &mut hitstop,
                         &mut writer,
+                        &mut stats_query,
                     );
 
                     attack.has_hit = true;
@@ -191,9 +195,9 @@ pub fn attack_hit_system(
                             enemy,
                             enemy_pos,
                             attack_pos,
-                            player_pos,
                             &mut hitstop,
                             &mut writer,
+                            &mut stats_query,
                         );
                     }
                 }
@@ -210,9 +214,9 @@ pub fn attack_hit_system(
                             enemy,
                             enemy_pos,
                             attack_pos,
-                            player_pos,
                             &mut hitstop,
                             &mut writer,
+                            &mut stats_query,
                         );
 
                         attack.hits_done += 1;
@@ -233,54 +237,77 @@ fn apply_hit_effects(
     attack: &Attack,
     target: Entity,
     target_position: Vec3,
-    position_attacker: Vec3,
     attack_pos: Vec3,
     hitstop: &mut Hitstop,
     writer: &mut MessageWriter<DamageEvent>,
+    stats_query: &mut Query<&mut Stats>,
 ) {
-    // DAMAGE
-    writer.write(DamageEvent {
-        target,
-        amount: attack.definition.damage,
-    });
-    hitstop.remaining = hitstop.remaining.max(0.05);
+    for timed_effect in &attack.definition.effects {
+        let effect = timed_effect.effect.clone();
+        match effect {
+            AttackEffect::Damage(dmg) => {
+                let entity = match dmg.target {
+                    ModifierTarget::SelfEntity => attack.owner,
+                    ModifierTarget::TargetEntity => target,
+                };
 
-    // KNOCKBACK + HITSTUN
-    let knockbacks = [
-        (&attack.definition.knockback_target, target),
-        (&attack.definition.knockback_self, attack.owner),
-    ];
+                writer.write(DamageEvent {
+                    target: entity,
+                    amount: dmg.amount,
+                });
 
-    for (kb_opt, entity) in knockbacks {
-        if let Some(kb) = kb_opt {
-            let dir = match kb.direction {
-                KnockbackDirection::SourceToTarget => {
-                    (target_position - attack_pos).normalize_or_zero()
+                hitstop.remaining = hitstop.remaining.max(0.05);
+            }
+
+            AttackEffect::Knockback(kb) => {
+                let entity = match kb.target {
+                    ModifierTarget::SelfEntity => attack.owner,
+                    ModifierTarget::TargetEntity => target,
+                };
+
+                let dir = match kb.direction {
+                    KnockbackDirection::SourceToTarget => {
+                        (target_position - attack_pos).normalize_or_zero()
+                    }
+                    KnockbackDirection::TargetToSource => {
+                        (attack_pos - target_position).normalize_or_zero()
+                    }
+                    KnockbackDirection::Fixed(v) => v.normalize_or_zero(),
+                };
+
+                let velocity = dir * kb.force;
+
+                commands.entity(entity).insert(KnockbackEffect {
+                    velocity,
+                    timer: Timer::from_seconds(0.2, TimerMode::Once),
+                });
+
+                commands.entity(entity).insert(Hitstun {
+                    remaining: kb.hitstun,
+                });
+            }
+
+            AttackEffect::StatModifier(stat) => {
+                let entity = match stat.target {
+                    ModifierTarget::SelfEntity => attack.owner,
+                    ModifierTarget::TargetEntity => target,
+                };
+
+                if let Ok(mut stats) = stats_query.get_mut(entity) {
+                    stats.add_modifier(stat.modifier.to_runtime(attack.id));
                 }
-                KnockbackDirection::TargetToSource => {
-                    (attack_pos - target_position).normalize_or_zero()
-                }
-                KnockbackDirection::Fixed(v) => v.normalize_or_zero(),
-            };
-
-            let velocity = dir * kb.force;
-
-            commands.entity(entity).insert(KnockbackEffect {
-                velocity,
-                timer: Timer::from_seconds(0.2, TimerMode::Once),
-            });
-
-            commands.entity(target).insert(Hitstun {
-                remaining: kb.hitstun,
-            });
+            }
         }
     }
 }
 
 fn remove_attack_modifiers(stats: &mut Stats, attack_id: AttackId) {
     let should_remove = |m: &RuntimeModifier| {
-        m.source == attack_id &&
-            matches!(m.lifetime, ModifierLifetime::WhileAttacking | ModifierLifetime::OnAttackEnd)
+        m.source == attack_id
+            && matches!(
+                m.lifetime,
+                ModifierLifetime::WhileAttacking | ModifierLifetime::OnAttackEnd
+            )
     };
 
     stats.speed.retain(|m| !should_remove(m));
@@ -334,7 +361,6 @@ pub fn attack_lifetime_system(
         }
     }
 }
-
 
 pub fn attack_follow_system(
     mut attacks: Query<(&mut Transform, &Attack)>,

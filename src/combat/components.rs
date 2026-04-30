@@ -1,4 +1,4 @@
-use crate::combat::attacks::AttackDefinition;
+use crate::combat::attack_definition::AttackDefinition;
 use crate::common::components::StatModifier;
 use bevy::prelude::*;
 use std::collections::HashMap;

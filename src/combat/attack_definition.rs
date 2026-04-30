@@ -1,0 +1,67 @@
+use crate::combat::attacks::{
+    AttackSpawn, HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode,
+};
+use crate::common::components::StatModifier;
+use bevy::math::Vec3;
+use bevy::prelude::Component;
+
+#[derive(Clone, Copy)]
+pub enum ModifierTarget {
+    SelfEntity,   // attacker
+    TargetEntity, // enemy
+}
+
+#[derive(Clone)]
+pub struct DamageEffect {
+    pub amount: f32,
+    pub target: ModifierTarget,
+}
+
+#[derive(Clone)]
+pub struct KnockbackEffectDef {
+    pub force: f32,
+    pub direction: KnockbackDirection,
+    pub mode: KnockbackMode,
+    pub hitstun: f32,
+    pub target: ModifierTarget,
+}
+
+#[derive(Clone)]
+pub struct StatModifierEffect {
+    pub modifier: StatModifier,
+    pub target: ModifierTarget,
+}
+#[derive(Clone)]
+pub enum EffectTrigger {
+    OnCast,
+    OnHit,
+}
+#[derive(Clone)]
+pub struct TimedEffect {
+    pub trigger: EffectTrigger,
+    pub effect: AttackEffect,
+}
+#[derive(Clone)]
+pub enum AttackEffect {
+    Damage(DamageEffect),
+    Knockback(KnockbackEffectDef),
+    StatModifier(StatModifierEffect),
+    // later:
+    // Status(StatusEffectDef),
+    // Protect(ProtectEffect),
+}
+
+#[derive(Component, Clone)]
+pub struct AttackDefinition {
+    pub name: String,
+    pub effects: Vec<TimedEffect>,
+
+    pub range: f32,
+    pub lifetime: f32,
+    pub hit_interval: f32,
+    pub cooldown: f32,
+
+    pub spawn: AttackSpawn,
+    pub offset: Vec3,
+    pub hit_behavior: HitBehavior,
+}
