@@ -3,10 +3,7 @@ use super::events::*;
 use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget,
 };
-use crate::combat::attacks::{
-    HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode, quick_attack, simple_beam,
-    speedo,
-};
+use crate::combat::attacks::{HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode, quick_attack, simple_beam, speedo, AttackSpawn};
 use crate::common::components::{
     Enemy, ModifierLifetime, ModifierTrigger, Player, RuntimeModifier, Stats,
 };
@@ -24,36 +21,6 @@ pub struct AttackContext<'a> {
     pub id_counter: &'a mut AttackIdCounter,
     pub owner: Entity,
 }
-impl<'a> AttackContext<'a> {
-    pub fn try_spawn(&mut self, commands: &mut Commands, def: AttackDefinition) {
-        // cooldown check
-        if let Some(timer) = self.cooldowns.timers.get(&def.name) {
-            if !timer.is_finished() {
-                return;
-            }
-        }
-
-        // start cooldown
-        self.cooldowns.timers.insert(
-            def.name.clone(),
-            Timer::from_seconds(def.cooldown, TimerMode::Once),
-        );
-
-        // id
-        let id = AttackId(self.id_counter.next);
-        self.id_counter.next += 1;
-
-        let sprite = def.spawn.build_sprite();
-
-        commands.spawn((
-            Attack::from_definition(def, self.owner, id),
-            Transform::default(),
-            sprite,
-        ));
-
-        *self.combat_state = CombatState::Attacking;
-    }
-}
 fn get_attack_for_key(key: KeyCode) -> Option<AttackDefinition> {
     match key {
         QUICK_ATTACK => Some(quick_attack()),
@@ -69,17 +36,43 @@ pub fn attack_input_system(
     mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Movable>, Without<Hitstun>)>,
 ) {
     for (entity, mut cooldowns, mut combat_state) in &mut query {
-        let mut ctx = AttackContext {
-            cooldowns: &mut cooldowns,
-            combat_state: &mut combat_state,
-            id_counter: &mut id_counter,
-            owner: entity,
-        };
 
         for key in keyboard.get_just_pressed() {
-            if let Some(def) = get_attack_for_key(*key) {
-                ctx.try_spawn(&mut commands, def);
+            let Some(def) = get_attack_for_key(*key) else { continue };
+
+            // cooldown check
+            if let Some(timer) = cooldowns.timers.get(&def.name) {
+                if !timer.is_finished() {
+                    continue;
+                }
             }
+
+            // start cooldown
+            cooldowns.timers.insert(
+                def.name.clone(),
+                Timer::from_seconds(def.cooldown, TimerMode::Once),
+            );
+
+            // id
+            let id = AttackId(id_counter.next);
+            id_counter.next += 1;
+
+            let sprite = def.spawn.build_sprite();
+
+            // 🔥 spawn attack
+            let mut entity_commands = commands.spawn((
+                Attack::from_definition(def.clone(), entity, id),
+                Transform::default(),
+                sprite,
+            ));
+
+            let size = match &def.spawn {
+                AttackSpawn::Hitbox { size, .. } => *size,
+            };
+
+            entity_commands.insert(Hitbox { size });
+
+            *combat_state = CombatState::Attacking;
         }
     }
 }
@@ -142,27 +135,39 @@ pub fn attack_start_system(mut attacks: Query<&mut Attack>, mut stats_query: Que
     }
 }
 
+fn intersects(pos_a: Vec3, size_a: Vec2, pos_b: Vec3, size_b: Vec2) -> bool {
+    let half_a = size_a / 2.0;
+    let half_b = size_b / 2.0;
+
+    let delta = pos_a - pos_b;
+
+    delta.x.abs() <= (half_a.x + half_b.x)
+        && delta.y.abs() <= (half_a.y + half_b.y)
+}
+
 pub fn attack_hit_system(
     mut commands: Commands,
-    mut attacks: Query<(&Transform, &mut Attack)>,
-    enemies: Query<(Entity, &Transform), With<Enemy>>,
-    player: Query<&Transform, With<Player>>,
+    mut attacks: Query<(&Transform, &Hitbox, &mut Attack)>,
+    enemies: Query<(Entity, &Transform, &Hurtbox), With<Enemy>>,
     mut hitstop: ResMut<Hitstop>,
     mut writer: MessageWriter<DamageEvent>,
     mut stats_query: Query<&mut Stats>,
+
     time: Res<Time>,
 ) {
-    for (attack_transform, mut attack) in &mut attacks {
+    for (attack_transform,hitbox, mut attack) in &mut attacks {
         let attack_pos = attack_transform.translation;
 
         let tick_ready = attack.hit_timer.tick(time.delta()).just_finished();
 
-        for (enemy, enemy_transform) in &enemies {
+        for (enemy, enemy_transform, hurtbox) in &enemies {
             let enemy_pos = enemy_transform.translation;
-            let Ok(player_transform) = player.single() else {
-                continue;
-            };
-            if attack_pos.distance(enemy_pos) >= attack.definition.range {
+            if !intersects(
+                attack_pos,
+                hitbox.size,
+                enemy_pos,
+                hurtbox.size,
+            ) {
                 continue;
             }
 
@@ -243,8 +248,7 @@ fn apply_hit_effects(
     stats_query: &mut Query<&mut Stats>,
 ) {
     for timed_effect in &attack.definition.effects {
-        let effect = timed_effect.effect.clone();
-        match effect {
+        match &timed_effect.effect {
             AttackEffect::Damage(dmg) => {
                 let entity = match dmg.target {
                     ModifierTarget::SelfEntity => attack.owner,

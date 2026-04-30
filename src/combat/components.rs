@@ -88,3 +88,13 @@ pub struct KnockbackEffect {
     pub velocity: Vec3,
     pub timer: Timer,
 }
+
+
+#[derive(Component)]
+pub struct Hitbox {
+    pub size: Vec2,
+}
+#[derive(Component)]
+pub struct Hurtbox {
+    pub size: Vec2,
+}
