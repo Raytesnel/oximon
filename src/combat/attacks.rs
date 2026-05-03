@@ -1,6 +1,6 @@
 use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, DamageEffect, EffectTrigger, KnockbackEffectDef,
-    ModifierTarget, StatModifierEffect, TimedEffect,
+    ModifierTarget, StatModifierEffect, StatusEffect, TimedEffect,
 };
 use crate::common::components::{ModifierLifetime, ModifierTrigger, StatModifier, StatType};
 use bevy::prelude::*;
@@ -243,13 +243,21 @@ pub fn slow_down() -> AttackDefinition {
                     modifier: StatModifier {
                         stat_type: StatType::Speed,
                         flat: 0.0,
-                        multiplier: 0.2,
-                        duration: Some(20.0),
+                        multiplier: 0.9,
+                        duration: Some(2.0),
                         lifetime: ModifierLifetime::Duration,
                         trigger: ModifierTrigger::Cast,
                     },
                 }),
             },
-        ]
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::ApplyStatus(StatusEffect::Poison {
+                    dps: 5.0,
+                    tick_rate: 2.0,
+                    duration: 20.0,
+                }),
+            },
+        ],
     }
-    }
+}

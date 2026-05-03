@@ -1,6 +1,4 @@
-use crate::combat::attacks::{
-    AttackSpawn, HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode,
-};
+use crate::combat::attacks::{AttackSpawn, HitBehavior, KnockbackDirection, KnockbackMode};
 use crate::common::components::StatModifier;
 use bevy::math::Vec3;
 use bevy::prelude::Component;
@@ -41,11 +39,29 @@ pub struct TimedEffect {
     pub trigger: EffectTrigger,
     pub effect: AttackEffect,
 }
+
+#[derive(Clone)]
+pub enum StatusEffect {
+    Poison {
+        dps: f32,
+        duration: f32,
+        tick_rate: f32,
+    },
+    Slow {
+        multiplier: f32,
+        duration: f32,
+    },
+    Stun {
+        duration: f32,
+    },
+}
+
 #[derive(Clone)]
 pub enum AttackEffect {
     Damage(DamageEffect),
     Knockback(KnockbackEffectDef),
     StatModifier(StatModifierEffect),
+    ApplyStatus(StatusEffect),
     // later:
     // Status(StatusEffectDef),
     // Protect(ProtectEffect),

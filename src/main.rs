@@ -9,8 +9,7 @@ use crate::combat::components::{
 };
 use crate::common::CommonPlugin;
 use crate::common::components::{
-    ComputedStats, ModifierLifetime, ModifierTrigger, Player, RuntimeModifier, StatModifier,
-    StatType, Stats,
+    ComputedStats, ModifierLifetime, Player, RuntimeModifier, StatType, Stats,
 };
 use crate::movement::MovementPlugin;
 use crate::movement::components::{Facing, Movable, MoveIntent};

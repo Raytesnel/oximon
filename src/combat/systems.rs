@@ -1,9 +1,12 @@
 use super::components::*;
 use super::events::*;
 use crate::combat::attack_definition::{
-    AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget,
+    AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget, StatusEffect,
 };
-use crate::combat::attacks::{HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode, quick_attack, simple_beam, speedo, AttackSpawn, slow_down};
+use crate::combat::attacks::{
+    AttackSpawn, HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode, quick_attack,
+    simple_beam, slow_down, speedo,
+};
 use crate::common::components::{
     Enemy, ModifierLifetime, ModifierTrigger, Player, RuntimeModifier, Stats,
 };
@@ -36,9 +39,10 @@ pub fn attack_input_system(
     mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Movable>, Without<Hitstun>)>,
 ) {
     for (entity, mut cooldowns, mut combat_state) in &mut query {
-
         for key in keyboard.get_just_pressed() {
-            let Some(def) = get_attack_for_key(*key) else { continue };
+            let Some(def) = get_attack_for_key(*key) else {
+                continue;
+            };
 
             // cooldown check
             if let Some(timer) = cooldowns.timers.get(&def.name) {
@@ -141,8 +145,7 @@ fn intersects(pos_a: Vec3, size_a: Vec2, pos_b: Vec3, size_b: Vec2) -> bool {
 
     let delta = pos_a - pos_b;
 
-    delta.x.abs() <= (half_a.x + half_b.x)
-        && delta.y.abs() <= (half_a.y + half_b.y)
+    delta.x.abs() <= (half_a.x + half_b.x) && delta.y.abs() <= (half_a.y + half_b.y)
 }
 
 pub fn attack_hit_system(
@@ -155,19 +158,14 @@ pub fn attack_hit_system(
 
     time: Res<Time>,
 ) {
-    for (attack_transform,hitbox, mut attack) in &mut attacks {
+    for (attack_transform, hitbox, mut attack) in &mut attacks {
         let attack_pos = attack_transform.translation;
 
         let tick_ready = attack.hit_timer.tick(time.delta()).just_finished();
 
         for (enemy, enemy_transform, hurtbox) in &enemies {
             let enemy_pos = enemy_transform.translation;
-            if !intersects(
-                attack_pos,
-                hitbox.size,
-                enemy_pos,
-                hurtbox.size,
-            ) {
+            if !intersects(attack_pos, hitbox.size, enemy_pos, hurtbox.size) {
                 continue;
             }
 
@@ -301,6 +299,36 @@ fn apply_hit_effects(
                     stats.add_modifier(stat.modifier.to_runtime(attack.id));
                 }
             }
+            AttackEffect::ApplyStatus(status) => match status {
+                StatusEffect::Poison {
+                    dps,
+                    duration,
+                    tick_rate,
+                } => {
+                    commands.entity(target).insert(Poison {
+                        damage: *dps,
+                        tick_timer: Timer::from_seconds(*tick_rate, TimerMode::Repeating),
+                        duration: Timer::from_seconds(*duration, TimerMode::Once),
+                    });
+                }
+
+                StatusEffect::Slow {
+                    multiplier,
+                    duration,
+                } => {
+                    commands.entity(target).insert(Slow {
+                        multiplier: *multiplier,
+                        applied: false,
+                        duration: Timer::from_seconds(*duration, TimerMode::Once),
+                    });
+                }
+
+                StatusEffect::Stun { duration } => {
+                    commands.entity(target).insert(Stun {
+                        duration: Timer::from_seconds(*duration, TimerMode::Once),
+                    });
+                }
+            },
         }
     }
 }

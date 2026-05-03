@@ -3,12 +3,14 @@ mod attack_definition;
 mod attacks;
 pub mod components;
 pub mod events;
+mod status;
 pub mod systems;
 mod tests;
 
 use crate::combat::ai::*;
 use crate::combat::components::AttackEvent;
 use crate::combat::events::DamageEvent;
+use crate::combat::status::StatusEffectsPlugin;
 use bevy::prelude::*;
 use systems::*;
 
@@ -18,6 +20,7 @@ impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_message::<DamageEvent>();
         app.add_message::<AttackEvent>();
+        app.add_plugins(StatusEffectsPlugin);
         app.add_systems(
             Update,
             (
