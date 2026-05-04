@@ -67,6 +67,7 @@ pub fn attack_input_system(
             let mut entity_commands = commands.spawn((
                 Attack::from_definition(def.clone(), entity, id),
                 Transform::default(),
+                CombatEntity,
                 sprite,
             ));
 
@@ -458,5 +459,14 @@ pub fn apply_knockback_system(
         if knockback.timer.is_finished() {
             commands.entity(entity).remove::<KnockbackEffect>();
         }
+    }
+}
+
+pub fn cleanup_combat(
+    mut commands: Commands,
+    query: Query<Entity, With<CombatEntity>>,
+) {
+    for e in &query {
+        commands.entity(e).despawn();
     }
 }
