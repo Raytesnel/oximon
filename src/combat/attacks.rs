@@ -1,3 +1,7 @@
+use crate::combat::attack_definition::{
+    AttackDefinition, AttackEffect, DamageEffect, EffectTrigger, KnockbackEffectDef,
+    ModifierTarget, StatModifierEffect, StatusEffect, TimedEffect,
+};
 use crate::common::components::{ModifierLifetime, ModifierTrigger, StatModifier, StatType};
 use bevy::prelude::*;
 
@@ -46,97 +50,214 @@ pub enum HitBehavior {
     Limited(u32), // e.g. triple kick (3 hits max)
 }
 
-#[derive(Component, Clone)]
-pub struct AttackDefinition {
-    pub name: String,
-    pub damage: f32,
-    pub range: f32,
-    pub lifetime: f32,
-    pub hit_interval: f32,
-    pub cooldown: f32,
-    pub stat_modifiers: Vec<StatModifier>,
-    pub spawn: AttackSpawn,
-    pub offset: Vec3,
-    pub hit_behavior: HitBehavior,
-
-    pub knockback_target: Option<KnockbackDefinition>,
-    pub knockback_self: Option<KnockbackDefinition>,
-}
-
 pub fn quick_attack() -> AttackDefinition {
     AttackDefinition {
         name: "quick_attack".to_string(),
-        damage: 10.0,
+
+        effects: vec![
+            // DAMAGE
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Damage(DamageEffect {
+                    amount: 10.0,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            },
+            // KNOCKBACK TARGET
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Knockback(KnockbackEffectDef {
+                    force: 3000.0,
+                    direction: KnockbackDirection::SourceToTarget,
+                    mode: KnockbackMode::Override,
+                    hitstun: 1.0,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            },
+            // KNOCKBACK SELF
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Knockback(KnockbackEffectDef {
+                    force: 1.0,
+                    direction: KnockbackDirection::Fixed(Vec3::ZERO),
+                    mode: KnockbackMode::Override,
+                    hitstun: 0.5,
+                    target: ModifierTarget::SelfEntity,
+                }),
+            },
+            // BUFFS (ON CAST!)
+            TimedEffect {
+                trigger: EffectTrigger::OnCast,
+                effect: AttackEffect::StatModifier(StatModifierEffect {
+                    target: ModifierTarget::SelfEntity,
+                    modifier: StatModifier {
+                        stat_type: StatType::Speed,
+                        flat: 0.0,
+                        multiplier: 3.0,
+                        duration: Some(2.0),
+                        lifetime: ModifierLifetime::OnAttackEnd,
+                        trigger: ModifierTrigger::Cast, // mag later weg
+                    },
+                }),
+            },
+            TimedEffect {
+                trigger: EffectTrigger::OnCast,
+                effect: AttackEffect::StatModifier(StatModifierEffect {
+                    target: ModifierTarget::SelfEntity,
+                    modifier: StatModifier {
+                        stat_type: StatType::Acceleration,
+                        flat: 0.0,
+                        multiplier: 15.0,
+                        duration: Some(2.0),
+                        lifetime: ModifierLifetime::OnAttackEnd,
+                        trigger: ModifierTrigger::Cast,
+                    },
+                }),
+            },
+        ],
+
         range: 30.0,
         lifetime: 2.0,
         hit_interval: 0.1,
         cooldown: 3.0,
+
         hit_behavior: HitBehavior::Single,
         offset: Vec3::ZERO,
+
         spawn: AttackSpawn::Hitbox {
             color: Color::srgb(1.0, 0.0, 0.0),
             size: Vec2::new(10.0, 10.0),
         },
-        knockback_target: Some(KnockbackDefinition {
-            force: 3000.0,
-            direction: KnockbackDirection::SourceToTarget,
-            mode: KnockbackMode::Override,
-            hitstun: 2.0,
-        }),
-        knockback_self: Some(KnockbackDefinition {
-            force: 1.0,
-            direction: KnockbackDirection::Fixed(Vec3::ZERO),
-            mode: KnockbackMode::Override, // stops player
-            hitstun: 2.0,
-        }),
-        stat_modifiers: vec![
-            StatModifier {
-                stat_type: StatType::Speed,
-                flat: 0.0,
-                multiplier: 3.0,
-                duration: Some(2.0),
-                trigger: ModifierTrigger::Cast,
-                lifetime: ModifierLifetime::OnAttackEnd,
-            },
-            StatModifier {
-                stat_type: StatType::Acceleration,
-                flat: 0.0,
-                multiplier: 15.0,
-                duration: Some(2.0),
-                trigger: ModifierTrigger::Cast,
-                lifetime: ModifierLifetime::OnAttackEnd,
-            },
-        ],
     }
 }
 pub fn simple_beam() -> AttackDefinition {
     AttackDefinition {
         name: "simple_beam".to_string(),
-        damage: 1.0,
+
+        effects: vec![
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Damage(DamageEffect {
+                    amount: 1.0,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            },
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Knockback(KnockbackEffectDef {
+                    force: 300.0,
+                    direction: KnockbackDirection::SourceToTarget,
+                    mode: KnockbackMode::Impulse,
+                    hitstun: 0.05,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            },
+        ],
+
         range: 100.0,
         lifetime: 2.0,
         hit_interval: 0.05,
         cooldown: 0.6,
+
         hit_behavior: HitBehavior::MultiHit,
-        stat_modifiers: vec![StatModifier {
-            stat_type: StatType::Speed,
-            flat: 0.0,
-            multiplier: 0.1,
-            duration: Some(2.0),
-            trigger: ModifierTrigger::Cast,
-            lifetime: ModifierLifetime::OnAttackEnd,
-        }],
+
+        offset: Vec3::ZERO,
+
+        spawn: AttackSpawn::Hitbox {
+            color: Color::srgb(1.0, 0.0, 0.0),
+            size: Vec2::new(100.0, 10.0),
+        },
+    }
+}
+pub fn speedo() -> AttackDefinition {
+    AttackDefinition {
+        name: "speedo".to_string(),
+
+        effects: vec![
+            TimedEffect {
+                trigger: EffectTrigger::OnCast,
+                effect: AttackEffect::StatModifier(StatModifierEffect {
+                    target: ModifierTarget::SelfEntity,
+                    modifier: StatModifier {
+                        stat_type: StatType::Speed,
+                        flat: 0.0,
+                        multiplier: 2.0,
+                        duration: Some(20.0),
+                        lifetime: ModifierLifetime::Duration,
+                        trigger: ModifierTrigger::Cast,
+                    },
+                }),
+            },
+            TimedEffect {
+                trigger: EffectTrigger::OnCast,
+                effect: AttackEffect::StatModifier(StatModifierEffect {
+                    target: ModifierTarget::SelfEntity,
+                    modifier: StatModifier {
+                        stat_type: StatType::Acceleration,
+                        flat: 0.0,
+                        multiplier: 2.0,
+                        duration: Some(20.0),
+                        lifetime: ModifierLifetime::Duration,
+                        trigger: ModifierTrigger::Cast,
+                    },
+                }),
+            },
+        ],
+
+        // 👇 deze worden bijna irrelevant
+        range: 0.0,
+        lifetime: 0.1, // kan zelfs laag
+        hit_interval: 0.0,
+        cooldown: 3.0,
+
+        hit_behavior: HitBehavior::Single, // maakt niet meer uit
+
+        offset: Vec3::ZERO,
+
+        spawn: AttackSpawn::Hitbox {
+            color: Color::srgb(0.0, 1.0, 0.0),
+            size: Vec2::new(10.0, 10.0),
+        },
+    }
+}
+
+pub fn slow_down() -> AttackDefinition {
+    AttackDefinition {
+        name: "speedo".to_string(),
+        range: 0.0,
+        lifetime: 2.0,
+        hit_interval: 2.0,
+        cooldown: 3.0,
+
+        hit_behavior: HitBehavior::Single,
         offset: Vec3::ZERO,
         spawn: AttackSpawn::Hitbox {
             color: Color::srgb(1.0, 0.0, 0.0),
             size: Vec2::new(100.0, 10.0),
         },
-        knockback_target: Some(KnockbackDefinition {
-            force: 300.0,
-            direction: KnockbackDirection::SourceToTarget,
-            mode: KnockbackMode::Impulse,
-            hitstun: 0.05,
-        }),
-        knockback_self: None,
+        effects: vec![
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::StatModifier(StatModifierEffect {
+                    target: ModifierTarget::TargetEntity,
+                    modifier: StatModifier {
+                        stat_type: StatType::Speed,
+                        flat: 0.0,
+                        multiplier: 0.9,
+                        duration: Some(2.0),
+                        lifetime: ModifierLifetime::Duration,
+                        trigger: ModifierTrigger::Cast,
+                    },
+                }),
+            },
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::ApplyStatus(StatusEffect::Poison {
+                    dps: 5.0,
+                    tick_rate: 2.0,
+                    duration: 20.0,
+                }),
+            },
+        ],
     }
 }

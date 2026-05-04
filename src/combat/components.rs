@@ -1,5 +1,4 @@
-use crate::combat::attacks::AttackDefinition;
-use crate::common::components::StatModifier;
+use crate::combat::attack_definition::AttackDefinition;
 use bevy::prelude::*;
 use std::collections::HashMap;
 
@@ -87,4 +86,32 @@ pub struct Hitstop {
 pub struct KnockbackEffect {
     pub velocity: Vec3,
     pub timer: Timer,
+}
+
+#[derive(Component)]
+pub struct Hitbox {
+    pub size: Vec2,
+}
+#[derive(Component)]
+pub struct Hurtbox {
+    pub size: Vec2,
+}
+
+#[derive(Component)]
+pub struct Poison {
+    pub damage: f32,
+    pub tick_timer: Timer,
+    pub duration: Timer,
+}
+
+#[derive(Component)]
+pub struct Slow {
+    pub multiplier: f32,
+    pub duration: Timer,
+    pub applied: bool,
+}
+
+#[derive(Component)]
+pub struct Stun {
+    pub duration: Timer,
 }

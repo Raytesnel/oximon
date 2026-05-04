@@ -199,7 +199,7 @@ pub fn update_movement_state(
 
 pub fn update_facing(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<&mut Facing, With<Movable>>,
+    mut query: Query<&mut Facing, With<Player>>,
 ) {
     let input_dir = compute_direction(&keyboard).truncate();
 
@@ -222,7 +222,7 @@ pub fn debug_movement_state_changes(
 
 pub fn player_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<&mut MoveIntent, (With<Movable>, Without<Hitstun>)>,
+    mut query: Query<&mut MoveIntent, (With<Player>, Without<Hitstun>)>,
 ) {
     let mut direction = Vec3::ZERO;
 

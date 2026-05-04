@@ -5,12 +5,11 @@ pub mod movement;
 use crate::combat::CombatPlugin;
 use crate::combat::ai::{AI, AIConfig, AIIntent, AIState, Target};
 use crate::combat::components::{
-    AttackId, AttackIdCounter, AttackStats, CombatState, Cooldowns, Health, Hitstop,
+    AttackId, AttackIdCounter, AttackStats, CombatState, Cooldowns, Health, Hitstop, Hurtbox,
 };
 use crate::common::CommonPlugin;
 use crate::common::components::{
-    ComputedStats, ModifierLifetime, ModifierTrigger, Player, RuntimeModifier, StatModifier,
-    StatType, Stats,
+    ComputedStats, ModifierLifetime, Player, RuntimeModifier, StatType, Stats,
 };
 use crate::movement::MovementPlugin;
 use crate::movement::components::{Facing, Movable, MoveIntent};
@@ -40,6 +39,9 @@ fn setup(mut commands: Commands) {
                 color: Color::WHITE,
                 custom_size: Some(Vec2::new(20.0, 20.0)),
                 ..default()
+            },
+            Hurtbox {
+                size: Vec2::new(20.0, 20.0),
             },
             Transform::from_xyz(0., 0., 0.),
             Player,
@@ -156,6 +158,7 @@ pub struct EnemyBundle {
     pub attack: AttackStats,
     pub combat: CombatState,
     pub move_intent: MoveIntent,
+    pub hurtbox: Hurtbox,
 }
 
 pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
@@ -236,6 +239,9 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
             color: Color::srgb(0., 0., 1.0),
             custom_size: Some(Vec2::new(20.0, 20.0)),
             ..default()
+        },
+        hurtbox: Hurtbox {
+            size: Vec2::new(20.0, 20.0),
         },
 
         ai: AI {
