@@ -1,5 +1,8 @@
 use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::*;
+use crate::combat::components::AttackId;
+use crate::movement::input::*;
+use crate::common::components::{ComputedStats, ModifierLifetime, RuntimeModifier, StatType, Stats};
 use crate::movement::components::{Facing, Movable, MoveIntent, MovementState, Velocity};
 use crate::GameState;
 
@@ -35,6 +38,15 @@ pub fn spawn_player_overworld(commands: &mut Commands) {
         MovementState::Idle,
         MoveIntent { direction: Vec3::ZERO },
         Facing(Vec2::X),
+        ComputedStats {
+            speed: 150.0,
+            acceleration: 800.0,
+            friction: 500.0,
+            dash_speed: 0.0,
+            dash_time: 0.0,
+            dash_friction: 0.0,
+            dash_stop_time: 0.0,
+        },
     ));
 }
 pub fn overworld_input(
@@ -45,16 +57,16 @@ pub fn overworld_input(
     for mut intent in &mut query {
         let mut dir = Vec3::ZERO;
 
-        if keyboard.pressed(KeyCode::KeyW) {
+        if keyboard.pressed(MOVE_UP_BUTTON) {
             dir.y += 1.0;
         }
-        if keyboard.pressed(KeyCode::KeyS) {
+        if keyboard.pressed(MOVE_DOWN_BUTTON) {
             dir.y -= 1.0;
         }
-        if keyboard.pressed(KeyCode::KeyA) {
+        if keyboard.pressed(MOVE_LEFT_BUTTON) {
             dir.x -= 1.0;
         }
-        if keyboard.pressed(KeyCode::KeyD) {
+        if keyboard.pressed(MOVE_RIGHT_BUTTON) {
             dir.x += 1.0;
         }
 
