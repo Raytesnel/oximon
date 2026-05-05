@@ -3,12 +3,7 @@ use crate::combat::components::Hitstun;
 use crate::common::components::{ComputedStats, Player, Stats};
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
-
-const UP_BUTTON: KeyCode = KeyCode::ArrowUp;
-const DOWN_BUTTON: KeyCode = KeyCode::ArrowDown;
-const LEFT_BUTTON: KeyCode = KeyCode::ArrowLeft;
-const RIGHT_BUTTON: KeyCode = KeyCode::ArrowRight;
-const DASH_BUTTON: KeyCode = KeyCode::ShiftLeft;
+use crate::movement::input::{DASH_BUTTON, MOVE_DOWN_BUTTON, MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON, MOVE_UP_BUTTON};
 
 #[derive(QueryData)]
 #[query_data(mutable)]
@@ -92,16 +87,16 @@ pub fn apply_velocity(
 pub fn compute_direction(input: &ButtonInput<KeyCode>) -> Vec3 {
     let mut direction = Vec3::ZERO;
 
-    if input.pressed(UP_BUTTON) {
+    if input.pressed(MOVE_UP_BUTTON) {
         direction.y += 1.0;
     }
-    if input.pressed(DOWN_BUTTON) {
+    if input.pressed(MOVE_DOWN_BUTTON) {
         direction.y -= 1.0;
     }
-    if input.pressed(LEFT_BUTTON) {
+    if input.pressed(MOVE_LEFT_BUTTON) {
         direction.x -= 1.0;
     }
-    if input.pressed(RIGHT_BUTTON) {
+    if input.pressed(MOVE_RIGHT_BUTTON) {
         direction.x += 1.0;
     }
 
@@ -226,16 +221,16 @@ pub fn player_input_system(
 ) {
     let mut direction = Vec3::ZERO;
 
-    if keyboard.pressed(UP_BUTTON) {
+    if keyboard.pressed(MOVE_UP_BUTTON) {
         direction.y += 1.0;
     }
-    if keyboard.pressed(DOWN_BUTTON) {
+    if keyboard.pressed(MOVE_DOWN_BUTTON) {
         direction.y -= 1.0;
     }
-    if keyboard.pressed(LEFT_BUTTON) {
+    if keyboard.pressed(MOVE_LEFT_BUTTON) {
         direction.x -= 1.0;
     }
-    if keyboard.pressed(RIGHT_BUTTON) {
+    if keyboard.pressed(MOVE_RIGHT_BUTTON) {
         direction.x += 1.0;
     }
 

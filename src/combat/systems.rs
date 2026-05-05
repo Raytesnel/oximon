@@ -13,6 +13,7 @@ use crate::common::components::{
 use crate::movement::components::{Facing, Movable, Velocity};
 use bevy::ecs::error::info;
 use bevy::prelude::*;
+use crate::GameState;
 
 pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
 pub const QUICK_ATTACK: KeyCode = KeyCode::KeyQ;
@@ -408,10 +409,13 @@ pub fn attack_follow_system(
     }
 }
 
-pub fn despawn_dead_system(mut commands: Commands, query: Query<(Entity, &CombatState)>) {
+pub fn despawn_dead_system(mut commands: Commands, query: Query<(Entity, &CombatState)>,mut next_state: ResMut<NextState<GameState>>,) {
     for (entity, state) in &query {
         if *state == CombatState::Dead {
             commands.entity(entity).despawn();
+            info!("monster:{:?} is dead, ending battle...",entity);
+            next_state.set(GameState::Overworld);
+
         }
     }
 }
