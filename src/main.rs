@@ -41,6 +41,13 @@ fn main() {
         .run();
 }
 
+#[derive(Component)]
+struct MainCamera;
+
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    commands.spawn((
+        Camera2d,
+        MainCamera,
+        Transform::default(),
+    ));
 }
