@@ -4,7 +4,7 @@ use crate::combat::components::AttackId;
 use crate::movement::input::*;
 use crate::common::components::{ComputedStats, ModifierLifetime, RuntimeModifier, StatType, Stats};
 use crate::movement::components::{Facing, Movable, MoveIntent, MovementState, Velocity};
-use crate::GameState;
+use crate::{GameState, MainCamera};
 
 #[derive(Component)]
 pub struct OverworldEntity;
@@ -83,5 +83,30 @@ pub fn cleanup_overworld(
 ) {
     for e in &query {
         commands.entity(e).despawn();
+    }
+}
+
+pub fn camera_follow(
+    mut cam_q: Query<&mut Transform, With<MainCamera>>,
+    player_q: Query<&Transform, (With<OverworldPlayer>, Without<MainCamera>)>,
+) {
+    let player_transform = player_q.single().expect("Expected exactly one player");
+    let mut cam_transform = cam_q.single_mut().expect("Expected exactly one camera");
+
+    let deadzone = Vec2::new(200.0, 120.0);
+
+    let delta = player_transform.translation - cam_transform.translation;
+    let lerp_factor = 0.01;
+
+    if delta.x.abs() > deadzone.x {
+        cam_transform.translation.x = cam_transform
+            .translation.x
+            .lerp(player_transform.translation.x, lerp_factor);
+    }
+
+    if delta.y.abs() > deadzone.y {
+        cam_transform.translation.y = cam_transform
+            .translation.y
+            .lerp(player_transform.translation.y, lerp_factor);
     }
 }
