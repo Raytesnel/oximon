@@ -6,6 +6,9 @@
         "tiles"
     ],
     "fileStates": {
+        "map/TX Plant.tsx": {
+            "dynamicWrapping": false
+        },
         "map/TilesetFloorDetail.tsx": {
             "scaleInDock": 1,
             "scaleInEditor": 1
@@ -39,5 +42,9 @@
         "tiles/TX Tileset Grass.tsx"
     ],
     "tileset.lastUsedFilter": "Tiled tileset files (*.tsx *.xml)",
-    "tileset.lastUsedFormat": "tsx"
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 160,
+        "width": 98
+    }
 }
