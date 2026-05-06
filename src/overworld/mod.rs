@@ -13,13 +13,17 @@ impl Plugin for OverworldPlugin {
                 Update,
                 (
                     camera_follow,
+                    y_sort,
+                    update_facing,
+                    interaction_input_system
                 )
                     .run_if(in_state(GameState::Overworld)),
             )
             .add_systems(OnExit(GameState::Overworld), cleanup_overworld);
         app.add_systems(
             FixedUpdate,
-            overworld_movement.run_if(in_state(GameState::Overworld)),
+            (overworld_movement,).run_if(in_state(GameState::Overworld)),
         );
+        app.add_observer(on_interaction);
     }
 }
