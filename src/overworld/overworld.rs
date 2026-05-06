@@ -48,9 +48,11 @@ pub fn spawn_player_overworld(commands: &mut Commands) {
         },
         Transform::from_xyz(0., 0., 10.),
         RigidBody::Dynamic,
-        Collider::rectangle(20.0, 20.0),
+        Collider::rectangle(18.0, 18.0),
         LockedAxes::ROTATION_LOCKED,
-        LinearDamping(10.0), // handles deceleration when key released
+        LinearDamping(8.0),
+        Friction::new(0.0),
+        Restitution::new(0.0),
         GravityScale(0.0),
         CollisionEventsEnabled
 
@@ -59,16 +61,20 @@ pub fn spawn_player_overworld(commands: &mut Commands) {
 pub fn overworld_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut query: Query<&mut LinearVelocity, With<OverworldPlayer>>,
+    time: Res<Time>,
 ) {
+    let max_speed = 200.0;
+    let acceleration = 15.0;
+
     for mut lin_vel in &mut query {
         let mut dir = Vec2::ZERO;
-
         if keyboard.pressed(MOVE_UP_BUTTON)    { dir.y += 1.0; }
         if keyboard.pressed(MOVE_DOWN_BUTTON)  { dir.y -= 1.0; }
         if keyboard.pressed(MOVE_LEFT_BUTTON)  { dir.x -= 1.0; }
         if keyboard.pressed(MOVE_RIGHT_BUTTON) { dir.x += 1.0; }
 
-        lin_vel.0 = dir.normalize_or_zero() * 150.0;
+        let target = dir.normalize_or_zero() * max_speed;
+        lin_vel.0 = lin_vel.0.lerp(target, acceleration * time.delta_secs());
     }
 }
 
