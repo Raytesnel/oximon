@@ -13,7 +13,6 @@ impl Plugin for OverworldPlugin {
                 Update,
                 (
                     camera_follow,
-                    debug_collider_positions,
                 )
                     .run_if(in_state(GameState::Overworld)),
             )
