@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::*;
+use avian2d::prelude::*;
 use crate::combat::components::AttackId;
 use crate::movement::input::*;
 use crate::common::components::{ComputedStats, ModifierLifetime, RuntimeModifier, StatType, Stats};
@@ -11,12 +12,25 @@ pub struct OverworldEntity;
 
 
 pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // Load your tiled map
-
     let map_handle: Handle<TiledMapAsset> = asset_server.load("map/main.tmx");
 
-    // Spawn a new entity with the TiledMap component
-    commands.spawn((TiledMap(map_handle),OverworldEntity));
+    commands
+        .spawn((
+            TiledMap(map_handle),
+            OverworldEntity,
+            TiledPhysicsSettings::<TiledPhysicsAvianBackend>::default(),
+        ))
+        .observe(
+            |collider_created: On<TiledEvent<ColliderCreated>>,
+             mut commands: Commands| {
+                commands
+                    .entity(collider_created.event().origin)
+                    .insert(RigidBody::Static);
+                info!("Collider entity: {:?}", collider_created.event().origin);
+                // log the source info too
+                info!("Collider source: {:?}", collider_created.event().event.source);
+            },
+        );
 
     spawn_player_overworld(&mut commands);
 }
@@ -33,47 +47,28 @@ pub fn spawn_player_overworld(commands: &mut Commands) {
             ..default()
         },
         Transform::from_xyz(0., 0., 10.),
-        Movable,
-        Velocity::default(),
-        MovementState::Idle,
-        MoveIntent { direction: Vec3::ZERO },
-        Facing(Vec2::X),
-        ComputedStats {
-            speed: 150.0,
-            acceleration: 800.0,
-            friction: 500.0,
-            dash_speed: 0.0,
-            dash_time: 0.0,
-            dash_friction: 0.0,
-            dash_stop_time: 0.0,
-        },
+        RigidBody::Dynamic,
+        Collider::rectangle(20.0, 20.0),
+        LockedAxes::ROTATION_LOCKED,
+        LinearDamping(10.0), // handles deceleration when key released
+        GravityScale(0.0),
+        CollisionEventsEnabled
+
     ));
 }
-pub fn overworld_input(
+pub fn overworld_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<&mut MoveIntent, With<OverworldPlayer>>,
-    mut next_state: ResMut<NextState<GameState>>,
+    mut query: Query<&mut LinearVelocity, With<OverworldPlayer>>,
 ) {
-    for mut intent in &mut query {
-        let mut dir = Vec3::ZERO;
+    for mut lin_vel in &mut query {
+        let mut dir = Vec2::ZERO;
 
-        if keyboard.pressed(MOVE_UP_BUTTON) {
-            dir.y += 1.0;
-        }
-        if keyboard.pressed(MOVE_DOWN_BUTTON) {
-            dir.y -= 1.0;
-        }
-        if keyboard.pressed(MOVE_LEFT_BUTTON) {
-            dir.x -= 1.0;
-        }
-        if keyboard.pressed(MOVE_RIGHT_BUTTON) {
-            dir.x += 1.0;
-        }
+        if keyboard.pressed(MOVE_UP_BUTTON)    { dir.y += 1.0; }
+        if keyboard.pressed(MOVE_DOWN_BUTTON)  { dir.y -= 1.0; }
+        if keyboard.pressed(MOVE_LEFT_BUTTON)  { dir.x -= 1.0; }
+        if keyboard.pressed(MOVE_RIGHT_BUTTON) { dir.x += 1.0; }
 
-        intent.direction = dir.normalize_or_zero();
-    }
-    if keyboard.just_pressed(KeyCode::Space) {
-        next_state.set(GameState::Combat);
+        lin_vel.0 = dir.normalize_or_zero() * 150.0;
     }
 }
 

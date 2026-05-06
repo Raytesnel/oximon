@@ -1,3 +1,4 @@
+use avian2d::prelude::RigidBody;
 use super::components::*;
 use crate::combat::components::Hitstun;
 use crate::common::components::{ComputedStats, Player, Stats};
@@ -77,7 +78,7 @@ pub fn apply_friction(
 }
 pub fn apply_velocity(
     time: Res<Time>,
-    mut query: Query<(&mut Transform, &Velocity), With<Movable>>,
+    mut query: Query<(&mut Transform, &Velocity), (With<Movable>, Without<RigidBody>)>,
 ) {
     for (mut transform, velocity) in &mut query {
         transform.translation += velocity.value * time.delta_secs();
