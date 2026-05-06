@@ -5,19 +5,23 @@ mod overworld;
 
 use crate::combat::CombatPlugin;
 use crate::combat::ai::{AI, AIConfig, AIIntent, AIState, Target};
-use crate::combat::components::{AttackId, AttackIdCounter, AttackStats, CombatEntity, CombatState, Cooldowns, Health, Hitstop, Hurtbox};
+use crate::combat::components::{
+    AttackId, AttackIdCounter, AttackStats, CombatEntity, CombatState, Cooldowns, Health, Hitstop,
+    Hurtbox,
+};
 use crate::common::CommonPlugin;
 use crate::common::components::{
     ComputedStats, ModifierLifetime, Player, RuntimeModifier, StatType, Stats,
 };
 use crate::movement::MovementPlugin;
 use crate::movement::components::{Facing, Movable, MoveIntent};
+use crate::overworld::OverworldPlugin;
+use avian2d::prelude::*;
 use bevy::prelude::*;
+use bevy_ecs_tiled::prelude::*;
 use common::components::Enemy;
 use movement::components::{MovementState, Velocity};
 use std::collections::HashMap;
-use bevy_ecs_tiled::prelude::*;
-use crate::overworld::OverworldPlugin;
 
 #[derive(States, Debug, Clone, Eq, PartialEq, Hash, Default)]
 enum GameState {
@@ -34,7 +38,10 @@ fn main() {
         }))
         .init_state::<GameState>()
         .add_plugins(TiledPlugin::default())
-        .add_plugins(CommonPlugin)        .add_plugins(MovementPlugin)
+        .add_plugins(TiledPhysicsPlugin::<TiledPhysicsAvianBackend>::default())
+        .add_plugins(PhysicsPlugins::default().with_length_unit(32.0))
+        .add_plugins(CommonPlugin)
+        .add_plugins(MovementPlugin)
         .add_plugins(CombatPlugin)
         .add_plugins(OverworldPlugin)
         .add_systems(Startup, setup_camera)
@@ -45,9 +52,5 @@ fn main() {
 struct MainCamera;
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn((
-        Camera2d,
-        MainCamera,
-        Transform::default(),
-    ));
+    commands.spawn((Camera2d, MainCamera, Transform::default()));
 }

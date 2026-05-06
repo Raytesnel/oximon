@@ -11,8 +11,16 @@ impl Plugin for OverworldPlugin {
         app.add_systems(OnEnter(GameState::Overworld), setup_overworld)
             .add_systems(
                 Update,
-                (overworld_input, camera_follow).run_if(in_state(GameState::Overworld)),
+                (
+                    camera_follow,
+                    debug_collider_positions,
+                )
+                    .run_if(in_state(GameState::Overworld)),
             )
             .add_systems(OnExit(GameState::Overworld), cleanup_overworld);
+        app.add_systems(
+            FixedUpdate,
+            overworld_movement.run_if(in_state(GameState::Overworld)),
+        );
     }
 }

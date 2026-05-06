@@ -1,0 +1,43 @@
+{
+    "activeFile": "map/main.tmx",
+    "expandedProjectPaths": [
+        "map",
+        ".",
+        "tiles"
+    ],
+    "fileStates": {
+        "map/TilesetFloorDetail.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "map/main.tmx": {
+            "scale": 0.4648,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 477.6247848537006,
+                "y": 1681.368330464716
+            }
+        },
+        "tiles/TX Tileset Grass.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        }
+    },
+    "last.externalTilesetPath": "/home/raytesnel/RustroverProjects/oximon/assets/map",
+    "last.imagePath": "/home/raytesnel/RustroverProjects/oximon/assets/tiles/dungeon",
+    "map.height": 60,
+    "map.lastUsedFormat": "tmx",
+    "map.width": 60,
+    "openFiles": [
+        "map/main.tmx",
+        "map/TilesetFloorDetail.tsx"
+    ],
+    "project": "oximon.tiled-project",
+    "recentFiles": [
+        "map/TilesetFloorDetail.tsx",
+        "map/main.tmx",
+        "tiles/TX Tileset Grass.tsx"
+    ],
+    "tileset.lastUsedFilter": "Tiled tileset files (*.tsx *.xml)",
+    "tileset.lastUsedFormat": "tsx"
+}
