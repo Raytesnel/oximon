@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use crate::combat::components::AttackId;
 use crate::common::components::{
     ComputedStats, ModifierLifetime, RuntimeModifier, StatType, Stats,
@@ -9,123 +8,10 @@ use crate::{GameState, MainCamera};
 use avian2d::prelude::*;
 use bevy::ecs::event::Trigger;
 use bevy::prelude::*;
-use bevy_ecs_tiled::prelude::*;
 use bevy_ecs_tiled::prelude::tiled::PropertyValue;
-
-#[derive(Component)]
-pub struct OverworldEntity;
-
-#[derive(Component)]
-pub struct Interactable;
-
-#[derive(Component)]
-pub enum InteractionType {
-    Chest,
-    Lamp,
-    Sign,
-}
-
-#[derive(Component, PartialEq)]
-pub enum InteractionState {
-    Closed,
-    Open,
-    Off,
-    On,
-}
-
-#[derive(Component)]
-pub struct SignText(pub String);
-
-#[derive(Event)]
-pub struct InteractionEvent {
-    pub entity: Entity,
-}
-#[derive(Component, Clone, Copy)]
-pub enum Facing {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let map_handle: Handle<TiledMapAsset> = asset_server.load("map/main.tmx");
-
-    commands
-        .spawn((
-            TiledMap(map_handle),
-            OverworldEntity,
-            TiledPhysicsSettings::<TiledPhysicsAvianBackend>::default(),
-        ))
-        .observe(
-            |collider_created: On<TiledEvent<ColliderCreated>>, mut commands: Commands| {
-                commands
-                    .entity(collider_created.event().origin)
-                    .insert(RigidBody::Static);
-            },
-        )
-        .observe(
-            |object_created: On<TiledEvent<ObjectCreated>>,
-             assets: Res<Assets<TiledMapAsset>>,
-             mut commands: Commands| {
-                let event = object_created.event();
-
-                let object = event.get_object(&assets).expect("object must exist");
-
-                let entity = event.origin;
-
-                commands.entity(entity).insert(YSort);
-                let obj_type = object.user_type.as_str();
-
-                match obj_type {
-                    "chest" => {
-                        commands.entity(entity).insert((
-                            Interactable,
-                            InteractionType::Chest,
-                            InteractionState::Closed,
-                            Name::new(object.name.clone()),
-                        ));
-                    }
-                    "lamp" => {
-                        commands.entity(entity).insert((
-                            Interactable,
-                            InteractionType::Lamp,
-                            InteractionState::Off,
-                            Name::new(object.name.clone()),
-                        ));
-                    }
-                    "sign" => {
-                        let text = object
-                            .properties
-                            .get("text")
-                            .and_then(|v| {
-                                match v {
-                                    PropertyValue::StringValue(s) => Some(s.clone()),
-                                    _ => None,
-                                }
-                            })
-                            .unwrap_or("...".to_string());
-
-                        commands.entity(entity).insert((
-                            Interactable,
-                            InteractionType::Sign,
-                            SignText(text),
-                            Name::new(object.name.clone()),
-                        ));
-                    }
-                    _ => {}
-                }
-            },
-        )
-        .observe(
-            |object_created: On<TiledEvent<ObjectCreated>>, mut commands: Commands| {
-                commands.entity(object_created.event().origin).insert(YSort);
-            },
-        );
-
-    spawn_player_overworld(&mut commands);
-}
-#[derive(Component)]
-pub struct OverworldPlayer;
+use bevy_ecs_tiled::prelude::*;
+use std::ops::Deref;
+use crate::overworld::components::{Facing, Interactable, InteractionEvent, InteractionField, InteractionFieldMarker, InteractionState, InteractionType, OverworldEntity, OverworldPlayer, SignPopup, SignText, YSort};
 
 pub fn spawn_player_overworld(commands: &mut Commands) {
     commands.spawn((
@@ -149,41 +35,10 @@ pub fn spawn_player_overworld(commands: &mut Commands) {
         CollisionEventsEnabled,
     ));
 }
-pub fn overworld_movement(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<&mut LinearVelocity, With<OverworldPlayer>>,
-) {
-    for mut lin_vel in &mut query {
-        let mut dir = Vec2::ZERO;
-        if keyboard.pressed(MOVE_UP_BUTTON) {
-            dir.y += 1.0;
-        }
-        if keyboard.pressed(MOVE_DOWN_BUTTON) {
-            dir.y -= 1.0;
-        }
-        if keyboard.pressed(MOVE_LEFT_BUTTON) {
-            dir.x -= 1.0;
-        }
-        if keyboard.pressed(MOVE_RIGHT_BUTTON) {
-            dir.x += 1.0;
-        }
-
-        lin_vel.0 = dir.normalize_or_zero() * 150.0;
-    }
-}
 
 pub fn y_sort(mut query: Query<&mut Transform, With<YSort>>) {
     for mut transform in &mut query {
         transform.translation.z = -transform.translation.y / 1000.0;
-    }
-}
-
-#[derive(Component)]
-pub struct YSort;
-
-pub fn cleanup_overworld(mut commands: Commands, query: Query<Entity, With<OverworldEntity>>) {
-    for e in &query {
-        commands.entity(e).despawn();
     }
 }
 
@@ -211,139 +66,5 @@ pub fn camera_follow(
             .translation
             .y
             .lerp(player_transform.translation.y, lerp_factor);
-    }
-}
-
-pub fn update_facing(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut query: Query<&mut Facing, With<OverworldPlayer>>,
-) {
-    for mut facing in &mut query {
-        if keyboard.pressed(MOVE_UP_BUTTON) {
-            *facing = Facing::Up;
-        } else if keyboard.pressed(MOVE_DOWN_BUTTON) {
-            *facing = Facing::Down;
-        } else if keyboard.pressed(MOVE_LEFT_BUTTON) {
-            *facing = Facing::Left;
-        } else if keyboard.pressed(MOVE_RIGHT_BUTTON) {
-            *facing = Facing::Right;
-        }
-    }
-}
-pub fn interaction_input_system(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    player_q: Query<(&Transform, &Facing), With<OverworldPlayer>>,
-    interactables: Query<(Entity, &Transform, Option<&Name>), With<Interactable>>,
-    mut commands: Commands,
-) {
-    if !keyboard.just_pressed(KeyCode::KeyE) {
-        return;
-    }
-    let (player_tf, facing) = player_q.single().expect("Expected exactly one player");
-
-    let forward: Vec2 = match facing {
-        Facing::Up    => Vec2::Y,
-        Facing::Down  => -Vec2::Y,
-        Facing::Left  => -Vec2::X,
-        Facing::Right => Vec2::X,
-    };
-
-    // Cone parameters — tweak these to taste
-    const MAX_RANGE: f32 = 60.0;
-    const HALF_ANGLE_COS: f32 = 0.707; // cos(45°) — total cone is 90°
-
-    let player_pos = player_tf.translation.truncate();
-
-    for (entity, tf, name) in &interactables {
-        let to_target = tf.translation.truncate() - player_pos;
-        let dist = to_target.length();
-
-        if dist > MAX_RANGE {
-            info!("distance to big {:?}",dist);
-            continue;
-        }
-
-        // dot(forward, normalised_direction) gives cos of the angle between them
-        let dot = forward.dot(to_target / dist);
-        if dot >= HALF_ANGLE_COS {
-            let label = name.map(|n| n.as_str()).unwrap_or("Unnamed");
-            info!("Interacting with: {label}");
-            commands.trigger(InteractionEvent { entity });
-            break;
-        }
-    }
-}
-pub fn on_interaction(
-    mut trigger: On<InteractionEvent>,
-    mut query: Query<(&InteractionType, &mut InteractionState)>,
-) {
-    let entity = trigger.event().entity;
-
-    if let Ok((kind, mut state)) = query.get_mut(entity) {
-        match kind {
-            InteractionType::Chest => {
-                *state = InteractionState::Open;
-                info!("we found an chest");
-            }
-            InteractionType::Lamp => {
-                *state = match *state {
-                    InteractionState::Off => InteractionState::On,
-                    _ => InteractionState::Off,
-
-                };
-                info!("we found a lamp");
-            }
-            InteractionType::Sign => {
-                info!("Sign interacted");
-            }
-        }
-    }
-}
-
-#[derive(Component)]
-pub struct SignPopup {
-    pub timer: Timer,
-}
-
-pub fn on_sign_interaction(
-    trigger: On<InteractionEvent>,
-    query: Query<(&InteractionType, &SignText)>,
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) {
-    let entity = trigger.event().entity;
-    let Ok((InteractionType::Sign, sign_text)) = query.get(entity) else {
-        return;
-    };
-
-    // Spawn popup as a child — inherits the sign's Transform
-    commands.entity(entity).with_children(|parent| {
-        parent.spawn((
-            SignPopup {
-                timer: Timer::from_seconds(3.0, TimerMode::Once),
-            },
-            Text2d::new(sign_text.0.clone()),
-            TextFont {
-                font: asset_server.load("fonts/your_font.otf"),
-                font_size: 12.0,
-                ..default()
-            },
-            TextColor(Color::WHITE),
-            // Float 32px above the sign
-            Transform::from_xyz(0.0, 32.0, 5.0),
-        ));
-    });
-}
-
-pub fn tick_sign_popups(
-    mut commands: Commands,
-    time: Res<Time>,
-    mut query: Query<(Entity, &mut SignPopup)>,
-) {
-    for (entity, mut popup) in &mut query {
-        popup.timer.tick(time.delta());
-        if popup.timer.is_finished() {
-            commands.entity(entity).despawn();
-        }
     }
 }
