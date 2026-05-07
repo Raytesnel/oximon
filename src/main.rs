@@ -32,10 +32,20 @@ enum GameState {
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(AssetPlugin {
-            watch_for_changes_override: Some(true),
-            ..default()
-        }))
+        .add_plugins(DefaultPlugins
+            .set(AssetPlugin {
+                watch_for_changes_override: Some(true),
+                ..default()
+            })
+            .set(ImagePlugin::default_nearest())
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "oximon".into(),
+                    ..default()
+                }),
+                ..default()
+            })
+        )
         .init_state::<GameState>()
         .add_plugins(TiledPlugin::default())
         .add_plugins(TiledPhysicsPlugin::<TiledPhysicsAvianBackend>::default())
@@ -52,5 +62,5 @@ fn main() {
 struct MainCamera;
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn((Camera2d, MainCamera, Transform::default()));
+    commands.spawn((Camera2d, MainCamera,Msaa::Off,  Transform::default()));
 }
