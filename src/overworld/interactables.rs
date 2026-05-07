@@ -1,3 +1,4 @@
+use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy::asset::AssetServer;
 use bevy::color::Color;
@@ -159,6 +160,127 @@ pub fn tick_lamp_animation(
             if let Some(atlas) = &mut sprite.texture_atlas {
                 atlas.index = anim.frames[next];
             }
+        }
+    }
+}
+
+
+// Snap a world position to the nearest grid cell (32x32)
+fn to_grid(pos: Vec2, grid_size: f32) -> IVec2 {
+    IVec2::new(
+        (pos.x / grid_size).round() as i32,
+        (pos.y / grid_size).round() as i32,
+    )
+}
+
+pub fn on_block_interaction(
+    trigger: On<InteractionEvent>,
+    block_q: Query<(&InteractionType, &PushableBlock, &Transform)>,
+    player_q: Query<&Facing, With<OverworldPlayer>>,
+    obstacle_q: Query<&Transform, Or<(With<RigidBody>, With<PushableBlock>)>>,
+    sliding_q: Query<&BlockSliding>,
+    mut commands: Commands,
+) {
+    let entity = trigger.event().entity;
+    let Ok((InteractionType::Block, block, block_tf)) = block_q.get(entity) else {
+        return;
+    };
+
+    if sliding_q.get(entity).is_ok() {
+        return;
+    }
+
+    let Ok(facing) = player_q.single() else {
+        return;
+    };
+
+    let push_dir: Vec2 = match facing {
+        Facing::Up    => Vec2::Y,
+        Facing::Down  => -Vec2::Y,
+        Facing::Left  => -Vec2::X,
+        Facing::Right => Vec2::X,
+    };
+
+    let current_pos = block_tf.translation.truncate();
+    let target_pos = current_pos + push_dir * block.grid_size;
+    let target_grid = to_grid(target_pos, block.grid_size);
+
+    // Check if any obstacle occupies the target grid cell
+    let is_blocked = obstacle_q.iter().any(|obs_tf| {
+        let obs_pos = obs_tf.translation.truncate();
+        // Skip the block itself
+        if to_grid(obs_pos, block.grid_size) == to_grid(current_pos, block.grid_size) {
+            return false;
+        }
+        to_grid(obs_pos, block.grid_size) == target_grid
+    });
+
+    if is_blocked {
+        info!("blocked at grid {:?}", target_grid);
+        return;
+    }
+
+    commands.entity(entity).insert(BlockSliding {
+        from: current_pos,
+        to: target_pos,
+        timer: Timer::from_seconds(1.0, TimerMode::Once),
+    });
+}
+
+pub fn tick_block_sliding(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut BlockSliding, &mut Transform, Option<&Children>)>,
+    name_q: Query<&Name>,
+    mut sprite_q: Query<&mut Sprite>,
+    block_spritesheet: Option<Res<BlockSpriteSheet>>,
+) {
+    for (entity, mut sliding, mut tf, children) in &mut query {
+        sliding.timer.tick(time.delta());
+        let t = sliding.timer.fraction(); // 0.0 -> 1.0
+
+        // Smooth step for nicer feel
+        let smoothed = t * t * (3.0 - 2.0 * t);
+        let new_pos = sliding.from.lerp(sliding.to, smoothed);
+        tf.translation.x = new_pos.x;
+        tf.translation.y = new_pos.y;
+
+        // Animate the visual child if spritesheet is loaded
+        if let (Some(sheet), Some(children)) = (block_spritesheet.as_ref(), children) {
+            let visual = children.iter().find(|&c| {
+                name_q.get(c)
+                    .map(|n| n.as_str() == "TiledObjectVisual")
+                    .unwrap_or(false)
+            });
+
+            if let Some(visual_entity) = visual {
+                if let Ok(mut sprite) = sprite_q.get_mut(visual_entity) {
+                    let frame_count = 9usize;
+                    let frame = ((t * frame_count as f32) as usize).min(frame_count - 1);
+
+                    // Always set both — don't branch on whether atlas exists
+                    sprite.image = sheet.image.clone();
+                    sprite.rect = None;  // clear any Tiled rect
+                    sprite.custom_size = Some(Vec2::new(32.0, 46.0));
+
+                    if let Some(atlas) = &mut sprite.texture_atlas {
+                        atlas.layout = sheet.layout.clone();
+                        atlas.index = frame;
+                    } else {
+                        sprite.texture_atlas = Some(TextureAtlas {
+                            layout: sheet.layout.clone(),
+                            index: frame,
+                        });
+                    }
+                }            }
+        }
+
+        if sliding.timer.is_finished() {
+            // Snap exactly to target to avoid float drift
+            tf.translation.x = sliding.to.x;
+            tf.translation.y = sliding.to.y;
+            commands.entity(entity).remove::<BlockSliding>();
+            info!("block slide complete");
         }
     }
 }

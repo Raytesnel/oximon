@@ -54,7 +54,7 @@
         }
     },
     "last.externalTilesetPath": "/home/raytesnel/RustroverProjects/oximon/assets/map",
-    "last.imagePath": "/home/raytesnel/RustroverProjects/oximon/assets/tiles/dungeon",
+    "last.imagePath": "/home/raytesnel/RustroverProjects/oximon/assets/sprites/objects",
     "map.height": 60,
     "map.lastUsedFormat": "tmx",
     "map.width": 60,
@@ -81,7 +81,7 @@
     "tileset.lastUsedFilter": "Tiled tileset files (*.tsx *.xml)",
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {
-        "height": 65,
+        "height": 46,
         "width": 32
     }
 }

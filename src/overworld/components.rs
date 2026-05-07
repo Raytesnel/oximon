@@ -20,10 +20,27 @@ pub struct OverworldEntity;
 pub struct Interactable;
 
 #[derive(Component)]
+pub struct PushableBlock {
+    pub grid_size: f32,
+}
+#[derive(Resource)]
+pub struct BlockSpriteSheet {
+    pub image: Handle<Image>,
+    pub layout: Handle<TextureAtlasLayout>,
+}
+#[derive(Component)]
+pub struct BlockSliding {
+    pub from: Vec2,
+    pub to: Vec2,
+    pub timer: Timer,
+}
+
+#[derive(Component)]
 pub enum InteractionType {
     Chest,
     Lamp,
     Sign,
+    Block
 }
 
 #[derive(Component, PartialEq)]

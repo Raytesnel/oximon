@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="60" height="60" tilewidth="32" tileheight="32" infinite="0" nextlayerid="20" nextobjectid="58">
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="60" height="60" tilewidth="32" tileheight="32" infinite="0" nextlayerid="21" nextobjectid="65">
  <tileset firstgid="1" source="TilesetFloorDetail.tsx"/>
  <tileset firstgid="65" source="TX Plant.tsx"/>
  <tileset firstgid="321" source="TX Props.tsx"/>
@@ -10,6 +10,7 @@
  <tileset firstgid="1409" source="TX Tileset Wall.tsx"/>
  <tileset firstgid="1665" source="TXPlant-ezgif.com-crop.tsx"/>
  <tileset firstgid="1666" source="Sprite-lamp.tsx"/>
+ <tileset firstgid="1676" source="block-0003.tsx"/>
  <layer id="1" name="Tile Layer 1" width="60" height="60">
   <data encoding="csv">
 0,0,18,0,0,0,0,0,0,0,18,0,18,0,0,0,0,0,0,0,18,0,18,0,0,18,18,0,0,0,0,0,0,18,0,0,18,18,0,0,0,0,18,18,0,0,0,18,0,0,0,0,18,0,0,18,18,18,0,0,
@@ -202,6 +203,9 @@
 0,0,992,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
+ <objectgroup id="20" name="first floow">
+  <object id="59" gid="565" x="321.079" y="1694.78" width="32" height="32"/>
+ </objectgroup>
  <layer id="2" name="stairs" width="60" height="60">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -331,29 +335,11 @@
 </data>
  </layer>
  <objectgroup id="12" name="collisions">
-  <object id="10" name="collision" type="collision" x="250.542" y="1662.56">
-   <polygon points="0,0 -1.48602,-93.9162 140.28,-93.3218 141.172,5.64686 54.9826,44.5805 54.3882,39.2308 133.741,0.297203 134.039,-88.5666 5.05246,-89.4582 5.05246,0"/>
-  </object>
-  <object id="11" name="collision" type="collision" x="304.931" y="1745.18">
-   <polygon points="0,0 80.2449,-39.2308 86.7834,-38.9336 86.189,18.7238 79.0561,18.7238 -0.594407,59.1435 -0.89161,53.1994 79.3533,12.4825 79.6505,-13.0769 0,5.05246"/>
-  </object>
-  <object id="12" name="collision" type="collision" x="391.057" y="1920.93">
-   <polygon points="0,0 0,-117.693 -8.32169,-117.098 -85.8918,-78.1645 -86.189,-72.5176 -8.02449,-73.112 -7.13288,-0.89161"/>
-  </object>
   <object id="13" name="collision" type="collision" x="593.333" y="1458">
    <polygon points="0,0 82,-41.3333 87.3333,-39.3333 86,-20.6667 294.667,-20 296,-39.3333 304,-38 381.333,0 382.667,6 304.667,5.33333 300.667,44.6667 256,44 254,0 124.667,0 126,39.3333 84,44 81.3333,4.66667"/>
   </object>
   <object id="14" name="collision" type="collision" x="894.667" y="1375.33">
    <polygon points="0,0 -218.667,0.666667 -304.667,40 -304,47.3333 -292,44.6667 -218,7.33333 0.666667,8 74.6667,44 82.6667,42.6667 81.3333,38.6667"/>
-  </object>
-  <object id="37" name="collision" type="collision" x="63.1563" y="1920.39">
-   <polygon points="0,0 0.734376,-73.4376 80.7814,-72.7032 80.7814,-79.3126 -4.40626,-119.703 -8.81251,-119.703 -7.34376,0"/>
-  </object>
-  <object id="38" name="collision" type="collision" x="142.469" y="1752.22">
-   <polygon points="0,0 -79.3126,-0.734376 -80.047,6.60939 2.9375,47.7344 -0.734376,51.4063 -7.34376,52.8751 -87.3908,13.2188 -85.922,-46.2657 -78.5782,-47.0001 2.9375,-7.34376"/>
-  </object>
-  <object id="39" name="collision" type="collision" x="126.313" y="1710.36">
-   <polygon points="4.81039,-5.61212 16.1563,-1.46875 16.1563,-5.87501 -62.422,-44.0626 -61.6876,-82.9845 63.8907,-80.7814 65.3595,-49.9376 71.9689,-49.2032 70.5001,-142.469 -71.2345,-142.469 -70.5001,-41.1251"/>
   </object>
  </objectgroup>
  <objectgroup id="18" name="interactabels">
@@ -369,25 +355,28 @@
 voor naar boven</property>
    </properties>
   </object>
-  <object id="45" name="chest" type="chest" gid="340" x="211.692" y="1536.89" width="32" height="32">
-   <properties>
-    <property name="initial_state" value="closed"/>
-    <property name="interaction_type" value="chest"/>
-   </properties>
-  </object>
   <object id="46" name="lamp" type="lamp" gid="1666" x="207.683" y="1443.08" width="32" height="65">
    <properties>
     <property name="initial_state" value="lamp"/>
     <property name="interaction_type" value="off"/>
    </properties>
   </object>
+  <object id="58" type="block" gid="1676" x="192" y="1280" width="32" height="46"/>
+  <object id="60" name="lamp" type="lamp" gid="1666" x="12.4054" y="1501.69" width="32" height="65">
+   <properties>
+    <property name="sprite_sheet" value=""/>
+   </properties>
+  </object>
+  <object id="61" name="lamp" type="lamp" gid="1666" x="64" y="1472" width="32" height="65"/>
+  <object id="62" type="block" gid="1676" x="224" y="1280" width="32" height="46"/>
+  <object id="63" type="block" gid="1676" x="224" y="1248" width="32" height="46"/>
+  <object id="64" type="block" gid="1676" x="160" y="1248" width="32" height="46"/>
  </objectgroup>
  <objectgroup id="14" name="objects">
   <object id="16" gid="1665" x="256" y="1504" width="98" height="160"/>
   <object id="17" gid="1665" x="96" y="1504" width="98" height="160"/>
   <object id="18" gid="1665" x="608.267" y="1503.22" width="98" height="160"/>
   <object id="19" gid="1665" x="863.095" y="1503.22" width="98" height="160"/>
-  <object id="21" gid="565" x="321.079" y="1694.78" width="32" height="32"/>
   <object id="52" gid="1665" x="396.763" y="1454.17" width="98" height="160"/>
   <object id="53" gid="1665" x="473.729" y="1542.36" width="98" height="160"/>
   <object id="54" gid="1665" x="409.591" y="1634.56" width="98" height="160"/>

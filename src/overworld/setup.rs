@@ -1,11 +1,10 @@
-use bevy::prelude::{Commands, Entity, GlobalTransform, Name, On, Query, Res, Transform, With};
+use bevy::prelude::*;
 use bevy::asset::{AssetServer, Assets, Handle};
-use bevy_ecs_tiled::prelude::{ColliderCreated, ObjectCreated, TiledEvent, TiledMap, TiledMapAsset, TiledPhysicsAvianBackend, TiledPhysicsSettings};
-use avian2d::prelude::{Collider, CollidingEntities, CollisionEventsEnabled, RigidBody, Sensor};
+use bevy_ecs_tiled::prelude::*;
+use avian2d::prelude::*;
 use bevy_ecs_tiled::prelude::tiled::PropertyValue;
-use crate::overworld::components::{Interactable, InteractionField, InteractionFieldMarker, InteractionState, InteractionType, OverworldEntity, SignText};
+use crate::overworld::components::*;
 use crate::overworld::overworld;
-use crate::overworld::components::YSort;
 
 pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
     let map_handle: Handle<TiledMapAsset> = asset_server.load("map/main.tmx");
@@ -115,6 +114,33 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                             ));
                         });
                     }
+                    "block" => {
+                        commands.entity(entity).insert((
+                            YSort,
+                            Interactable,
+                            InteractionType::Block,
+                            PushableBlock { grid_size: 32.0 },
+                            Name::new(object.name.clone()),
+                            RigidBody::Dynamic,
+                            LockedAxes::ROTATION_LOCKED,
+                            LinearDamping(100.0),  // high damping so physics doesn't interfere
+                            GravityScale(0.0),
+                        ));
+
+                        // Interaction field child
+                        commands.entity(entity).with_children(|parent| {
+                            parent.spawn((
+                                InteractionFieldMarker,
+                                InteractionField { owner: entity },
+                                Collider::rectangle(48.0, 48.0),
+                                Sensor,
+                                CollidingEntities::default(),
+                                CollisionEventsEnabled,
+                                Transform::default(),
+                                GlobalTransform::default(),
+                            ));
+                        });
+                    }
                     _ => {
                         commands.entity(entity).insert(YSort);
                     }
@@ -129,4 +155,20 @@ pub fn cleanup_overworld(mut commands: Commands, query: Query<Entity, With<Overw
     for e in &query {
         commands.entity(e).despawn();
     }
+}
+
+pub fn load_block_spritesheet(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    let layout = layouts.add(TextureAtlasLayout::from_grid(
+        UVec2::new(32, 46),
+        9, 1,
+        None, None,
+    ));
+    commands.insert_resource(BlockSpriteSheet {
+        image: asset_server.load("sprites/objects/block_push.png"),
+        layout,
+    });
 }
