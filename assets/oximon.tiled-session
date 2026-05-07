@@ -1,24 +1,51 @@
 {
-    "activeFile": "map/main.tmx",
+    "activeFile": "map/TX Props.tsx",
     "expandedProjectPaths": [
         "map",
-        ".",
-        "tiles"
+        "tiles",
+        "."
     ],
     "fileStates": {
         "map/TX Plant.tsx": {
-            "dynamicWrapping": false
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "map/TX Props.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "map/TX Shadow Plant.tsx": {
+            "scaleInDock": 1
+        },
+        "map/TX Shadow.tsx": {
+            "scaleInDock": 1
+        },
+        "map/TX Struct.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "map/TX Tileset Stone Ground.tsx": {
+            "scaleInDock": 1
+        },
+        "map/TX Tileset Wall.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "map/TXPlant-ezgif.com-crop.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         },
         "map/TilesetFloorDetail.tsx": {
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
         "map/main.tmx": {
-            "scale": 0.4648,
-            "selectedLayer": 0,
+            "scale": 1.2473,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 477.6247848537006,
-                "y": 1681.368330464716
+                "x": 307.4641225046099,
+                "y": 1530.1050268580134
             }
         },
         "tiles/TX Tileset Grass.tsx": {
@@ -33,12 +60,22 @@
     "map.width": 60,
     "openFiles": [
         "map/main.tmx",
-        "map/TilesetFloorDetail.tsx"
+        "map/TilesetFloorDetail.tsx",
+        "map/TX Plant.tsx",
+        "map/TX Props.tsx",
+        "map/TX Tileset Wall.tsx",
+        "map/TXPlant-ezgif.com-crop.tsx",
+        "map/TX Struct.tsx"
     ],
     "project": "oximon.tiled-project",
     "recentFiles": [
-        "map/TilesetFloorDetail.tsx",
         "map/main.tmx",
+        "map/TilesetFloorDetail.tsx",
+        "map/TX Plant.tsx",
+        "map/TX Struct.tsx",
+        "map/TXPlant-ezgif.com-crop.tsx",
+        "map/TX Tileset Wall.tsx",
+        "map/TX Props.tsx",
         "tiles/TX Tileset Grass.tsx"
     ],
     "tileset.lastUsedFilter": "Tiled tileset files (*.tsx *.xml)",
