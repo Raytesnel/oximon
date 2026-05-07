@@ -341,8 +341,14 @@
   <object id="14" name="collision" type="collision" x="894.667" y="1375.33">
    <polygon points="0,0 -218.667,0.666667 -304.667,40 -304,47.3333 -292,44.6667 -218,7.33333 0.666667,8 74.6667,44 82.6667,42.6667 81.3333,38.6667"/>
   </object>
- </objectgroup>
- <objectgroup id="18" name="interactabels">
+  <object id="16" gid="1665" x="256" y="1504" width="98" height="160"/>
+  <object id="17" gid="1665" x="96" y="1504" width="98" height="160"/>
+  <object id="18" gid="1665" x="608.267" y="1503.22" width="98" height="160"/>
+  <object id="19" gid="1665" x="863.095" y="1503.22" width="98" height="160"/>
+  <object id="52" gid="1665" x="396.763" y="1454.17" width="98" height="160"/>
+  <object id="53" gid="1665" x="473.729" y="1542.36" width="98" height="160"/>
+  <object id="54" gid="1665" x="409.591" y="1634.56" width="98" height="160"/>
+  <object id="55" gid="1665" x="503.393" y="1705.11" width="98" height="160"/>
   <object id="43" name="sign_2" type="sign" gid="404" x="269.416" y="1709.26" width="32" height="32">
    <properties>
     <property name="text" value="rechts"/>
@@ -371,15 +377,5 @@ voor naar boven</property>
   <object id="62" type="block" gid="1676" x="224" y="1280" width="32" height="46"/>
   <object id="63" type="block" gid="1676" x="224" y="1248" width="32" height="46"/>
   <object id="64" type="block" gid="1676" x="160" y="1248" width="32" height="46"/>
- </objectgroup>
- <objectgroup id="14" name="objects">
-  <object id="16" gid="1665" x="256" y="1504" width="98" height="160"/>
-  <object id="17" gid="1665" x="96" y="1504" width="98" height="160"/>
-  <object id="18" gid="1665" x="608.267" y="1503.22" width="98" height="160"/>
-  <object id="19" gid="1665" x="863.095" y="1503.22" width="98" height="160"/>
-  <object id="52" gid="1665" x="396.763" y="1454.17" width="98" height="160"/>
-  <object id="53" gid="1665" x="473.729" y="1542.36" width="98" height="160"/>
-  <object id="54" gid="1665" x="409.591" y="1634.56" width="98" height="160"/>
-  <object id="55" gid="1665" x="503.393" y="1705.11" width="98" height="160"/>
  </objectgroup>
 </map>
