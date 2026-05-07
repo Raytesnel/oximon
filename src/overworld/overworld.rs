@@ -68,3 +68,20 @@ pub fn camera_follow(
             .lerp(player_transform.translation.y, lerp_factor);
     }
 }
+
+pub fn update_facing(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut query: Query<&mut Facing, With<OverworldPlayer>>,
+) {
+    for mut facing in &mut query {
+        if keyboard.pressed(MOVE_UP_BUTTON) {
+            *facing = Facing::Up;
+        } else if keyboard.pressed(MOVE_DOWN_BUTTON) {
+            *facing = Facing::Down;
+        } else if keyboard.pressed(MOVE_LEFT_BUTTON) {
+            *facing = Facing::Left;
+        } else if keyboard.pressed(MOVE_RIGHT_BUTTON) {
+            *facing = Facing::Right;
+        }
+    }
+}
