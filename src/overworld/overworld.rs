@@ -233,7 +233,7 @@ pub fn update_facing(
 pub fn interaction_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     player_q: Query<(&Transform, &Facing), With<OverworldPlayer>>,
-    interactables: Query<(Entity, &Transform,Option<&Name>), With<Interactable>>,
+    interactables: Query<(Entity, &Transform, Option<&Name>), With<Interactable>>,
     mut commands: Commands,
 ) {
     if !keyboard.just_pressed(KeyCode::KeyE) {
@@ -241,23 +241,35 @@ pub fn interaction_input_system(
     }
     let (player_tf, facing) = player_q.single().expect("Expected exactly one player");
 
-    let forward = match facing {
-        Facing::Up => Vec3::Y,
-        Facing::Down => -Vec3::Y,
-        Facing::Left => -Vec3::X,
-        Facing::Right => Vec3::X,
+    let forward: Vec2 = match facing {
+        Facing::Up    => Vec2::Y,
+        Facing::Down  => -Vec2::Y,
+        Facing::Left  => -Vec2::X,
+        Facing::Right => Vec2::X,
     };
 
-    let check_pos = player_tf.translation + forward * 32.0;
-    info!("player forward check: {:?}", check_pos);
-    for (entity, tf,name) in &interactables {
-        let name = name.map(|n| n.as_str()).unwrap_or("Unnamed");
-        info!("interactable at: {:?} with name:{:?}", tf.translation, name);
-        if tf.translation.distance(check_pos) < 20.0 {
+    // Cone parameters — tweak these to taste
+    const MAX_RANGE: f32 = 60.0;
+    const HALF_ANGLE_COS: f32 = 0.707; // cos(45°) — total cone is 90°
+
+    let player_pos = player_tf.translation.truncate();
+
+    for (entity, tf, name) in &interactables {
+        let to_target = tf.translation.truncate() - player_pos;
+        let dist = to_target.length();
+
+        if dist > MAX_RANGE {
+            info!("distance to big {:?}",dist);
+            continue;
+        }
+
+        // dot(forward, normalised_direction) gives cos of the angle between them
+        let dot = forward.dot(to_target / dist);
+        if dot >= HALF_ANGLE_COS {
+            let label = name.map(|n| n.as_str()).unwrap_or("Unnamed");
+            info!("Interacting with: {label}");
             commands.trigger(InteractionEvent { entity });
             break;
-        } else {
-            info!("nothing is standing in front of us.")
         }
     }
 }
@@ -284,6 +296,54 @@ pub fn on_interaction(
             InteractionType::Sign => {
                 info!("Sign interacted");
             }
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct SignPopup {
+    pub timer: Timer,
+}
+
+pub fn on_sign_interaction(
+    trigger: On<InteractionEvent>,
+    query: Query<(&InteractionType, &SignText)>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    let entity = trigger.event().entity;
+    let Ok((InteractionType::Sign, sign_text)) = query.get(entity) else {
+        return;
+    };
+
+    // Spawn popup as a child — inherits the sign's Transform
+    commands.entity(entity).with_children(|parent| {
+        parent.spawn((
+            SignPopup {
+                timer: Timer::from_seconds(3.0, TimerMode::Once),
+            },
+            Text2d::new(sign_text.0.clone()),
+            TextFont {
+                font: asset_server.load("fonts/your_font.otf"),
+                font_size: 12.0,
+                ..default()
+            },
+            TextColor(Color::WHITE),
+            // Float 32px above the sign
+            Transform::from_xyz(0.0, 32.0, 5.0),
+        ));
+    });
+}
+
+pub fn tick_sign_popups(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut SignPopup)>,
+) {
+    for (entity, mut popup) in &mut query {
+        popup.timer.tick(time.delta());
+        if popup.timer.is_finished() {
+            commands.entity(entity).despawn();
         }
     }
 }
