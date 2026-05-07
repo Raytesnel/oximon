@@ -34,7 +34,7 @@ impl Plugin for OverworldPlugin {
                 tick_block_sliding,
                 update_facing,
                 interaction_input_system,
-                apply_ysort_to_visuals,
+                debug_ysort
             )
                 .run_if(in_state(GameState::Overworld)),
         )

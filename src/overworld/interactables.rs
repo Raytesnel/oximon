@@ -176,7 +176,7 @@ fn to_grid(pos: Vec2, grid_size: f32) -> IVec2 {
 pub fn on_block_interaction(
     trigger: On<InteractionEvent>,
     block_q: Query<(&InteractionType, &PushableBlock, &Transform)>,
-    player_q: Query<&Facing, With<OverworldPlayer>>,
+    player_q: Query<(&Facing, &Transform), With<OverworldPlayer>>,
     obstacle_q: Query<&Transform, Or<(With<RigidBody>, With<PushableBlock>)>>,
     sliding_q: Query<&BlockSliding>,
     mut commands: Commands,
@@ -190,10 +190,11 @@ pub fn on_block_interaction(
         return;
     }
 
-    let Ok(facing) = player_q.single() else {
+    let Ok((facing,player_tf)) = player_q.single() else {
         return;
     };
-
+    info!("block world pos: {:?}", block_tf.translation);
+    info!("player world pos: {:?}", player_tf.translation);
     let push_dir: Vec2 = match facing {
         Facing::Up    => Vec2::Y,
         Facing::Down  => -Vec2::Y,
