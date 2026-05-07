@@ -37,6 +37,7 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
 
                         commands.entity(entity).insert((
                             Interactable,
+                            YSort,
                             InteractionType::Chest,
                             InteractionState::Closed,
                             Name::new(object.name.clone()),
@@ -47,11 +48,11 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                                 InteractionField {
                                     owner: interactable_entity,
                                 },
-                                Collider::rectangle(40.0, 40.0),
+                                Collider::rectangle(32.0, 32.0),
                                 Sensor,
                                 CollidingEntities::default(),
                                 CollisionEventsEnabled,
-                                Transform::default(),
+                                Transform::from_xyz(16.0, 16.0, 0.0),
                                 GlobalTransform::default(),
                             ));
                         });
@@ -61,6 +62,7 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
 
                         commands.entity(entity).insert((
                             Interactable,
+                            YSort,
                             InteractionType::Lamp,
                             InteractionState::Off,
                         ));
@@ -70,11 +72,11 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                                 InteractionField {
                                     owner: interactable_entity,
                                 },
-                                Collider::rectangle(40.0, 40.0),
+                                Collider::rectangle(32.0, 32.0),
                                 Sensor,
                                 CollidingEntities::default(),
                                 CollisionEventsEnabled,
-                                Transform::default(),
+                                Transform::from_xyz(16.0, 16.0, 0.0),
                                 GlobalTransform::default(),
                             ));
                         });
@@ -92,8 +94,8 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                         let interactable_entity = entity;
 
                         commands.entity(entity).insert((
-                            YSort,
                             Interactable,
+                            YSort,
                             InteractionType::Sign,
                             SignText(text),
                             Name::new(object.name.clone()),
@@ -105,19 +107,19 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                                 InteractionField {
                                     owner: interactable_entity,
                                 },
-                                Collider::rectangle(40.0, 40.0),
+                                Collider::rectangle(32.0, 32.0),
                                 Sensor,
                                 CollidingEntities::default(),
                                 CollisionEventsEnabled,
-                                Transform::default(),
+                                Transform::from_xyz(16.0, 16.0, 0.0),
                                 GlobalTransform::default(),
                             ));
                         });
                     }
                     "block" => {
                         commands.entity(entity).insert((
-                            YSort,
                             Interactable,
+                            YSort,
                             InteractionType::Block,
                             PushableBlock { grid_size: 32.0 },
                             Name::new(object.name.clone()),
@@ -132,11 +134,11 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                             parent.spawn((
                                 InteractionFieldMarker,
                                 InteractionField { owner: entity },
-                                Collider::rectangle(48.0, 48.0),
+                                Collider::rectangle(32.0, 32.0),
                                 Sensor,
                                 CollidingEntities::default(),
                                 CollisionEventsEnabled,
-                                Transform::default(),
+                                Transform::from_xyz(16.0, 16.0, 0.0),
                                 GlobalTransform::default(),
                             ));
                         });
@@ -171,4 +173,16 @@ pub fn load_block_spritesheet(
         image: asset_server.load("sprites/objects/block_push.png"),
         layout,
     });
+}
+pub fn debug_ysort(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    query: Query<(Entity, &Transform, Option<&Name>), With<YSort>>,
+) {
+    if !keyboard.just_pressed(KeyCode::F1) {
+        return;
+    }
+    for (entity, tf, name) in &query {
+        info!("YSort entity {:?} name={:?} z={:.3} y={:.3}",
+            entity, name, tf.translation.z, tf.translation.y);
+    }
 }
