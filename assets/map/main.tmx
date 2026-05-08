@@ -365,17 +365,38 @@ voor naar boven</property>
    <properties>
     <property name="initial_state" value="lamp"/>
     <property name="interaction_type" value="off"/>
+    <property name="sprite_sheet" value="tiles/dungeon/Sprite-lamp.png"/>
    </properties>
   </object>
-  <object id="58" type="block" gid="1676" x="192" y="1280" width="32" height="46"/>
+  <object id="58" type="block" gid="1676" x="192" y="1280" width="32" height="46">
+   <properties>
+    <property name="sprite_sheet" value="sprites/objects/block_push.png"/>
+   </properties>
+  </object>
   <object id="60" name="lamp" type="lamp" gid="1666" x="12.4054" y="1501.69" width="32" height="65">
    <properties>
-    <property name="sprite_sheet" value=""/>
+    <property name="sprite_sheet" value="tiles/dungeon/Sprite-lamp.png"/>
    </properties>
   </object>
-  <object id="61" name="lamp" type="lamp" gid="1666" x="64" y="1472" width="32" height="65"/>
-  <object id="62" type="block" gid="1676" x="224" y="1280" width="32" height="46"/>
-  <object id="63" type="block" gid="1676" x="224" y="1248" width="32" height="46"/>
-  <object id="64" type="block" gid="1676" x="160" y="1248" width="32" height="46"/>
+  <object id="61" name="lamp" type="lamp" gid="1666" x="64" y="1472" width="32" height="65">
+   <properties>
+    <property name="sprite_sheet" value="tiles/dungeon/Sprite-lamp.png"/>
+   </properties>
+  </object>
+  <object id="62" type="block" gid="1676" x="224" y="1280" width="32" height="46">
+   <properties>
+    <property name="sprite_sheet" value="sprites/objects/block_push.png"/>
+   </properties>
+  </object>
+  <object id="63" type="block" gid="1676" x="224" y="1248" width="32" height="46">
+   <properties>
+    <property name="sprite_sheet" value="sprites/objects/block_push.png"/>
+   </properties>
+  </object>
+  <object id="64" type="block" gid="1676" x="160" y="1248" width="32" height="46">
+   <properties>
+    <property name="sprite_sheet" value="sprites/objects/block_push.png"/>
+   </properties>
+  </object>
  </objectgroup>
 </map>
