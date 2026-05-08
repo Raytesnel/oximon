@@ -130,7 +130,7 @@ pub fn load_lamp_spritesheet(
         None, None,
     ));
     commands.insert_resource(LampSpriteSheet {
-        image: asset_server.load("tiles/dungeon/Sprite-lamp.png"),
+        image: asset_server.load("tiles/dungeon/Sprite-lamp.png"), // TODO: get from sprite_sheet like text in sign.
         layout,
     });
 }
