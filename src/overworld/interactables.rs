@@ -1,8 +1,8 @@
+use crate::overworld::components::*;
 use avian2d::prelude::*;
-use bevy::prelude::*;
 use bevy::asset::AssetServer;
 use bevy::color::Color;
-use crate::overworld::components::*;
+use bevy::prelude::*;
 
 pub fn on_sign_interaction(
     trigger: On<InteractionEvent>,
@@ -49,30 +49,52 @@ pub fn tick_sign_popups(
 
 pub fn on_lamp_interaction(
     trigger: On<InteractionEvent>,
-    mut query: Query<(&InteractionType, &mut InteractionState)>,
+    mut query: Query<(
+        &InteractionType,
+        &mut InteractionState,
+        Option<&SpriteSheetHandle>,
+        Option<&SpriteSheetProps>,
+    )>,
     children_q: Query<&Children>,
     name_q: Query<&Name>,
     mut sprite_q: Query<&mut Sprite>,
-    spritesheet: Option<Res<LampSpriteSheet>>,
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let Some(spritesheet) = spritesheet else {
-        warn!("LampSpriteSheet resource not loaded yet");
-        return;
-    };
-
     let entity = trigger.event().entity;
-    let Ok((InteractionType::Lamp, mut state)) = query.get_mut(entity) else {
+    let Ok((InteractionType::Lamp, mut state, maybe_handle, maybe_props)) = query.get_mut(entity)
+    else {
         return;
     };
-
+    let handle = if let Some(h) = maybe_handle {
+        h.clone()
+    } else if let Some(props) = maybe_props {
+        let layout = layouts.add(TextureAtlasLayout::from_grid(
+            UVec2::new(props.width, props.height),
+            props.columns,
+            props.rows,
+            None,
+            None,
+        ));
+        let h = SpriteSheetHandle {
+            image: asset_server.load(props.path.clone()),
+            layout,
+        };
+        commands.entity(entity).insert(h.clone());
+        h
+    } else {
+        warn!("lamp has no spritesheet props");
+        return;
+    };
     // Find the TiledObjectVisual child that holds the sprite
     let Ok(children) = children_q.get(entity) else {
         return;
     };
 
     let visual_child = children.iter().find(|child| {
-        name_q.get(child.clone().clone())
+        name_q
+            .get(child.clone().clone())
             .map(|n| n.as_str() == "TiledObjectVisual")
             .unwrap_or(false)
     });
@@ -101,39 +123,26 @@ pub fn on_lamp_interaction(
     };
     info!("inserting frames: {:?}", frames);
 
-    sprite.image = spritesheet.image.clone();
+    sprite.image = handle.image.clone();
     sprite.texture_atlas = Some(TextureAtlas {
-        layout: spritesheet.layout.clone(),
+        layout: handle.layout.clone(),
         index: frames[0],
     });
 
     // Put the animation state on the visual child, not the parent
     // so tick_lamp_animation can find the Sprite easily
-    commands.entity(visual_entity.clone()).insert(LampAnimationState {
-        timer: Timer::from_seconds(0.08, TimerMode::Repeating),
-        frames,
-        current: 0,
-        hold_on_last: true,
-    });
+    commands
+        .entity(visual_entity.clone())
+        .insert(LampAnimationState {
+            timer: Timer::from_seconds(0.08, TimerMode::Repeating),
+            frames,
+            current: 0,
+            hold_on_last: true,
+        });
 
     info!("lamp animation started on visual child {:?}", visual_entity);
 }
 
-pub fn load_lamp_spritesheet(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
-) {
-    let layout = layouts.add(TextureAtlasLayout::from_grid(
-        UVec2::new(32, 65),
-        10, 1,
-        None, None,
-    ));
-    commands.insert_resource(LampSpriteSheet {
-        image: asset_server.load("tiles/dungeon/Sprite-lamp.png"), // TODO: get from sprite_sheet like text in sign.
-        layout,
-    });
-}
 pub fn tick_lamp_animation(
     mut commands: Commands,
     time: Res<Time>,
@@ -153,7 +162,7 @@ pub fn tick_lamp_animation(
                 // Remove the animator — sprite stays on last frame
                 commands.entity(entity).remove::<LampAnimationState>();
             } else {
-                anim.current = 0;  // loop
+                anim.current = 0; // loop
             }
         } else {
             anim.current = next;
@@ -163,7 +172,6 @@ pub fn tick_lamp_animation(
         }
     }
 }
-
 
 // Snap a world position to the nearest grid cell (32x32)
 fn to_grid(pos: Vec2, grid_size: f32) -> IVec2 {
@@ -175,51 +183,74 @@ fn to_grid(pos: Vec2, grid_size: f32) -> IVec2 {
 
 pub fn on_block_interaction(
     trigger: On<InteractionEvent>,
-    block_q: Query<(&InteractionType, &PushableBlock, &Transform)>,
+    block_q: Query<(
+        &InteractionType,
+        &PushableBlock,
+        &Transform,
+        Option<&SpriteSheetHandle>,
+        Option<&SpriteSheetProps>,
+    )>,
     player_q: Query<(&Facing, &Transform), With<OverworldPlayer>>,
     obstacle_q: Query<&Transform, Or<(With<RigidBody>, With<PushableBlock>)>>,
     sliding_q: Query<&BlockSliding>,
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     let entity = trigger.event().entity;
-    let Ok((InteractionType::Block, block, block_tf)) = block_q.get(entity) else {
+    let Ok((InteractionType::Block, block, block_tf, maybe_handle, maybe_props)) =
+        block_q.get(entity)
+    else {
         return;
     };
-
     if sliding_q.get(entity).is_ok() {
         return;
     }
-
-    let Ok((facing,player_tf)) = player_q.single() else {
+    let Ok((facing, _player_tf)) = player_q.single() else {
         return;
     };
-    info!("block world pos: {:?}", block_tf.translation);
-    info!("player world pos: {:?}", player_tf.translation);
+
     let push_dir: Vec2 = match facing {
-        Facing::Up    => Vec2::Y,
-        Facing::Down  => -Vec2::Y,
-        Facing::Left  => -Vec2::X,
+        Facing::Up => Vec2::Y,
+        Facing::Down => -Vec2::Y,
+        Facing::Left => -Vec2::X,
         Facing::Right => Vec2::X,
     };
-
     let current_pos = block_tf.translation.truncate();
     let target_pos = current_pos + push_dir * block.grid_size;
     let target_grid = to_grid(target_pos, block.grid_size);
 
-    // Check if any obstacle occupies the target grid cell
     let is_blocked = obstacle_q.iter().any(|obs_tf| {
         let obs_pos = obs_tf.translation.truncate();
-        // Skip the block itself
         if to_grid(obs_pos, block.grid_size) == to_grid(current_pos, block.grid_size) {
             return false;
         }
         to_grid(obs_pos, block.grid_size) == target_grid
     });
-
     if is_blocked {
-        info!("blocked at grid {:?}", target_grid);
         return;
     }
+
+    // Build spritesheet handle lazily on first push
+    let handle = if let Some(h) = maybe_handle {
+        Some(h.clone())
+    } else if let Some(props) = maybe_props {
+        let layout = layouts.add(TextureAtlasLayout::from_grid(
+            UVec2::new(props.width, props.height),
+            props.columns,
+            props.rows,
+            None,
+            None,
+        ));
+        let h = SpriteSheetHandle {
+            image: asset_server.load(props.path.clone()),
+            layout,
+        };
+        commands.entity(entity).insert(h.clone());
+        Some(h)
+    } else {
+        None
+    };
 
     commands.entity(entity).insert(BlockSliding {
         from: current_pos,
@@ -231,12 +262,18 @@ pub fn on_block_interaction(
 pub fn tick_block_sliding(
     mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(Entity, &mut BlockSliding, &mut Transform, Option<&Children>)>,
+
+    mut query: Query<(
+        Entity,
+        &mut BlockSliding,
+        &mut Transform,
+        Option<&Children>,
+        &SpriteSheetHandle,
+    )>,
     name_q: Query<&Name>,
     mut sprite_q: Query<&mut Sprite>,
-    block_spritesheet: Option<Res<BlockSpriteSheet>>,
 ) {
-    for (entity, mut sliding, mut tf, children) in &mut query {
+    for (entity, mut sliding, mut tf, children, spritesheet) in &mut query {
         sliding.timer.tick(time.delta());
         let t = sliding.timer.fraction(); // 0.0 -> 1.0
 
@@ -247,9 +284,10 @@ pub fn tick_block_sliding(
         tf.translation.y = new_pos.y;
 
         // Animate the visual child if spritesheet is loaded
-        if let (Some(sheet), Some(children)) = (block_spritesheet.as_ref(), children) {
+        if let (sheet, Some(children)) = (spritesheet.clone(), children) {
             let visual = children.iter().find(|&c| {
-                name_q.get(c)
+                name_q
+                    .get(c)
                     .map(|n| n.as_str() == "TiledObjectVisual")
                     .unwrap_or(false)
             });
@@ -261,7 +299,7 @@ pub fn tick_block_sliding(
 
                     // Always set both — don't branch on whether atlas exists
                     sprite.image = sheet.image.clone();
-                    sprite.rect = None;  // clear any Tiled rect
+                    sprite.rect = None; // clear any Tiled rect
                     sprite.custom_size = Some(Vec2::new(32.0, 46.0));
 
                     if let Some(atlas) = &mut sprite.texture_atlas {
@@ -273,7 +311,8 @@ pub fn tick_block_sliding(
                             index: frame,
                         });
                     }
-                }            }
+                }
+            }
         }
 
         if sliding.timer.is_finished() {

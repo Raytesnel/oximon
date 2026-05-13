@@ -1,16 +1,10 @@
 use bevy::prelude::*;
-#[derive(Resource)]
-pub struct LampSpriteSheet {
-    pub image: Handle<Image>,
-    pub layout: Handle<TextureAtlasLayout>,
-}
-
 #[derive(Component)]
 pub struct LampAnimationState {
     pub timer: Timer,
-    pub frames: Vec<usize>,      // frame indices to play
-    pub current: usize,          // index into frames vec
-    pub hold_on_last: bool,      // true = stop at last frame, false = loop
+    pub frames: Vec<usize>, // frame indices to play
+    pub current: usize,     // index into frames vec
+    pub hold_on_last: bool, // true = stop at last frame, false = loop
 }
 
 #[derive(Component)]
@@ -23,16 +17,25 @@ pub struct Interactable;
 pub struct PushableBlock {
     pub grid_size: f32,
 }
-#[derive(Resource)]
-pub struct BlockSpriteSheet {
+#[derive(Component, Clone)]
+pub struct SpriteSheetHandle {
     pub image: Handle<Image>,
     pub layout: Handle<TextureAtlasLayout>,
 }
+
 #[derive(Component)]
 pub struct BlockSliding {
     pub from: Vec2,
     pub to: Vec2,
     pub timer: Timer,
+}
+#[derive(Component)]
+pub struct SpriteSheetProps {
+    pub path: String,
+    pub width: u32,
+    pub height: u32,
+    pub columns: u32,
+    pub rows: u32,
 }
 
 #[derive(Component)]
@@ -40,7 +43,7 @@ pub enum InteractionType {
     Chest,
     Lamp,
     Sign,
-    Block
+    Block,
 }
 
 #[derive(Component, PartialEq)]
@@ -62,7 +65,10 @@ pub struct InteractionFieldMarker;
 #[derive(Component)]
 pub struct SignText(pub String);
 
-#[derive(Event,Clone)]
+#[derive(Component)]
+pub struct InteractionSheet(pub String);
+
+#[derive(Event, Clone)]
 pub struct InteractionEvent {
     pub entity: Entity,
 }

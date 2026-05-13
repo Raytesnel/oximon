@@ -16,35 +16,28 @@ pub struct OverworldPlugin;
 
 impl Plugin for OverworldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            OnEnter(GameState::Overworld),
-            (
-                setup_overworld,
-                load_lamp_spritesheet,
-                load_block_spritesheet,
-            ),
-        )
-        .add_systems(
-            Update,
-            (
-                camera_follow,
-                y_sort,
-                tick_sign_popups,
-                tick_lamp_animation,
-                tick_block_sliding,
-                update_facing,
-                interaction_input_system,
-                debug_ysort
+        app.add_systems(OnEnter(GameState::Overworld), (setup_overworld,))
+            .add_systems(
+                Update,
+                (
+                    camera_follow,
+                    y_sort,
+                    tick_sign_popups,
+                    tick_lamp_animation,
+                    tick_block_sliding,
+                    update_facing,
+                    interaction_input_system,
+                    debug_ysort,
+                )
+                    .run_if(in_state(GameState::Overworld)),
             )
-                .run_if(in_state(GameState::Overworld)),
-        )
-        .add_systems(OnExit(GameState::Overworld), cleanup_overworld)
-        .add_systems(
-            FixedUpdate,
-            overworld_movement.run_if(in_state(GameState::Overworld)),
-        )
-        .add_observer(on_sign_interaction)
-        .add_observer(on_block_interaction)
-        .add_observer(on_lamp_interaction);
+            .add_systems(OnExit(GameState::Overworld), cleanup_overworld)
+            .add_systems(
+                FixedUpdate,
+                overworld_movement.run_if(in_state(GameState::Overworld)),
+            )
+            .add_observer(on_sign_interaction)
+            .add_observer(on_block_interaction)
+            .add_observer(on_lamp_interaction);
     }
 }

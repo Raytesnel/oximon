@@ -1,14 +1,18 @@
-use bevy::prelude::*;
-use bevy::asset::{AssetServer, Assets, Handle};
-use bevy_ecs_tiled::prelude::*;
-use avian2d::prelude::*;
-use bevy_ecs_tiled::prelude::tiled::PropertyValue;
 use crate::overworld::components::*;
 use crate::overworld::overworld;
+use avian2d::prelude::*;
+use bevy::asset::{AssetServer, Assets, Handle};
+use bevy::prelude::*;
+use bevy_ecs_tiled::prelude::tiled::PropertyValue;
+use bevy_ecs_tiled::prelude::*;
 
-pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_overworld(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
     let map_handle: Handle<TiledMapAsset> = asset_server.load("map/main.tmx");
-
+    let asset_server = asset_server.clone();
     commands
         .spawn((
             TiledMap(map_handle),
@@ -23,25 +27,29 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
         )
         .observe(
-            |object_created: On<TiledEvent<ObjectCreated>>,
-             assets: Res<Assets<TiledMapAsset>>,
-             mut commands: Commands| {
+            move |object_created: On<TiledEvent<ObjectCreated>>,
+                  assets: Res<Assets<TiledMapAsset>>,
+                  mut commands: Commands| {
                 let event = object_created.event();
                 let object = event.get_object(&assets).expect("object must exist");
                 let entity = event.origin;
-                let obj_type = object.user_type.as_str();
 
-                match obj_type {
+                match object.user_type.as_str() {
                     "chest" => {
                         let interactable_entity = entity;
 
-                        commands.entity(entity).insert((
+                        let mut entity_cmd = commands.entity(entity);
+
+                        entity_cmd.insert((
                             Interactable,
                             YSort,
                             InteractionType::Chest,
                             InteractionState::Closed,
                             Name::new(object.name.clone()),
                         ));
+                        if let Some(props) = parse_spritesheet_props(&object) {
+                            entity_cmd.insert(props);
+                        }
                         commands.entity(entity).with_children(|parent| {
                             parent.spawn((
                                 InteractionFieldMarker,
@@ -60,12 +68,17 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                     "lamp" => {
                         let interactable_entity = entity;
 
-                        commands.entity(entity).insert((
+                        let mut entity_cmd = commands.entity(entity);
+
+                        entity_cmd.insert((
                             Interactable,
                             YSort,
                             InteractionType::Lamp,
                             InteractionState::Off,
                         ));
+                        if let Some(props) = parse_spritesheet_props(&object) {
+                            entity_cmd.insert(props);
+                        }
                         commands.entity(entity).with_children(|parent| {
                             parent.spawn((
                                 InteractionFieldMarker,
@@ -117,7 +130,9 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                         });
                     }
                     "block" => {
-                        commands.entity(entity).insert((
+                        let mut entity_cmd = commands.entity(entity);
+
+                        entity_cmd.insert((
                             Interactable,
                             YSort,
                             InteractionType::Block,
@@ -125,10 +140,12 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                             Name::new(object.name.clone()),
                             RigidBody::Dynamic,
                             LockedAxes::ROTATION_LOCKED,
-                            LinearDamping(100.0),  // high damping so physics doesn't interfere
+                            LinearDamping(100.0), // high damping so physics doesn't interfere
                             GravityScale(0.0),
                         ));
-
+                        if let Some(props) = parse_spritesheet_props(&object) {
+                            entity_cmd.insert(props);
+                        }
                         // Interaction field child
                         commands.entity(entity).with_children(|parent| {
                             parent.spawn((
@@ -159,20 +176,65 @@ pub fn cleanup_overworld(mut commands: Commands, query: Query<Entity, With<Overw
     }
 }
 
-pub fn load_block_spritesheet(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
-) {
-    let layout = layouts.add(TextureAtlasLayout::from_grid(
-        UVec2::new(32, 46),
-        9, 1,
-        None, None,
-    ));
-    commands.insert_resource(BlockSpriteSheet {
-        image: asset_server.load("sprites/objects/block_push.png"),
-        layout,
-    });
+fn parse_spritesheet_props(object: &tiled::Object<'_>) -> Option<SpriteSheetProps> {
+    let path = object.properties.get("sprite_sheet").and_then(|v| {
+        if let PropertyValue::StringValue(s) = v {
+            Some(s.clone())
+        } else {
+            None
+        }
+    })?;
+    let width = object
+        .properties
+        .get("sprite_width")
+        .and_then(|v| {
+            if let PropertyValue::IntValue(n) = v {
+                Some(*n as u32)
+            } else {
+                None
+            }
+        })
+        .unwrap_or(32);
+    let height = object
+        .properties
+        .get("sprite_height")
+        .and_then(|v| {
+            if let PropertyValue::IntValue(n) = v {
+                Some(*n as u32)
+            } else {
+                None
+            }
+        })
+        .unwrap_or(32);
+    let columns = object
+        .properties
+        .get("sprite_columns")
+        .and_then(|v| {
+            if let PropertyValue::IntValue(n) = v {
+                Some(*n as u32)
+            } else {
+                None
+            }
+        })
+        .unwrap_or(1);
+    let rows = object
+        .properties
+        .get("sprite_rows")
+        .and_then(|v| {
+            if let PropertyValue::IntValue(n) = v {
+                Some(*n as u32)
+            } else {
+                None
+            }
+        })
+        .unwrap_or(1);
+    Some(SpriteSheetProps {
+        path,
+        width,
+        height,
+        columns,
+        rows,
+    })
 }
 pub fn debug_ysort(
     keyboard: Res<ButtonInput<KeyCode>>,
@@ -182,7 +244,9 @@ pub fn debug_ysort(
         return;
     }
     for (entity, tf, name) in &query {
-        info!("YSort entity {:?} name={:?} z={:.3} y={:.3}",
-            entity, name, tf.translation.z, tf.translation.y);
+        info!(
+            "YSort entity {:?} name={:?} z={:.3} y={:.3}",
+            entity, name, tf.translation.z, tf.translation.y
+        );
     }
 }
