@@ -11,12 +11,12 @@
    <object id="1" x="4" y="4.90909" width="24.4545" height="23.3636"/>
   </objectgroup>
  </tile>
- <tile id="83">
+ <tile id="83" type="sign">
   <objectgroup draworder="index" id="2">
    <object id="1" x="12.1818" y="15.0909" width="5.81818" height="16.5455"/>
   </objectgroup>
  </tile>
- <tile id="115">
+ <tile id="115" type="sign">
   <objectgroup draworder="index" id="2">
    <object id="1" x="12" y="15.0909" width="5.81818" height="16.5455"/>
   </objectgroup>
