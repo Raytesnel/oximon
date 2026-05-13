@@ -16,4 +16,11 @@
    <object id="1" x="11.7972" y="-0.155227" width="7.99418" height="21.887"/>
   </objectgroup>
  </tile>
+ <tile id="99">
+  <objectgroup draworder="index" id="3">
+   <object id="2" x="7.61781" y="11.1417" width="16.4275" height="14.6138">
+    <ellipse/>
+   </object>
+  </objectgroup>
+ </tile>
 </tileset>

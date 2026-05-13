@@ -1,11 +1,15 @@
 {
     "activeFile": "map/main.tmx",
     "expandedProjectPaths": [
-        "map",
         ".",
-        "tiles"
+        "tiles",
+        "map"
     ],
     "fileStates": {
+        "map/Sprite-lamp.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
         "map/TX Plant.tsx": {
             "dynamicWrapping": false,
             "scaleInDock": 1,
@@ -40,12 +44,20 @@
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
+        "map/block-0003.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "map/block_push.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
         "map/main.tmx": {
             "scale": 1.549,
-            "selectedLayer": 7,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 275.98450613298905,
-                "y": 1621.3686249193029
+                "x": 172.6920593931569,
+                "y": 1368.947708198838
             }
         },
         "tiles/TX Tileset Grass.tsx": {
@@ -65,10 +77,15 @@
         "map/TX Props.tsx",
         "map/TX Tileset Wall.tsx",
         "map/TXPlant-ezgif.com-crop.tsx",
-        "map/TX Struct.tsx"
+        "map/TX Struct.tsx",
+        "map/Sprite-lamp.tsx",
+        "map/block_push.tsx"
     ],
     "project": "oximon.tiled-project",
+    "property.type": "int",
     "recentFiles": [
+        "map/block_push.tsx",
+        "map/Sprite-lamp.tsx",
         "map/TX Struct.tsx",
         "map/TXPlant-ezgif.com-crop.tsx",
         "map/TX Tileset Wall.tsx",
@@ -76,6 +93,7 @@
         "map/TX Plant.tsx",
         "map/TilesetFloorDetail.tsx",
         "map/main.tmx",
+        "map/block-0003.tsx",
         "tiles/TX Tileset Grass.tsx"
     ],
     "tileset.lastUsedFilter": "Tiled tileset files (*.tsx *.xml)",
