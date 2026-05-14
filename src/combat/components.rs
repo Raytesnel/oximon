@@ -2,17 +2,18 @@ use crate::combat::attack_definition::AttackDefinition;
 use bevy::prelude::*;
 use std::collections::HashMap;
 #[derive(Component)]
+
 pub struct CombatEntity;
 
 #[derive(Component, Debug)]
 pub struct Health {
     pub current: f32,
-    pub max: f32,
+    pub _max: f32,
 }
 
 #[derive(Component, Debug)]
 pub struct AttackStats {
-    pub attack: f32,
+    pub _attack: f32,
 }
 
 #[derive(Component, Debug, PartialEq, Eq)]
@@ -40,7 +41,6 @@ pub struct Attack {
     pub definition: AttackDefinition,
     pub lifetime_timer: Timer,
     pub hit_timer: Timer,
-    pub active: bool,
     pub follow_entity: Option<Entity>,
     pub applied_start_modifiers: bool,
     pub hits_done: u32,
@@ -54,7 +54,6 @@ impl Attack {
             lifetime_timer: Timer::from_seconds(def.lifetime, TimerMode::Once),
             hit_timer: Timer::from_seconds(def.hit_interval, TimerMode::Repeating),
             definition: def,
-            active: false,
             hits_done: 0,
             has_hit: false,
             follow_entity: Some(owner),
@@ -72,7 +71,7 @@ pub struct AttackIdCounter {
 
 #[derive(Message, Debug)]
 pub struct AttackEvent {
-    pub entity: Entity,
+    pub _entity: Entity,
 }
 
 #[derive(Component, Debug)]

@@ -50,7 +50,6 @@ pub enum InteractionType {
 #[derive(Component, PartialEq)]
 pub enum InteractionState {
     Closed,
-    Open,
     Off,
     On,
 }
@@ -65,9 +64,6 @@ pub struct InteractionFieldMarker;
 
 #[derive(Component)]
 pub struct SignText(pub String);
-
-#[derive(Component)]
-pub struct InteractionSheet(pub String);
 
 #[derive(Event, Clone)]
 pub struct InteractionEvent {

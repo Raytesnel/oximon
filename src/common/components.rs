@@ -23,17 +23,6 @@ pub enum StatType {
     DashStopTime,
 }
 
-#[derive(Component)]
-pub struct StatsModifiers {
-    pub speed: Vec<StatModifier>,
-    pub acceleration: Vec<StatModifier>,
-    pub friction: Vec<StatModifier>,
-    pub dash_speed: Vec<StatModifier>,
-    pub dash_time: Vec<StatModifier>,
-    pub dash_friction: Vec<StatModifier>,
-    pub dash_stop_time: Vec<StatModifier>,
-}
-
 #[derive(Component, Debug)]
 pub struct Stats {
     pub speed: Vec<RuntimeModifier>,
@@ -68,16 +57,10 @@ pub struct ComputedStats {
     pub dash_friction: f32,
     pub dash_stop_time: f32,
 }
-#[derive(Clone, Copy)]
-pub enum ModifierTrigger {
-    Cast,
-    OnHit,
-    After,
-}
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum ModifierLifetime {
     Duration, // ignores all, always waiting till defined lifetime.
-    WhileAttacking,
+    _WhileAttacking,
     OnAttackEnd,
     Permanent,
 }
@@ -87,7 +70,6 @@ pub struct StatModifier {
     pub flat: f32,
     pub multiplier: f32,
     pub duration: Option<f32>,
-    pub trigger: ModifierTrigger,
     pub lifetime: ModifierLifetime,
 }
 impl StatModifier {

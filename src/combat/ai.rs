@@ -1,5 +1,4 @@
-use crate::combat::components::Attack;
-use crate::movement::components::{MoveIntent, Velocity};
+use crate::{combat::components::Attack, movement::components::MoveIntent};
 use bevy::prelude::*;
 
 #[derive(Component, Debug, PartialEq, Eq)]
@@ -17,12 +16,9 @@ pub struct AI {
 pub struct AIConfig {
     pub vision_range: f32,
     pub attack_range: f32,
-    pub wander_speed: f32,
-    pub chase_speed: f32,
 }
 #[derive(Component, Debug)]
 pub struct AIIntent {
-    pub move_dir: Vec3,
     pub wants_attack: bool,
 }
 #[derive(Component)]
@@ -90,7 +86,7 @@ pub fn ai_decision_system(
 }
 
 pub fn ai_attack_system(mut query: Query<(&AI, &mut AIIntent, &mut Attack)>) {
-    for (ai, intent, mut attack) in &mut query {
+    for (ai, intent, attack) in &mut query {
         if intent.wants_attack {
             if ai.state == AIState::Attack && attack.hit_timer.is_finished() {
                 info!("attacking!");

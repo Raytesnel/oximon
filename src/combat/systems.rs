@@ -1,30 +1,20 @@
 use super::components::*;
 use super::events::*;
+use crate::GameState;
 use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget, StatusEffect,
 };
 use crate::combat::attacks::{
-    AttackSpawn, HitBehavior, KnockbackDefinition, KnockbackDirection, KnockbackMode, quick_attack,
-    simple_beam, slow_down, speedo,
+    AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, slow_down, speedo,
 };
-use crate::common::components::{
-    Enemy, ModifierLifetime, ModifierTrigger, Player, RuntimeModifier, Stats,
-};
-use crate::movement::components::{Facing, Movable, Velocity};
-use bevy::ecs::error::info;
+use crate::common::components::{Enemy, ModifierLifetime, RuntimeModifier, Stats};
+use crate::movement::components::{Movable, Velocity};
 use bevy::prelude::*;
-use crate::GameState;
 
 pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
 pub const QUICK_ATTACK: KeyCode = KeyCode::KeyQ;
 pub const PEWPEW: KeyCode = KeyCode::KeyW;
 
-pub struct AttackContext<'a> {
-    pub cooldowns: &'a mut Cooldowns,
-    pub combat_state: &'a mut CombatState,
-    pub id_counter: &'a mut AttackIdCounter,
-    pub owner: Entity,
-}
 fn get_attack_for_key(key: KeyCode) -> Option<AttackDefinition> {
     match key {
         QUICK_ATTACK => Some(quick_attack()),
@@ -207,7 +197,7 @@ pub fn attack_hit_system(
                     }
                 }
 
-                HitBehavior::Limited(max_hits) => {
+                HitBehavior::_Limited(max_hits) => {
                     if attack.hits_done >= max_hits {
                         continue;
                     }
@@ -273,7 +263,7 @@ fn apply_hit_effects(
                     KnockbackDirection::SourceToTarget => {
                         (target_position - attack_pos).normalize_or_zero()
                     }
-                    KnockbackDirection::TargetToSource => {
+                    KnockbackDirection::_TargetToSource => {
                         (attack_pos - target_position).normalize_or_zero()
                     }
                     KnockbackDirection::Fixed(v) => v.normalize_or_zero(),
@@ -313,23 +303,6 @@ fn apply_hit_effects(
                         duration: Timer::from_seconds(*duration, TimerMode::Once),
                     });
                 }
-
-                StatusEffect::Slow {
-                    multiplier,
-                    duration,
-                } => {
-                    commands.entity(target).insert(Slow {
-                        multiplier: *multiplier,
-                        applied: false,
-                        duration: Timer::from_seconds(*duration, TimerMode::Once),
-                    });
-                }
-
-                StatusEffect::Stun { duration } => {
-                    commands.entity(target).insert(Stun {
-                        duration: Timer::from_seconds(*duration, TimerMode::Once),
-                    });
-                }
             },
         }
     }
@@ -340,7 +313,7 @@ fn remove_attack_modifiers(stats: &mut Stats, attack_id: AttackId) {
         m.source == attack_id
             && matches!(
                 m.lifetime,
-                ModifierLifetime::WhileAttacking | ModifierLifetime::OnAttackEnd
+                ModifierLifetime::_WhileAttacking | ModifierLifetime::OnAttackEnd
             )
     };
 
@@ -409,13 +382,16 @@ pub fn attack_follow_system(
     }
 }
 
-pub fn despawn_dead_system(mut commands: Commands, query: Query<(Entity, &CombatState)>,mut next_state: ResMut<NextState<GameState>>,) {
+pub fn despawn_dead_system(
+    mut commands: Commands,
+    query: Query<(Entity, &CombatState)>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
     for (entity, state) in &query {
         if *state == CombatState::Dead {
             commands.entity(entity).despawn();
-            info!("monster:{:?} is dead, ending battle...",entity);
+            info!("monster:{:?} is dead, ending battle...", entity);
             next_state.set(GameState::Overworld);
-
         }
     }
 }
@@ -466,10 +442,7 @@ pub fn apply_knockback_system(
     }
 }
 
-pub fn cleanup_combat(
-    mut commands: Commands,
-    query: Query<Entity, With<CombatEntity>>,
-) {
+pub fn cleanup_combat(mut commands: Commands, query: Query<Entity, With<CombatEntity>>) {
     for e in &query {
         commands.entity(e).despawn();
     }

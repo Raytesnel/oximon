@@ -2,9 +2,10 @@ use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, DamageEffect, EffectTrigger, KnockbackEffectDef,
     ModifierTarget, StatModifierEffect, StatusEffect, TimedEffect,
 };
-use crate::common::components::{ModifierLifetime, ModifierTrigger, StatModifier, StatType};
+use crate::common::components::{ModifierLifetime, StatModifier, StatType};
 use bevy::prelude::*;
 
+#[allow(dead_code)]
 #[derive(Clone)]
 pub enum AttackSpawn {
     Hitbox { size: Vec2, color: Color },
@@ -26,28 +27,21 @@ impl AttackSpawn {
 
 #[derive(Clone)]
 pub enum KnockbackMode {
-    Additive, // adds to velocity (smooth, keeps momentum)
-    Override, // replaces velocity (sharp hits)
-    Impulse,  // instant burst (like smash knockback)
+    _Additive, // adds to velocity (smooth, keeps momentum)
+    Override,  // replaces velocity (sharp hits)
+    Impulse,   // instant burst (like smash knockback)
 }
 #[derive(Clone)]
 pub enum KnockbackDirection {
-    SourceToTarget, // classic hit
-    TargetToSource, // recoil pull
-    Fixed(Vec3),    // e.g. always upward
-}
-#[derive(Clone)]
-pub struct KnockbackDefinition {
-    pub force: f32,
-    pub direction: KnockbackDirection,
-    pub mode: KnockbackMode,
-    pub hitstun: f32,
+    SourceToTarget,  // classic hit
+    _TargetToSource, // recoil pull
+    Fixed(Vec3),     // e.g. always upward
 }
 #[derive(Clone)]
 pub enum HitBehavior {
-    Single,       // stop after first hit (Quick Attack)
-    MultiHit,     // keep hitting (beam / fire)
-    Limited(u32), // e.g. triple kick (3 hits max)
+    Single,        // stop after first hit (Quick Attack)
+    MultiHit,      // keep hitting (beam / fire)
+    _Limited(u32), // e.g. triple kick (3 hits max)
 }
 
 pub fn quick_attack() -> AttackDefinition {
@@ -69,7 +63,7 @@ pub fn quick_attack() -> AttackDefinition {
                 effect: AttackEffect::Knockback(KnockbackEffectDef {
                     force: 3000.0,
                     direction: KnockbackDirection::SourceToTarget,
-                    mode: KnockbackMode::Override,
+                    _mode: KnockbackMode::Override,
                     hitstun: 1.0,
                     target: ModifierTarget::TargetEntity,
                 }),
@@ -80,7 +74,7 @@ pub fn quick_attack() -> AttackDefinition {
                 effect: AttackEffect::Knockback(KnockbackEffectDef {
                     force: 1.0,
                     direction: KnockbackDirection::Fixed(Vec3::ZERO),
-                    mode: KnockbackMode::Override,
+                    _mode: KnockbackMode::Override,
                     hitstun: 0.5,
                     target: ModifierTarget::SelfEntity,
                 }),
@@ -96,7 +90,6 @@ pub fn quick_attack() -> AttackDefinition {
                         multiplier: 3.0,
                         duration: Some(2.0),
                         lifetime: ModifierLifetime::OnAttackEnd,
-                        trigger: ModifierTrigger::Cast, // mag later weg
                     },
                 }),
             },
@@ -110,13 +103,11 @@ pub fn quick_attack() -> AttackDefinition {
                         multiplier: 15.0,
                         duration: Some(2.0),
                         lifetime: ModifierLifetime::OnAttackEnd,
-                        trigger: ModifierTrigger::Cast,
                     },
                 }),
             },
         ],
 
-        range: 30.0,
         lifetime: 2.0,
         hit_interval: 0.1,
         cooldown: 3.0,
@@ -147,14 +138,13 @@ pub fn simple_beam() -> AttackDefinition {
                 effect: AttackEffect::Knockback(KnockbackEffectDef {
                     force: 300.0,
                     direction: KnockbackDirection::SourceToTarget,
-                    mode: KnockbackMode::Impulse,
+                    _mode: KnockbackMode::Impulse,
                     hitstun: 0.05,
                     target: ModifierTarget::TargetEntity,
                 }),
             },
         ],
 
-        range: 100.0,
         lifetime: 2.0,
         hit_interval: 0.05,
         cooldown: 0.6,
@@ -184,7 +174,6 @@ pub fn speedo() -> AttackDefinition {
                         multiplier: 2.0,
                         duration: Some(20.0),
                         lifetime: ModifierLifetime::Duration,
-                        trigger: ModifierTrigger::Cast,
                     },
                 }),
             },
@@ -198,14 +187,11 @@ pub fn speedo() -> AttackDefinition {
                         multiplier: 2.0,
                         duration: Some(20.0),
                         lifetime: ModifierLifetime::Duration,
-                        trigger: ModifierTrigger::Cast,
                     },
                 }),
             },
         ],
 
-        // 👇 deze worden bijna irrelevant
-        range: 0.0,
         lifetime: 0.1, // kan zelfs laag
         hit_interval: 0.0,
         cooldown: 3.0,
@@ -224,7 +210,6 @@ pub fn speedo() -> AttackDefinition {
 pub fn slow_down() -> AttackDefinition {
     AttackDefinition {
         name: "speedo".to_string(),
-        range: 0.0,
         lifetime: 2.0,
         hit_interval: 2.0,
         cooldown: 3.0,
@@ -246,7 +231,6 @@ pub fn slow_down() -> AttackDefinition {
                         multiplier: 0.9,
                         duration: Some(2.0),
                         lifetime: ModifierLifetime::Duration,
-                        trigger: ModifierTrigger::Cast,
                     },
                 }),
             },

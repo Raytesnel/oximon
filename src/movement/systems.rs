@@ -1,10 +1,12 @@
-use avian2d::prelude::RigidBody;
 use super::components::*;
 use crate::combat::components::Hitstun;
-use crate::common::components::{ComputedStats, Player, Stats};
+use crate::common::components::{ComputedStats, Player};
+use crate::movement::input::{
+    DASH_BUTTON, MOVE_DOWN_BUTTON, MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON, MOVE_UP_BUTTON,
+};
+use avian2d::prelude::RigidBody;
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
-use crate::movement::input::{DASH_BUTTON, MOVE_DOWN_BUTTON, MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON, MOVE_UP_BUTTON};
 
 #[derive(QueryData)]
 #[query_data(mutable)]
@@ -57,7 +59,7 @@ pub fn apply_acceleration(
 
 pub fn apply_friction(
     time: Res<Time>,
-    mut query: Query<(&mut Velocity, &MovementState, &ComputedStats), (With<Movable>)>,
+    mut query: Query<(&mut Velocity, &MovementState, &ComputedStats), With<Movable>>,
 ) {
     for (mut velocity, state, stats) in &mut query {
         let speed = velocity.value.length();
@@ -170,7 +172,7 @@ pub fn update_movement_state(
         (With<Movable>, Without<Hitstun>),
     >,
 ) {
-    for (mut velocity, mut movement_state, dash, recover, move_intent) in &mut query {
+    for (velocity, mut movement_state, dash, recover, move_intent) in &mut query {
         let input_dir = move_intent.direction;
         let speed = velocity.value.length();
         let new_state = if dash.is_some() {
