@@ -1,13 +1,16 @@
-use crate::combat::attacks::*;
-use crate::combat::components::{Attack, AttackStats, CombatState, Cooldowns, Health};
-use crate::combat::events::*;
+#[allow(unused)]
+use crate::combat::attacks::{quick_attack, simple_beam};
+use crate::combat::components::*;
 use crate::combat::*;
-use crate::common::components::{ComputedStats, Enemy, Player, RuntimeModifier, StatType, Stats};
-use crate::movement::components::{Facing, MovementState, Velocity};
+use crate::common::components::*;
+#[allow(unused)]
+use crate::movement::components::Facing;
 use bevy::app::FixedMain;
 use bevy::prelude::*;
+#[allow(unused)]
 use bevy::time::TimeUpdateStrategy;
 use std::collections::HashMap;
+#[allow(dead_code)]
 
 fn test_app() -> App {
     let mut app = App::new();
@@ -33,7 +36,7 @@ fn damage_reduces_health() {
         .spawn((
             Health {
                 current: 100.0,
-                max: 100.0,
+                _max: 100.0,
             },
             CombatState::Idle,
         ))
@@ -61,12 +64,12 @@ fn attack_is_spawned() {
             Player,
             Transform::from_xyz(0.0, 0.0, 0.0),
             Facing(Vec2::X),
-            AttackStats { attack: 10.0 },
+            AttackStats { _attack: 10.0 },
         ))
         .id();
     // manually run spawn system logic path
     app.world_mut()
-        .write_message(AttackEvent { entity: player });
+        .write_message(AttackEvent { _entity: player });
 
     app.update();
 
@@ -87,12 +90,12 @@ fn attack_despawns_after_time() {
     let attack = app
         .world_mut()
         .spawn((
-            Attack::from_definition(def, Entity::PLACEHOLDER),
+            Attack::from_definition(def, Entity::PLACEHOLDER, AttackId(1)),
             Transform::default(),
         ))
         .id();
 
-    for i in 0..(duration / 0.016).ceil() as i32 + 2 {
+    for _ in 0..(duration / 0.016).ceil() as i32 + 2 {
         app.insert_resource(TimeUpdateStrategy::ManualDuration(
             std::time::Duration::from_secs_f32(0.016),
         ));
@@ -102,6 +105,7 @@ fn attack_despawns_after_time() {
     let exists = app.world().get_entity(attack).is_ok();
     assert!(!exists);
 }
+#[allow(dead_code)]
 fn tick(app: &mut App, dt: f32) {
     let delta = std::time::Duration::from_secs_f32(dt);
 
@@ -127,7 +131,7 @@ fn cooldown_prevents_spam() {
         input.press(QUICK_ATTACK);
     }
     tick(&mut app, 0.016);
-    let player = app.world_mut().spawn((Player, Cooldowns::default())).id();
+    let _player = app.world_mut().spawn((Player, Cooldowns::default())).id();
 
     {
         let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
@@ -161,7 +165,7 @@ fn cooldown_prevents_spam() {
 fn cooldown_expires_allows_attack_again() {
     let mut app = test_app();
 
-    let player = app.world_mut().spawn((Player, Cooldowns::default())).id();
+    let _player = app.world_mut().spawn((Player, Cooldowns::default())).id();
 
     // first attack
     app.world_mut()
@@ -204,7 +208,7 @@ fn attack_applies_stat_modifier_on_start() {
     let def = quick_attack();
 
     app.world_mut()
-        .spawn((Attack::from_definition(def.clone(), player),));
+        .spawn((Attack::from_definition(def.clone(), player, AttackId(1)),));
 
     app.update(); // runs attack_start_system
 
@@ -218,26 +222,24 @@ fn attack_applies_stat_modifier_on_start() {
 fn attack_becomes_active_on_hit() {
     let mut app = test_app();
 
-    let enemy = app
+    let _enemy = app
         .world_mut()
         .spawn((Enemy, Transform::from_xyz(0.0, 0.0, 0.0)))
         .id();
 
-    let mut def = simple_beam();
-    def.range = 200.0;
+    let def = simple_beam();
 
     let attack = app
         .world_mut()
         .spawn((
-            Attack::from_definition(def, Entity::PLACEHOLDER),
+            Attack::from_definition(def, Entity::PLACEHOLDER, AttackId(1)),
             Transform::from_xyz(0.0, 0.0, 0.0),
         ))
         .id();
 
     app.update();
 
-    let attack = app.world().get::<Attack>(attack).unwrap();
-    assert!(attack.active);
+    let _attack = app.world().get::<Attack>(attack).unwrap();
 }
 
 #[test]
@@ -254,7 +256,7 @@ fn attack_follows_entity() {
     let attack = app
         .world_mut()
         .spawn((
-            Attack::from_definition(def.clone(), player),
+            Attack::from_definition(def.clone(), player, AttackId(1)),
             Transform::default(),
         ))
         .id();

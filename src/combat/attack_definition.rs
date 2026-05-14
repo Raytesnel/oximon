@@ -19,7 +19,7 @@ pub struct DamageEffect {
 pub struct KnockbackEffectDef {
     pub force: f32,
     pub direction: KnockbackDirection,
-    pub mode: KnockbackMode,
+    pub _mode: KnockbackMode,
     pub hitstun: f32,
     pub target: ModifierTarget,
 }
@@ -47,13 +47,6 @@ pub enum StatusEffect {
         duration: f32,
         tick_rate: f32,
     },
-    Slow {
-        multiplier: f32,
-        duration: f32,
-    },
-    Stun {
-        duration: f32,
-    },
 }
 
 #[derive(Clone)]
@@ -72,7 +65,6 @@ pub struct AttackDefinition {
     pub name: String,
     pub effects: Vec<TimedEffect>,
 
-    pub range: f32,
     pub lifetime: f32,
     pub hit_interval: f32,
     pub cooldown: f32,

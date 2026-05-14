@@ -185,13 +185,13 @@ fn to_grid(pos: Vec2, grid_size: f32) -> IVec2 {
 
 pub fn on_monster_interaction(
     trigger: On<InteractionEvent>,
-    monster_q: Query<(&InteractionType)>,
+    monster_q: Query<&InteractionType>,
     player_q: Query<&Transform, With<OverworldPlayer>>,
     mut world_state: ResMut<NextState<GameState>>,
     mut commands: Commands,
 ) {
     let entity = trigger.event().entity;
-    let Ok((InteractionType::Monster)) = monster_q.get(entity) else {
+    let Ok(InteractionType::Monster) = monster_q.get(entity) else {
         return;
     };
     if let Ok(player_tf) = player_q.single() {
@@ -253,7 +253,7 @@ pub fn on_block_interaction(
     }
 
     // Build spritesheet handle lazily on first push
-    let handle = if let Some(h) = maybe_handle {
+    let _handle = if let Some(h) = maybe_handle {
         Some(h.clone())
     } else if let Some(props) = maybe_props {
         let layout = layouts.add(TextureAtlasLayout::from_grid(

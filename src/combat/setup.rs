@@ -136,9 +136,9 @@ fn spawn_combat_player(commands: &mut Commands, pos: Vec3) -> Entity {
             MovementState::Idle,
             Health {
                 current: 100.0,
-                max: 100.0,
+                _max: 100.0,
             },
-            AttackStats { attack: 25.0 },
+            AttackStats { _attack: 25.0 },
             CombatState::Idle,
             MoveIntent {
                 direction: Vec3::ZERO,
@@ -239,11 +239,8 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
             ai_config: AIConfig {
                 vision_range: 250.0,
                 attack_range: 40.0,
-                wander_speed: 50.0,
-                chase_speed: 120.0,
             },
             ai_intent: AIIntent {
-                move_dir: Vec3::ZERO,
                 wants_attack: false,
             },
             target: Target { entity: target },
@@ -254,9 +251,9 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
 
             health: Health {
                 current: 100.0,
-                max: 100.0,
+                _max: 100.0,
             },
-            attack: AttackStats { attack: 25.0 },
+            attack: AttackStats { _attack: 25.0 },
             combat: CombatState::Idle,
             move_intent: MoveIntent {
                 direction: Vec3::ZERO,

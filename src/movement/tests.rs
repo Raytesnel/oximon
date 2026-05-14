@@ -1,19 +1,26 @@
-use crate::common::components::{
-    ComputedStats, ModifierTrigger, Player, RuntimeModifier, StatModifier, StatType, Stats,
-};
+#[allow(unused)]
+use crate::common::components::{ComputedStats, Player, Stats};
 use crate::movement::MovementPlugin;
+#[allow(unused)]
 use crate::movement::components::{Dash, Facing, MovementState, Velocity};
-use crate::movement::systems::*;
+#[allow(unused)]
+use crate::movement::systems::compute_direction;
 use bevy::app::FixedMain;
 use bevy::prelude::*;
 use bevy::time::Time;
+#[allow(dead_code)]
 
 const UP_BUTTON: KeyCode = KeyCode::ArrowUp;
+#[allow(dead_code)]
 const DOWN_BUTTON: KeyCode = KeyCode::ArrowDown;
+#[allow(dead_code)]
 const LEFT_BUTTON: KeyCode = KeyCode::ArrowLeft;
+#[allow(dead_code)]
 const RIGHT_BUTTON: KeyCode = KeyCode::ArrowRight;
+#[allow(dead_code)]
 const DASH_BUTTON: KeyCode = KeyCode::ShiftLeft;
 
+#[allow(dead_code)]
 fn tick(app: &mut App, dt: f32) {
     let delta = std::time::Duration::from_secs_f32(dt);
 
@@ -43,6 +50,7 @@ fn test_diagonal_normalized() {
     assert!(dir.length() <= 1.0);
 }
 
+#[allow(dead_code)]
 fn run_movement(keys: &[KeyCode]) -> Vec3 {
     let mut app = test_app();
 
@@ -116,6 +124,7 @@ fn movement_is_normalized() {
     );
 }
 
+#[allow(dead_code)]
 fn run_frames(input_per_frame: Vec<Vec<KeyCode>>) -> Vec<Vec3> {
     let mut app = test_app();
 
@@ -460,7 +469,6 @@ fn dash_transitions_to_recovering() {
 
     let mut dash_q = world.query::<&Dash>();
     let dash_count = dash_q.iter(world).count();
-    let mut velocity_q = world.query::<&Velocity>();
     let mut state_q = world.query::<&MovementState>();
     let state = state_q.single(world).unwrap();
 
