@@ -1,3 +1,4 @@
+use crate::GameState;
 use crate::overworld::components::*;
 use avian2d::prelude::*;
 use bevy::asset::AssetServer;
@@ -179,6 +180,18 @@ fn to_grid(pos: Vec2, grid_size: f32) -> IVec2 {
         (pos.x / grid_size).round() as i32,
         (pos.y / grid_size).round() as i32,
     )
+}
+
+pub fn on_monster_interaction(
+    trigger: On<InteractionEvent>,
+    monster_q: Query<(&InteractionType)>,
+    mut world_state: ResMut<NextState<GameState>>,
+) {
+    let entity = trigger.event().entity;
+    let Ok((InteractionType::Monster)) = monster_q.get(entity) else {
+        return;
+    };
+    world_state.set(GameState::Combat);
 }
 
 pub fn on_block_interaction(
