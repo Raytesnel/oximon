@@ -1,6 +1,11 @@
 use crate::combat::components::AttackId;
 use bevy::prelude::*;
 
+#[derive(Resource)]
+pub struct CombatSpawnContext {
+    pub player_world_pos: Vec3,
+}
+
 #[derive(Component)]
 pub struct Player;
 

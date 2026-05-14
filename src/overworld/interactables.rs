@@ -1,4 +1,5 @@
 use crate::GameState;
+use crate::common::components::CombatSpawnContext;
 use crate::overworld::components::*;
 use avian2d::prelude::*;
 use bevy::asset::AssetServer;
@@ -185,12 +186,19 @@ fn to_grid(pos: Vec2, grid_size: f32) -> IVec2 {
 pub fn on_monster_interaction(
     trigger: On<InteractionEvent>,
     monster_q: Query<(&InteractionType)>,
+    player_q: Query<&Transform, With<OverworldPlayer>>,
     mut world_state: ResMut<NextState<GameState>>,
+    mut commands: Commands,
 ) {
     let entity = trigger.event().entity;
     let Ok((InteractionType::Monster)) = monster_q.get(entity) else {
         return;
     };
+    if let Ok(player_tf) = player_q.single() {
+        commands.insert_resource(CombatSpawnContext {
+            player_world_pos: player_tf.translation,
+        });
+    }
     world_state.set(GameState::Combat);
 }
 
