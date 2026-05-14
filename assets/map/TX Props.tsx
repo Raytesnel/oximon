@@ -21,6 +21,11 @@
    <object id="1" x="12" y="15.0909" width="5.81818" height="16.5455"/>
   </objectgroup>
  </tile>
+ <tile id="138" type="monster">
+  <objectgroup draworder="index" id="2">
+   <object id="1" x="12.7482" y="12.6964" width="5.54494" height="5.90769"/>
+  </objectgroup>
+ </tile>
  <tile id="244">
   <objectgroup draworder="index" id="2">
    <object id="1" x="3.16519" y="17.2647">

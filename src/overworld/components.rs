@@ -44,6 +44,7 @@ pub enum InteractionType {
     Lamp,
     Sign,
     Block,
+    Monster,
 }
 
 #[derive(Component, PartialEq)]

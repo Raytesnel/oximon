@@ -70,6 +70,30 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                             ));
                         });
                     }
+                    "monster" => {
+                        let interactable_entity = entity;
+
+                        let mut entity_cmd = commands.entity(entity);
+
+                        entity_cmd.insert((Interactable, YSort, InteractionType::Monster));
+                        if let Some(props) = parse_spritesheet_props(&object) {
+                            entity_cmd.insert(props);
+                        }
+                        commands.entity(entity).with_children(|parent| {
+                            parent.spawn((
+                                InteractionFieldMarker,
+                                InteractionField {
+                                    owner: interactable_entity,
+                                },
+                                Collider::rectangle(32.0, 32.0),
+                                Sensor,
+                                CollidingEntities::default(),
+                                CollisionEventsEnabled,
+                                Transform::from_xyz(16.0, 16.0, 0.0),
+                                GlobalTransform::default(),
+                            ));
+                        });
+                    }
                     "lamp" => {
                         let interactable_entity = entity;
 

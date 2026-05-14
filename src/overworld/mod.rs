@@ -38,6 +38,7 @@ impl Plugin for OverworldPlugin {
             )
             .add_observer(on_sign_interaction)
             .add_observer(on_block_interaction)
+            .add_observer(on_monster_interaction)
             .add_observer(on_lamp_interaction);
     }
 }
