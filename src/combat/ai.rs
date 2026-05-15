@@ -87,10 +87,8 @@ pub fn ai_decision_system(
 
 pub fn ai_attack_system(mut query: Query<(&AI, &mut AIIntent, &mut Attack)>) {
     for (ai, intent, attack) in &mut query {
-        if intent.wants_attack {
-            if ai.state == AIState::Attack && attack.hit_timer.is_finished() {
-                info!("attacking!");
-            }
+        if intent.wants_attack && ai.state == AIState::Attack && attack.hit_timer.is_finished() {
+            info!("attacking!");
         }
     }
 }

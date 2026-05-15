@@ -10,8 +10,8 @@ use bevy::prelude::*;
 #[allow(unused)]
 use bevy::time::TimeUpdateStrategy;
 use std::collections::HashMap;
-#[allow(dead_code)]
 
+#[allow(dead_code)]
 fn test_app() -> App {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);

@@ -3,6 +3,8 @@ use bevy::prelude::*;
 pub mod components;
 pub mod input;
 pub mod systems;
+pub mod types;
+
 mod tests;
 
 use crate::combat::systems::not_in_hitstop;

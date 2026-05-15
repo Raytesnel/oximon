@@ -4,7 +4,7 @@ use crate::common::components::{ComputedStats, Player};
 use crate::movement::input::{
     DASH_BUTTON, MOVE_DOWN_BUTTON, MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON, MOVE_UP_BUTTON,
 };
-use avian2d::prelude::RigidBody;
+use crate::movement::types::*;
 use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 
@@ -27,7 +27,7 @@ pub fn apply_acceleration(
             &ComputedStats,
             &MoveIntent,
         ),
-        (With<Movable>, Without<Hitstun>),
+        AllowedMovable,
     >,
 ) {
     for (mut velocity, state, dash, stats, move_intent) in &mut query {
@@ -80,7 +80,7 @@ pub fn apply_friction(
 }
 pub fn apply_velocity(
     time: Res<Time>,
-    mut query: Query<(&mut Transform, &Velocity), (With<Movable>, Without<RigidBody>)>,
+    mut query: Query<(&mut Transform, &Velocity), NoneOverWorldMovable>,
 ) {
     for (mut transform, velocity) in &mut query {
         transform.translation += velocity.value * time.delta_secs();
@@ -109,7 +109,7 @@ pub fn compute_direction(input: &ButtonInput<KeyCode>) -> Vec3 {
 pub fn handle_dash_input(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<(Entity, &MovementState, &ComputedStats), (With<Movable>, Without<Hitstun>)>,
+    query: Query<(Entity, &MovementState, &ComputedStats), AllowedMovable>,
 ) {
     if !keyboard.pressed(DASH_BUTTON) {
         return;
@@ -169,7 +169,7 @@ pub fn update_movement_state(
             Option<&Recover>,
             &MoveIntent,
         ),
-        (With<Movable>, Without<Hitstun>),
+        AllowedMovable,
     >,
 ) {
     for (velocity, mut movement_state, dash, recover, move_intent) in &mut query {

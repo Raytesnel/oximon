@@ -8,8 +8,8 @@ use crate::movement::systems::compute_direction;
 use bevy::app::FixedMain;
 use bevy::prelude::*;
 use bevy::time::Time;
-#[allow(dead_code)]
 
+#[allow(dead_code)]
 const UP_BUTTON: KeyCode = KeyCode::ArrowUp;
 #[allow(dead_code)]
 const DOWN_BUTTON: KeyCode = KeyCode::ArrowDown;

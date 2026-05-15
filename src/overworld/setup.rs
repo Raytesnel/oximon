@@ -1,5 +1,5 @@
 use crate::overworld::components::*;
-use crate::overworld::overworld;
+use crate::overworld::player_movement;
 use avian2d::prelude::*;
 use bevy::asset::{AssetServer, Assets, Handle};
 use bevy::prelude::*;
@@ -194,7 +194,7 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
         );
 
-    overworld::spawn_player_overworld(&mut commands);
+    player_movement::spawn_player_overworld(&mut commands);
 }
 
 pub fn cleanup_overworld(mut commands: Commands, query: Query<Entity, With<OverworldEntity>>) {

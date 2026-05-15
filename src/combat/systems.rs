@@ -8,7 +8,8 @@ use crate::combat::attacks::{
     AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, slow_down, speedo,
 };
 use crate::common::components::{Enemy, ModifierLifetime, RuntimeModifier, Stats};
-use crate::movement::components::{Movable, Velocity};
+use crate::movement::components::Velocity;
+use crate::movement::types::AllowedMovable;
 use bevy::prelude::*;
 
 pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
@@ -27,7 +28,7 @@ pub fn attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut id_counter: ResMut<AttackIdCounter>,
-    mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), (With<Movable>, Without<Hitstun>)>,
+    mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), AllowedMovable>,
 ) {
     for (entity, mut cooldowns, mut combat_state) in &mut query {
         for key in keyboard.get_just_pressed() {
@@ -36,10 +37,10 @@ pub fn attack_input_system(
             };
 
             // cooldown check
-            if let Some(timer) = cooldowns.timers.get(&def.name) {
-                if !timer.is_finished() {
-                    continue;
-                }
+            if let Some(timer) = cooldowns.timers.get(&def.name)
+                && !timer.is_finished()
+            {
+                continue;
             }
 
             // start cooldown
@@ -111,19 +112,15 @@ pub fn attack_start_system(mut attacks: Query<&mut Attack>, mut stats_query: Que
                 continue;
             }
 
-            match &timed.effect {
-                AttackEffect::StatModifier(stat) => {
-                    let entity = match stat.target {
-                        ModifierTarget::SelfEntity => attack.owner,
-                        ModifierTarget::TargetEntity => continue, // meestal niet logisch bij cast
-                    };
+            if let AttackEffect::StatModifier(stat) = &timed.effect {
+                let entity = match stat.target {
+                    ModifierTarget::SelfEntity => attack.owner,
+                    ModifierTarget::TargetEntity => continue,
+                };
 
-                    if let Ok(mut stats) = stats_query.get_mut(entity) {
-                        stats.add_modifier(stat.modifier.to_runtime(attack.id));
-                    }
+                if let Ok(mut stats) = stats_query.get_mut(entity) {
+                    stats.add_modifier(stat.modifier.to_runtime(attack.id));
                 }
-
-                _ => {} // andere effects doen niks bij cast
             }
         }
 
@@ -168,11 +165,13 @@ pub fn attack_hit_system(
                     }
                     apply_hit_effects(
                         &mut commands,
-                        &attack,
-                        enemy,
-                        enemy_pos,
-                        attack_pos,
-                        &mut hitstop,
+                        HitEffectArgs {
+                            attack: &attack,
+                            target: enemy,
+                            target_position: enemy_pos,
+                            attack_pos,
+                            hitstop: &mut hitstop,
+                        },
                         &mut writer,
                         &mut stats_query,
                     );
@@ -186,11 +185,13 @@ pub fn attack_hit_system(
                     if tick_ready {
                         apply_hit_effects(
                             &mut commands,
-                            &attack,
-                            enemy,
-                            enemy_pos,
-                            attack_pos,
-                            &mut hitstop,
+                            HitEffectArgs {
+                                attack: &attack,
+                                target: enemy,
+                                target_position: enemy_pos,
+                                attack_pos,
+                                hitstop: &mut hitstop,
+                            },
                             &mut writer,
                             &mut stats_query,
                         );
@@ -205,11 +206,13 @@ pub fn attack_hit_system(
                     if tick_ready {
                         apply_hit_effects(
                             &mut commands,
-                            &attack,
-                            enemy,
-                            enemy_pos,
-                            attack_pos,
-                            &mut hitstop,
+                            HitEffectArgs {
+                                attack: &attack,
+                                target: enemy,
+                                target_position: enemy_pos,
+                                attack_pos,
+                                hitstop: &mut hitstop,
+                            },
                             &mut writer,
                             &mut stats_query,
                         );
@@ -227,22 +230,26 @@ pub fn attack_hit_system(
     }
 }
 
+pub struct HitEffectArgs<'a> {
+    pub attack: &'a Attack,
+    pub target: Entity,
+    pub target_position: Vec3,
+    pub attack_pos: Vec3,
+    pub hitstop: &'a mut Hitstop,
+}
+
 fn apply_hit_effects(
     commands: &mut Commands,
-    attack: &Attack,
-    target: Entity,
-    target_position: Vec3,
-    attack_pos: Vec3,
-    hitstop: &mut Hitstop,
+    attack_hit_connection: HitEffectArgs,
     writer: &mut MessageWriter<DamageEvent>,
     stats_query: &mut Query<&mut Stats>,
 ) {
-    for timed_effect in &attack.definition.effects {
+    for timed_effect in &attack_hit_connection.attack.definition.effects {
         match &timed_effect.effect {
             AttackEffect::Damage(dmg) => {
                 let entity = match dmg.target {
-                    ModifierTarget::SelfEntity => attack.owner,
-                    ModifierTarget::TargetEntity => target,
+                    ModifierTarget::SelfEntity => attack_hit_connection.attack.owner,
+                    ModifierTarget::TargetEntity => attack_hit_connection.target,
                 };
 
                 writer.write(DamageEvent {
@@ -250,22 +257,23 @@ fn apply_hit_effects(
                     amount: dmg.amount,
                 });
 
-                hitstop.remaining = hitstop.remaining.max(0.05);
+                attack_hit_connection.hitstop.remaining =
+                    attack_hit_connection.hitstop.remaining.max(0.05);
             }
 
             AttackEffect::Knockback(kb) => {
                 let entity = match kb.target {
-                    ModifierTarget::SelfEntity => attack.owner,
-                    ModifierTarget::TargetEntity => target,
+                    ModifierTarget::SelfEntity => attack_hit_connection.attack.owner,
+                    ModifierTarget::TargetEntity => attack_hit_connection.target,
                 };
 
                 let dir = match kb.direction {
-                    KnockbackDirection::SourceToTarget => {
-                        (target_position - attack_pos).normalize_or_zero()
-                    }
-                    KnockbackDirection::_TargetToSource => {
-                        (attack_pos - target_position).normalize_or_zero()
-                    }
+                    KnockbackDirection::SourceToTarget => (attack_hit_connection.target_position
+                        - attack_hit_connection.attack_pos)
+                        .normalize_or_zero(),
+                    KnockbackDirection::_TargetToSource => (attack_hit_connection.attack_pos
+                        - attack_hit_connection.target_position)
+                        .normalize_or_zero(),
                     KnockbackDirection::Fixed(v) => v.normalize_or_zero(),
                 };
 
@@ -283,12 +291,12 @@ fn apply_hit_effects(
 
             AttackEffect::StatModifier(stat) => {
                 let entity = match stat.target {
-                    ModifierTarget::SelfEntity => attack.owner,
-                    ModifierTarget::TargetEntity => target,
+                    ModifierTarget::SelfEntity => attack_hit_connection.attack.owner,
+                    ModifierTarget::TargetEntity => attack_hit_connection.target,
                 };
 
                 if let Ok(mut stats) = stats_query.get_mut(entity) {
-                    stats.add_modifier(stat.modifier.to_runtime(attack.id));
+                    stats.add_modifier(stat.modifier.to_runtime(attack_hit_connection.attack.id));
                 }
             }
             AttackEffect::ApplyStatus(status) => match status {
@@ -297,11 +305,13 @@ fn apply_hit_effects(
                     duration,
                     tick_rate,
                 } => {
-                    commands.entity(target).insert(Poison {
-                        damage: *dps,
-                        tick_timer: Timer::from_seconds(*tick_rate, TimerMode::Repeating),
-                        duration: Timer::from_seconds(*duration, TimerMode::Once),
-                    });
+                    commands
+                        .entity(attack_hit_connection.target)
+                        .insert(Poison {
+                            damage: *dps,
+                            tick_timer: Timer::from_seconds(*tick_rate, TimerMode::Repeating),
+                            duration: Timer::from_seconds(*duration, TimerMode::Once),
+                        });
                 }
             },
         }
@@ -374,10 +384,10 @@ pub fn attack_follow_system(
     targets: Query<&Transform, Without<Attack>>,
 ) {
     for (mut transform, attack) in &mut attacks {
-        if let Some(entity) = attack.follow_entity {
-            if let Ok(target_transform) = targets.get(entity) {
-                transform.translation = target_transform.translation + attack.definition.offset;
-            }
+        if let Some(entity) = attack.follow_entity
+            && let Ok(target_transform) = targets.get(entity)
+        {
+            transform.translation = target_transform.translation + attack.definition.offset;
         }
     }
 }
