@@ -1,6 +1,6 @@
 use crate::GameState;
 use crate::overworld::interactables::*;
-use crate::overworld::overworld::*;
+use crate::overworld::player_movement::*;
 use bevy::prelude::*;
 use input_systems::{interaction_input_system, overworld_movement};
 use interactables::{on_sign_interaction, tick_sign_popups};
@@ -9,7 +9,7 @@ use setup::*;
 mod components;
 mod input_systems;
 mod interactables;
-mod overworld;
+mod player_movement;
 mod setup;
 
 pub struct OverworldPlugin;

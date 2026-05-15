@@ -4,7 +4,41 @@ use crate::overworld::components::*;
 use avian2d::prelude::*;
 use bevy::asset::AssetServer;
 use bevy::color::Color;
+use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+
+type PlayerQueryItem = (&'static Facing, &'static Transform);
+type ObstacleQueryItem = &'static Transform;
+type ObstacleFilter = (With<RigidBody>, With<PushableBlock>);
+type BlockQueryItem = (
+    &'static InteractionType,
+    &'static PushableBlock,
+    &'static Transform,
+    Option<&'static SpriteSheetHandle>,
+    Option<&'static SpriteSheetProps>,
+);
+type LampQueryItem = (
+    &'static InteractionType,
+    &'static mut InteractionState,
+    Option<&'static SpriteSheetHandle>,
+    Option<&'static SpriteSheetProps>,
+);
+
+#[derive(SystemParam)]
+pub struct BlockInteractionContext<'w, 's> {
+    pub block_q: Query<'w, 's, BlockQueryItem>,
+    pub player_q: Query<'w, 's, PlayerQueryItem, With<OverworldPlayer>>,
+    pub obstacle_q: Query<'w, 's, ObstacleQueryItem, Or<ObstacleFilter>>,
+    pub sliding_q: Query<'w, 's, &'static BlockSliding>,
+}
+
+#[derive(SystemParam)]
+pub struct LampInteractionContext<'w, 's> {
+    pub lamp_q: Query<'w, 's, LampQueryItem>,
+    pub children_q: Query<'w, 's, &'static Children>,
+    pub name_q: Query<'w, 's, &'static Name>,
+    pub sprite_q: Query<'w, 's, &'static mut Sprite>,
+}
 
 pub fn on_sign_interaction(
     trigger: On<InteractionEvent>,
@@ -51,21 +85,14 @@ pub fn tick_sign_popups(
 
 pub fn on_lamp_interaction(
     trigger: On<InteractionEvent>,
-    mut query: Query<(
-        &InteractionType,
-        &mut InteractionState,
-        Option<&SpriteSheetHandle>,
-        Option<&SpriteSheetProps>,
-    )>,
-    children_q: Query<&Children>,
-    name_q: Query<&Name>,
-    mut sprite_q: Query<&mut Sprite>,
+    mut lamp_ctx: LampInteractionContext,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     let entity = trigger.event().entity;
-    let Ok((InteractionType::Lamp, mut state, maybe_handle, maybe_props)) = query.get_mut(entity)
+    let Ok((InteractionType::Lamp, mut state, maybe_handle, maybe_props)) =
+        lamp_ctx.lamp_q.get_mut(entity)
     else {
         return;
     };
@@ -90,13 +117,14 @@ pub fn on_lamp_interaction(
         return;
     };
     // Find the TiledObjectVisual child that holds the sprite
-    let Ok(children) = children_q.get(entity) else {
+    let Ok(children) = lamp_ctx.children_q.get(entity) else {
         return;
     };
 
     let visual_child = children.iter().find(|child| {
-        name_q
-            .get(child.clone().clone())
+        lamp_ctx
+            .name_q
+            .get(*child)
             .map(|n| n.as_str() == "TiledObjectVisual")
             .unwrap_or(false)
     });
@@ -106,7 +134,7 @@ pub fn on_lamp_interaction(
         return;
     };
 
-    let Ok(mut sprite) = sprite_q.get_mut(visual_entity.clone()) else {
+    let Ok(mut sprite) = lamp_ctx.sprite_q.get_mut(visual_entity) else {
         warn!("TiledObjectVisual has no Sprite");
         return;
     };
@@ -133,14 +161,12 @@ pub fn on_lamp_interaction(
 
     // Put the animation state on the visual child, not the parent
     // so tick_lamp_animation can find the Sprite easily
-    commands
-        .entity(visual_entity.clone())
-        .insert(LampAnimationState {
-            timer: Timer::from_seconds(0.08, TimerMode::Repeating),
-            frames,
-            current: 0,
-            hold_on_last: true,
-        });
+    commands.entity(visual_entity).insert(LampAnimationState {
+        timer: Timer::from_seconds(0.08, TimerMode::Repeating),
+        frames,
+        current: 0,
+        hold_on_last: true,
+    });
 
     info!("lamp animation started on visual child {:?}", visual_entity);
 }
@@ -204,30 +230,21 @@ pub fn on_monster_interaction(
 
 pub fn on_block_interaction(
     trigger: On<InteractionEvent>,
-    block_q: Query<(
-        &InteractionType,
-        &PushableBlock,
-        &Transform,
-        Option<&SpriteSheetHandle>,
-        Option<&SpriteSheetProps>,
-    )>,
-    player_q: Query<(&Facing, &Transform), With<OverworldPlayer>>,
-    obstacle_q: Query<&Transform, Or<(With<RigidBody>, With<PushableBlock>)>>,
-    sliding_q: Query<&BlockSliding>,
-    mut commands: Commands,
+    block_ctx: BlockInteractionContext,
     asset_server: Res<AssetServer>,
+    mut commands: Commands,
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     let entity = trigger.event().entity;
     let Ok((InteractionType::Block, block, block_tf, maybe_handle, maybe_props)) =
-        block_q.get(entity)
+        block_ctx.block_q.get(entity)
     else {
         return;
     };
-    if sliding_q.get(entity).is_ok() {
+    if block_ctx.sliding_q.get(entity).is_ok() {
         return;
     }
-    let Ok((facing, _player_tf)) = player_q.single() else {
+    let Ok((facing, _player_tf)) = block_ctx.player_q.single() else {
         return;
     };
 
@@ -241,7 +258,7 @@ pub fn on_block_interaction(
     let target_pos = current_pos + push_dir * block.grid_size;
     let target_grid = to_grid(target_pos, block.grid_size);
 
-    let is_blocked = obstacle_q.iter().any(|obs_tf| {
+    let is_blocked = block_ctx.obstacle_q.iter().any(|obs_tf| {
         let obs_pos = obs_tf.translation.truncate();
         if to_grid(obs_pos, block.grid_size) == to_grid(current_pos, block.grid_size) {
             return false;
@@ -313,25 +330,25 @@ pub fn tick_block_sliding(
                     .unwrap_or(false)
             });
 
-            if let Some(visual_entity) = visual {
-                if let Ok(mut sprite) = sprite_q.get_mut(visual_entity) {
-                    let frame_count = 9usize;
-                    let frame = ((t * frame_count as f32) as usize).min(frame_count - 1);
+            if let Some(visual_entity) = visual
+                && let Ok(mut sprite) = sprite_q.get_mut(visual_entity)
+            {
+                let frame_count = 9usize;
+                let frame = ((t * frame_count as f32) as usize).min(frame_count - 1);
 
-                    // Always set both — don't branch on whether atlas exists
-                    sprite.image = sheet.image.clone();
-                    sprite.rect = None; // clear any Tiled rect
-                    sprite.custom_size = Some(Vec2::new(32.0, 46.0));
+                // Always set both — don't branch on whether atlas exists
+                sprite.image = sheet.image.clone();
+                sprite.rect = None; // clear any Tiled rect
+                sprite.custom_size = Some(Vec2::new(32.0, 46.0));
 
-                    if let Some(atlas) = &mut sprite.texture_atlas {
-                        atlas.layout = sheet.layout.clone();
-                        atlas.index = frame;
-                    } else {
-                        sprite.texture_atlas = Some(TextureAtlas {
-                            layout: sheet.layout.clone(),
-                            index: frame,
-                        });
-                    }
+                if let Some(atlas) = &mut sprite.texture_atlas {
+                    atlas.layout = sheet.layout.clone();
+                    atlas.index = frame;
+                } else {
+                    sprite.texture_atlas = Some(TextureAtlas {
+                        layout: sheet.layout.clone(),
+                        index: frame,
+                    });
                 }
             }
         }

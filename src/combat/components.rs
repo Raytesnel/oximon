@@ -22,16 +22,9 @@ pub enum CombatState {
     Attacking,
     Dead,
 }
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Cooldowns {
     pub timers: HashMap<String, Timer>,
-}
-impl Default for Cooldowns {
-    fn default() -> Self {
-        Self {
-            timers: HashMap::new(),
-        }
-    }
 }
 
 #[derive(Component)]
