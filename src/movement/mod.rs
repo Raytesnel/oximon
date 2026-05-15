@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 pub mod components;
-pub mod systems;
 pub mod input;
+pub mod systems;
 mod tests;
 
 use crate::combat::systems::not_in_hitstop;

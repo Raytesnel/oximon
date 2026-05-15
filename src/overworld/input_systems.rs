@@ -1,10 +1,14 @@
-use bevy::prelude::{Commands, Entity, KeyCode, Query, Res, With};
-use bevy::input::ButtonInput;
+use crate::movement::input::{
+    MOVE_DOWN_BUTTON, MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON, MOVE_UP_BUTTON,
+};
+use crate::overworld::components::{
+    InteractionEvent, InteractionField, InteractionFieldMarker, OverworldPlayer,
+};
 use avian2d::prelude::{CollidingEntities, LinearVelocity};
+use bevy::input::ButtonInput;
 use bevy::log::info;
 use bevy::math::Vec2;
-use crate::movement::input::{MOVE_DOWN_BUTTON, MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON, MOVE_UP_BUTTON};
-use crate::overworld::components::{InteractionEvent, InteractionField, InteractionFieldMarker, OverworldPlayer};
+use bevy::prelude::{Commands, Entity, KeyCode, Query, Res, With};
 
 pub fn interaction_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
