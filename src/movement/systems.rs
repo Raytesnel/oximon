@@ -241,3 +241,102 @@ pub fn player_input_system(
         intent.direction = direction.normalize_or_zero();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    macro_rules! test_facing {
+        ($($name:ident: $keys:expr => $expected:expr,)*) => {
+            $(
+                #[test]
+                fn $name() {
+                    run_facing_test($keys, $expected);
+                }
+            )*
+        }
+    }
+
+    test_facing! {
+        facing_up:         &[MOVE_UP_BUTTON]                           => Vec2::Y,
+        facing_down:       &[MOVE_DOWN_BUTTON]                         => Vec2::NEG_Y,
+        facing_left:       &[MOVE_LEFT_BUTTON]                         => Vec2::NEG_X,
+        facing_right:      &[MOVE_RIGHT_BUTTON]                        => Vec2::X,
+        facing_up_right:   &[MOVE_UP_BUTTON, MOVE_RIGHT_BUTTON]        => Vec2::new( 1.0,  1.0).normalize(),
+        facing_up_left:    &[MOVE_UP_BUTTON, MOVE_LEFT_BUTTON]         => Vec2::new(-1.0,  1.0).normalize(),
+        facing_down_right: &[MOVE_DOWN_BUTTON, MOVE_RIGHT_BUTTON]      => Vec2::new( 1.0, -1.0).normalize(),
+        facing_down_left:  &[MOVE_DOWN_BUTTON, MOVE_LEFT_BUTTON]       => Vec2::new(-1.0, -1.0).normalize(),
+    }
+
+    fn run_facing_test(keys: &[KeyCode], expected: Vec2) {
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<KeyCode>>();
+        app.add_systems(Update, super::update_facing);
+        app.world_mut().spawn((Player, Facing(Vec2::X)));
+
+        let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+        for &key in keys {
+            input.press(key);
+        }
+
+        app.update();
+
+        let world = app.world_mut();
+        let mut q = world.query::<&Facing>();
+        let facing = q.single(world).unwrap();
+
+        assert!(
+            facing.0.distance(expected) < 0.01,
+            "Facing was {:?}, expected up-left",
+            facing.0
+        );
+    }
+
+    macro_rules! test_input_system {
+        ($($name:ident: $keys:expr => $expected:expr,)*) => {
+            $(
+                #[test]
+                fn $name() {
+                    run_input_system_test($keys, $expected);
+                }
+            )*
+        }
+    }
+    test_input_system! {
+        input_up:         &[MOVE_UP_BUTTON]                      => Vec3::Y,
+        input_down:       &[MOVE_DOWN_BUTTON]                    => Vec3::NEG_Y,
+        input_left:       &[MOVE_LEFT_BUTTON]                    => Vec3::NEG_X,
+        input_right:      &[MOVE_RIGHT_BUTTON]                   => Vec3::X,
+        input_up_right:   &[MOVE_UP_BUTTON, MOVE_RIGHT_BUTTON]   => Vec3::new( 1.0,  1.0, 0.0).normalize(),
+        input_cancelled:  &[MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON] => Vec3::ZERO,
+    }
+    fn run_input_system_test(keys: &[KeyCode], expected: Vec3) {
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<KeyCode>>();
+        app.add_systems(Update, super::player_input_system);
+        app.world_mut().spawn((
+            Player,
+            MoveIntent {
+                direction: Vec3::ZERO,
+            },
+        ));
+
+        let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+        for &key in keys {
+            input.press(key);
+        }
+
+        app.update();
+
+        let world = app.world_mut();
+        let mut q = world.query::<&MoveIntent>();
+        let intent = q.single(world).unwrap();
+
+        assert!(
+            intent.direction.distance(expected) < 0.01,
+            "Keys {:?} → direction {:?}, expected {:?}",
+            keys,
+            intent.direction,
+            expected
+        );
+    }
+}
