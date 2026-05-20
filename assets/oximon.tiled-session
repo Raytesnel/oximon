@@ -1,9 +1,9 @@
 {
     "activeFile": "map/main.tmx",
     "expandedProjectPaths": [
-        ".",
         "tiles",
-        "map"
+        "map",
+        "."
     ],
     "fileStates": {
         "map/Sprite-lamp.tsx": {
@@ -56,8 +56,8 @@
             "scale": 1.549,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 172.6920593931569,
-                "y": 1368.947708198838
+                "x": 319.8837959974177,
+                "y": 1363.7830858618463
             }
         },
         "tiles/TX Tileset Grass.tsx": {
