@@ -6,7 +6,7 @@ use crate::common::components::{ModifierLifetime, StatModifier, StatType};
 use bevy::prelude::*;
 
 #[allow(dead_code)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum AttackSpawn {
     Hitbox { size: Vec2, color: Color },
     // later:
@@ -25,19 +25,19 @@ impl AttackSpawn {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum KnockbackMode {
     _Additive, // adds to velocity (smooth, keeps momentum)
     Override,  // replaces velocity (sharp hits)
     Impulse,   // instant burst (like smash knockback)
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum KnockbackDirection {
     SourceToTarget,  // classic hit
     _TargetToSource, // recoil pull
     Fixed(Vec3),     // e.g. always upward
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum HitBehavior {
     Single,        // stop after first hit (Quick Attack)
     MultiHit,      // keep hitting (beam / fire)

@@ -6,10 +6,10 @@ pub struct CombatSpawnContext {
     pub player_world_pos: Vec3,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Player;
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Enemy;
 
 #[derive(Clone, Copy, Debug)]
@@ -51,7 +51,7 @@ pub enum ModifierLifetime {
     OnAttackEnd,
     Permanent,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct StatModifier {
     pub stat_type: StatType,
     pub flat: f32,

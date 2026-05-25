@@ -3,19 +3,19 @@ use crate::common::components::StatModifier;
 use bevy::math::Vec3;
 use bevy::prelude::Component;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ModifierTarget {
     SelfEntity,   // attacker
     TargetEntity, // enemy
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DamageEffect {
     pub amount: f32,
     pub target: ModifierTarget,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct KnockbackEffectDef {
     pub force: f32,
     pub direction: KnockbackDirection,
@@ -24,23 +24,23 @@ pub struct KnockbackEffectDef {
     pub target: ModifierTarget,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct StatModifierEffect {
     pub modifier: StatModifier,
     pub target: ModifierTarget,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum EffectTrigger {
     OnCast,
     OnHit,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TimedEffect {
     pub trigger: EffectTrigger,
     pub effect: AttackEffect,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum StatusEffect {
     Poison {
         dps: f32,
@@ -49,7 +49,7 @@ pub enum StatusEffect {
     },
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum AttackEffect {
     Damage(DamageEffect),
     Knockback(KnockbackEffectDef),
@@ -60,7 +60,7 @@ pub enum AttackEffect {
     // Protect(ProtectEffect),
 }
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Debug)]
 pub struct AttackDefinition {
     pub name: String,
     pub effects: Vec<TimedEffect>,
