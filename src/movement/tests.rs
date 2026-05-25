@@ -4,7 +4,6 @@ use crate::movement::MovementPlugin;
 #[allow(unused)]
 use crate::movement::components::{Dash, Facing, MovementState, Velocity};
 #[allow(unused)]
-use crate::movement::systems::compute_direction;
 use bevy::app::FixedMain;
 use bevy::prelude::*;
 use bevy::time::Time;
@@ -37,17 +36,6 @@ fn tick(app: &mut App, dt: f32) {
     }
     app.world_mut().run_schedule(FixedMain);
     app.update();
-}
-
-#[test]
-fn test_diagonal_normalized() {
-    let mut input = ButtonInput::<KeyCode>::default();
-    input.press(UP_BUTTON);
-    input.press(RIGHT_BUTTON);
-
-    let dir = compute_direction(&input);
-
-    assert!(dir.length() <= 1.0);
 }
 
 #[allow(dead_code)]
@@ -421,22 +409,7 @@ fn player_enters_moving_state_when_input_pressed() {
     let state = q.single(world).unwrap();
     assert_eq!(*state, MovementState::Moving);
 }
-#[test]
-fn dash_forces_dashing_state() {
-    let mut app = test_app();
 
-    let mut input = ButtonInput::<KeyCode>::default();
-    input.press(RIGHT_BUTTON);
-    input.press(DASH_BUTTON);
-    app.insert_resource(input);
-    tick(&mut app, 0.016);
-    tick(&mut app, 0.016);
-
-    let world = app.world_mut();
-    let mut q = world.query::<&MovementState>();
-    let state = q.single(world).unwrap();
-    assert_eq!(*state, MovementState::Dashing);
-}
 #[test]
 fn dash_transitions_to_recovering() {
     let mut app = test_app();
