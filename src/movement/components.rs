@@ -18,7 +18,6 @@ pub struct Recover {
 pub enum MovementState {
     Idle,
     Moving,
-    Dashing,
     Recovering,
 }
 

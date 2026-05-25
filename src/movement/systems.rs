@@ -2,20 +2,10 @@ use super::components::*;
 use crate::combat::components::Hitstun;
 use crate::common::components::{ComputedStats, Player};
 use crate::movement::input::{
-    DASH_BUTTON, MOVE_DOWN_BUTTON, MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON, MOVE_UP_BUTTON,
+    MOVE_DOWN_BUTTON, MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON, MOVE_UP_BUTTON,
 };
 use crate::movement::types::*;
-use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
-
-#[derive(QueryData)]
-#[query_data(mutable)]
-pub struct MovementData {
-    pub velocity: &'static Velocity,
-    pub state: &'static mut MovementState,
-    pub dash: Option<&'static Dash>,
-    pub recover: Option<&'static Recover>,
-}
 
 pub fn apply_friction(
     time: Res<Time>,
@@ -25,7 +15,6 @@ pub fn apply_friction(
         let speed = velocity.value.length();
 
         let friction = match state {
-            MovementState::Dashing => stats.dash_friction,
             MovementState::Recovering => stats.dash_speed / stats.dash_stop_time,
             MovementState::Moving | MovementState::Idle => stats.friction,
         };
@@ -48,7 +37,7 @@ pub fn apply_velocity(
     }
 }
 
-pub fn compute_direction(input: &ButtonInput<KeyCode>) -> Vec3 {
+fn compute_direction(input: &ButtonInput<KeyCode>) -> Vec3 {
     let mut direction = Vec3::ZERO;
 
     if input.pressed(MOVE_UP_BUTTON) {
@@ -67,69 +56,12 @@ pub fn compute_direction(input: &ButtonInput<KeyCode>) -> Vec3 {
     direction.normalize_or_zero()
 }
 
-pub fn handle_dash_input(
-    mut commands: Commands,
-    keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<(Entity, &MovementState, &ComputedStats), AllowedMovable>,
-) {
-    if !keyboard.pressed(DASH_BUTTON) {
-        return;
-    }
-    for (entity, state, stats) in &query {
-        if *state == MovementState::Dashing {
-            continue;
-        }
-
-        let direction = compute_direction(&keyboard);
-        if direction == Vec3::ZERO {
-            continue;
-        }
-
-        commands.entity(entity).insert(Dash {
-            direction,
-            timer: Timer::from_seconds(stats.dash_time, TimerMode::Once),
-        });
-    }
-}
-
-pub fn update_dash_timer(
-    mut commands: Commands,
-    time: Res<Time>,
-    mut query: Query<(Entity, &mut Dash, &ComputedStats)>,
-) {
-    for (entity, mut dash, stats) in &mut query {
-        dash.timer.tick(time.delta());
-        if dash.timer.is_finished() {
-            commands.entity(entity).remove::<Dash>().insert(Recover {
-                timer: Timer::from_seconds(stats.dash_stop_time, TimerMode::Once),
-            });
-        }
-    }
-}
-
-pub fn update_recover(
-    mut commands: Commands,
-    time: Res<Time>,
-    mut query: Query<(Entity, &mut Recover)>,
-) {
-    for (entity, mut recover) in &mut query {
-        recover.timer.tick(time.delta());
-        if recover.timer.is_finished() {
-            commands.entity(entity).remove::<Recover>();
-        }
-    }
-}
-
 pub fn apply_acceleration(
     time: Res<Time>,
     mut query: Query<(&mut Velocity, &MovementState, &ComputedStats, &MoveIntent), AllowedMovable>,
 ) {
     for (mut velocity, state, stats, move_intent) in &mut query {
         match state {
-            MovementState::Dashing => {
-                info!("we are still need to remove dashing");
-            }
-
             MovementState::Recovering => {
                 info!("we are still need to remove recovering");
             }
@@ -148,27 +80,13 @@ pub fn apply_acceleration(
     }
 }
 
-#[allow(clippy::type_complexity)]
 pub fn update_movement_state(
-    mut query: Query<
-        (
-            &Velocity,
-            &mut MovementState,
-            Option<&Dash>,
-            Option<&Recover>,
-            &MoveIntent,
-        ),
-        AllowedMovable,
-    >,
+    mut query: Query<(&Velocity, &mut MovementState, &MoveIntent), AllowedMovable>,
 ) {
-    for (velocity, mut movement_state, dash, recover, move_intent) in &mut query {
+    for (velocity, mut movement_state, move_intent) in &mut query {
         let input_dir = move_intent.direction;
         let speed = velocity.value.length();
-        let new_state = if dash.is_some() {
-            MovementState::Dashing
-        } else if recover.is_some() {
-            MovementState::Recovering
-        } else if input_dir != Vec3::ZERO {
+        let new_state = if input_dir != Vec3::ZERO {
             MovementState::Moving
         } else if speed > 1.0 {
             // still sliding
@@ -510,5 +428,15 @@ mod tests {
         tick(&mut app, fixed_time);
         // assert
         assert_acceleration(&mut app, 0.0);
+    }
+    #[test]
+    fn test_compute_direction_diagonal_normalized() {
+        let mut input = ButtonInput::<KeyCode>::default();
+        input.press(MOVE_UP_BUTTON);
+        input.press(MOVE_RIGHT_BUTTON);
+
+        let dir = compute_direction(&input);
+
+        assert!(dir.length() <= 1.0);
     }
 }
