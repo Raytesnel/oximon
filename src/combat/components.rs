@@ -1,7 +1,7 @@
 use crate::combat::attack_definition::AttackDefinition;
 use bevy::prelude::*;
 use std::collections::HashMap;
-#[derive(Component)]
+#[derive(Component, Debug)]
 
 pub struct CombatEntity;
 
@@ -22,12 +22,12 @@ pub enum CombatState {
     Attacking,
     Dead,
 }
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug)]
 pub struct Cooldowns {
     pub timers: HashMap<String, Timer>,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Attack {
     pub id: AttackId,
     pub owner: Entity,
@@ -72,40 +72,40 @@ pub struct Hitstun {
     pub remaining: f32,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Debug)]
 pub struct Hitstop {
     pub remaining: f32,
 }
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct KnockbackEffect {
     pub velocity: Vec3,
     pub timer: Timer,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Hitbox {
     pub size: Vec2,
 }
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Hurtbox {
     pub size: Vec2,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Poison {
     pub damage: f32,
     pub tick_timer: Timer,
     pub duration: Timer,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Slow {
     pub multiplier: f32,
     pub duration: Timer,
     pub applied: bool,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Stun {
     pub duration: Timer,
 }

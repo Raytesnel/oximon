@@ -17,46 +17,6 @@ pub struct MovementData {
     pub recover: Option<&'static Recover>,
 }
 
-pub fn apply_acceleration(
-    time: Res<Time>,
-    mut query: Query<
-        (
-            &mut Velocity,
-            &MovementState,
-            Option<&Dash>,
-            &ComputedStats,
-            &MoveIntent,
-        ),
-        AllowedMovable,
-    >,
-) {
-    for (mut velocity, state, dash, stats, move_intent) in &mut query {
-        match state {
-            MovementState::Dashing => {
-                let dash = dash.expect("Dashing state must have Dash component");
-                velocity.value = dash.direction * stats.dash_speed;
-
-                if velocity.value.length() > stats.dash_speed {
-                    velocity.value = velocity.value.normalize() * stats.dash_speed;
-                }
-            }
-
-            MovementState::Recovering => {}
-
-            MovementState::Moving | MovementState::Idle => {
-                let acceleration = stats.acceleration;
-                let speed = stats.speed;
-                let input_dir = move_intent.direction;
-                velocity.value += input_dir * acceleration * time.delta_secs();
-
-                if velocity.value.length() > speed {
-                    velocity.value = velocity.value.normalize() * speed;
-                }
-            }
-        }
-    }
-}
-
 pub fn apply_friction(
     time: Res<Time>,
     mut query: Query<(&mut Velocity, &MovementState, &ComputedStats), With<Movable>>,
@@ -78,6 +38,7 @@ pub fn apply_friction(
         }
     }
 }
+
 pub fn apply_velocity(
     time: Res<Time>,
     mut query: Query<(&mut Transform, &Velocity), NoneOverWorldMovable>,
@@ -159,6 +120,34 @@ pub fn update_recover(
     }
 }
 
+pub fn apply_acceleration(
+    time: Res<Time>,
+    mut query: Query<(&mut Velocity, &MovementState, &ComputedStats, &MoveIntent), AllowedMovable>,
+) {
+    for (mut velocity, state, stats, move_intent) in &mut query {
+        match state {
+            MovementState::Dashing => {
+                info!("we are still need to remove dashing");
+            }
+
+            MovementState::Recovering => {
+                info!("we are still need to remove recovering");
+            }
+
+            MovementState::Moving | MovementState::Idle => {
+                let acceleration = stats.acceleration;
+                let speed = stats.speed;
+                let input_dir = move_intent.direction;
+                velocity.value += input_dir * acceleration * time.delta_secs();
+
+                if velocity.value.length() > speed {
+                    velocity.value = velocity.value.normalize() * speed;
+                }
+            }
+        }
+    }
+}
+
 #[allow(clippy::type_complexity)]
 pub fn update_movement_state(
     mut query: Query<
@@ -210,14 +199,6 @@ pub fn update_facing(
     }
 }
 
-pub fn debug_movement_state_changes(
-    mut query: Query<(Entity, &MovementState), Changed<MovementState>>,
-) {
-    for (entity, state) in &mut query {
-        debug!("Entity {:?} changed state to {:?}", entity, state);
-    }
-}
-
 pub fn player_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut query: Query<&mut MoveIntent, (With<Player>, Without<Hitstun>)>,
@@ -245,6 +226,26 @@ pub fn player_input_system(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bevy::app::FixedMain;
+
+    fn tick(app: &mut App, dt: f32) {
+        let delta = std::time::Duration::from_secs_f32(dt);
+
+        // FIXED TIME (for FixedUpdate systems)
+        {
+            let mut time = app.world_mut().resource_mut::<Time<Fixed>>();
+            time.advance_by(delta);
+        }
+
+        // REAL TIME (for normal systems)
+        {
+            let mut time = app.world_mut().resource_mut::<Time>();
+            time.advance_by(delta);
+        }
+        app.world_mut().run_schedule(FixedMain);
+        app.update();
+    }
+
     macro_rules! test_facing {
         ($($name:ident: $keys:expr => $expected:expr,)*) => {
             $(
@@ -255,7 +256,6 @@ mod tests {
             )*
         }
     }
-
     test_facing! {
         facing_up:         &[MOVE_UP_BUTTON]                           => Vec2::Y,
         facing_down:       &[MOVE_DOWN_BUTTON]                         => Vec2::NEG_Y,
@@ -266,7 +266,6 @@ mod tests {
         facing_down_right: &[MOVE_DOWN_BUTTON, MOVE_RIGHT_BUTTON]      => Vec2::new( 1.0, -1.0).normalize(),
         facing_down_left:  &[MOVE_DOWN_BUTTON, MOVE_LEFT_BUTTON]       => Vec2::new(-1.0, -1.0).normalize(),
     }
-
     fn run_facing_test(keys: &[KeyCode], expected: Vec2) {
         let mut app = App::new();
         app.init_resource::<ButtonInput<KeyCode>>();
@@ -296,7 +295,7 @@ mod tests {
             $(
                 #[test]
                 fn $name() {
-                    run_input_system_test($keys, $expected);
+                    run_test_user_input_give_move_intent($keys, $expected);
                 }
             )*
         }
@@ -309,7 +308,7 @@ mod tests {
         input_up_right:   &[MOVE_UP_BUTTON, MOVE_RIGHT_BUTTON]   => Vec3::new( 1.0,  1.0, 0.0).normalize(),
         input_cancelled:  &[MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON] => Vec3::ZERO,
     }
-    fn run_input_system_test(keys: &[KeyCode], expected: Vec3) {
+    fn run_test_user_input_give_move_intent(keys: &[KeyCode], expected: Vec3) {
         let mut app = App::new();
         app.init_resource::<ButtonInput<KeyCode>>();
         app.add_systems(Update, super::player_input_system);
@@ -338,5 +337,178 @@ mod tests {
             intent.direction,
             expected
         );
+    }
+
+    #[test]
+    fn run_input_system_test_with_hitstun_stops_player_intent() {
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<KeyCode>>();
+        app.add_systems(Update, super::player_input_system);
+        app.world_mut().spawn((
+            Player,
+            Hitstun { remaining: 1.0 },
+            MoveIntent {
+                direction: Vec3::ZERO,
+            },
+        ));
+
+        let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+        input.press(MOVE_RIGHT_BUTTON);
+
+        app.update();
+
+        let world = app.world_mut();
+        let mut q = world.query::<&MoveIntent>();
+        let intent = q.single(world).unwrap();
+        let expected = Vec3::new(0.0, 0.0, 0.0);
+        assert!(
+            intent.direction.distance(expected) < 0.01,
+            "Keys {:?} → direction {:?}, expected {:?}",
+            MOVE_RIGHT_BUTTON,
+            intent.direction,
+            expected
+        );
+    }
+
+    fn setup_acceleration_app() -> App {
+        let mut app = App::new();
+        app.add_systems(Update, super::apply_acceleration);
+        app.init_resource::<Time>();
+        app.insert_resource(Time::<Fixed>::from_seconds(0.016));
+        app.init_resource::<ButtonInput<KeyCode>>();
+        app
+    }
+    fn base_stats() -> ComputedStats {
+        ComputedStats {
+            speed: 10.0,
+            acceleration: 10.0,
+            friction: 10.0,
+            dash_speed: 10.0,
+            dash_time: 10.0,
+            dash_friction: 10.0,
+            dash_stop_time: 10.0,
+        }
+    }
+    fn assert_acceleration(app: &mut App, expected_speed: f32) {
+        let world = app.world_mut();
+        let mut q = world.query::<&Velocity>();
+        let velocity = q.single(world).unwrap();
+        let expected_speed = Vec3::new(expected_speed, 0.0, 0.0);
+        assert!(
+            velocity.value.distance(expected_speed) < 0.01,
+            "Velocity {:?}, expected {:?}",
+            velocity.value,
+            expected_speed
+        );
+    }
+    #[test]
+    fn test_movement_intent_with_high_acceleration_results_in_max_speed() {
+        // setup
+        let mut app = setup_acceleration_app();
+        let max_speed = 2.0;
+        app.world_mut().spawn((
+            Player,
+            MovementState::Idle,
+            ComputedStats {
+                speed: max_speed,
+                acceleration: 200.0,
+                friction: 10.0,
+                dash_speed: 10.0,
+                dash_time: 10.0,
+                dash_friction: 10.0,
+                dash_stop_time: 10.0,
+            },
+            Velocity::default(),
+            Movable,
+            MoveIntent {
+                direction: Vec3::new(1.0, 0.0, 0.0),
+            },
+        ));
+        app.update();
+        // act
+        let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+        input.press(MOVE_LEFT_BUTTON);
+        tick(&mut app, 0.016);
+        // assert
+        assert_acceleration(&mut app, max_speed);
+    }
+    #[test]
+    fn test_movement_intent_with_low_acceleration_results_in_acceleration_increase() {
+        // setup
+        let mut app = setup_acceleration_app();
+        let fixed_time = 0.016;
+        let acceleration = 2.0;
+        app.world_mut().spawn((
+            Player,
+            MovementState::Idle,
+            ComputedStats {
+                speed: 10.0,
+                acceleration: acceleration,
+                friction: 10.0,
+                dash_speed: 10.0,
+                dash_time: 10.0,
+                dash_friction: 10.0,
+                dash_stop_time: 10.0,
+            },
+            Velocity::default(),
+            Movable,
+            MoveIntent {
+                direction: Vec3::new(1.0, 0.0, 0.0),
+            },
+        ));
+        app.update();
+        // act
+        let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+        input.press(MOVE_LEFT_BUTTON);
+        tick(&mut app, fixed_time);
+        // assert
+        let expected = acceleration * fixed_time;
+        assert_acceleration(&mut app, expected);
+    }
+    #[test]
+    fn test_if_moveable_is_stunned_no_acceleration_is_made_with_given_move_intent() {
+        // setup
+        let mut app = setup_acceleration_app();
+        let fixed_time = 0.016;
+        app.world_mut().spawn((
+            Player,
+            MovementState::Idle,
+            base_stats(),
+            Hitstun { remaining: 10.0 },
+            Movable,
+            Velocity::default(),
+            MoveIntent {
+                direction: Vec3::new(1.0, 0.0, 0.0),
+            },
+        ));
+        app.update();
+        // act
+        let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+        input.press(MOVE_LEFT_BUTTON);
+        tick(&mut app, fixed_time);
+        // assert
+        assert_acceleration(&mut app, 0.0);
+    }
+    #[test]
+    fn test_if_object_is_non_movable_no_acceleration_is_made_with_given_move_intent() {
+        // setup
+        let mut app = setup_acceleration_app();
+        let fixed_time = 0.016;
+        app.world_mut().spawn((
+            Player,
+            MovementState::Idle,
+            base_stats(),
+            Velocity::default(),
+            MoveIntent {
+                direction: Vec3::new(1.0, 0.0, 0.0),
+            },
+        ));
+        app.update();
+        // act
+        let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+        input.press(MOVE_LEFT_BUTTON);
+        tick(&mut app, fixed_time);
+        // assert
+        assert_acceleration(&mut app, 0.0);
     }
 }
