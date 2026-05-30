@@ -145,6 +145,8 @@ pub fn player_input_system(
 mod tests {
     use super::*;
     use bevy::app::FixedMain;
+    use bevy::prelude::*;
+    use paste::paste;
 
     fn tick(app: &mut App, dt: f32) {
         let delta = std::time::Duration::from_secs_f32(dt);
@@ -167,10 +169,12 @@ mod tests {
     macro_rules! test_facing {
         ($($name:ident: $keys:expr => $expected:expr,)*) => {
             $(
+            paste! {
                 #[test]
-                fn $name() {
+                fn [<test_input_$name _results_new_facing_direction>]() {
                     run_facing_test($keys, $expected);
                 }
+        }
             )*
         }
     }
@@ -211,10 +215,12 @@ mod tests {
     macro_rules! test_input_system {
         ($($name:ident: $keys:expr => $expected:expr,)*) => {
             $(
+            paste!{
                 #[test]
-                fn $name() {
+                fn [<test_$name _will_result_in_movement_intent>]() {
                     run_test_user_input_give_move_intent($keys, $expected);
                 }
+        }
             )*
         }
     }
@@ -258,7 +264,7 @@ mod tests {
     }
 
     #[test]
-    fn run_input_system_test_with_hitstun_stops_player_intent() {
+    fn test_player_with_hit_stun_stops_player_intent() {
         let mut app = App::new();
         app.init_resource::<ButtonInput<KeyCode>>();
         app.add_systems(Update, super::player_input_system);
@@ -290,7 +296,6 @@ mod tests {
 
     fn setup_acceleration_app() -> App {
         let mut app = App::new();
-        app.add_systems(Update, super::apply_acceleration);
         app.init_resource::<Time>();
         app.insert_resource(Time::<Fixed>::from_seconds(0.016));
         app.init_resource::<ButtonInput<KeyCode>>();
@@ -323,6 +328,8 @@ mod tests {
     fn test_movement_intent_with_high_acceleration_results_in_max_speed() {
         // setup
         let mut app = setup_acceleration_app();
+        app.add_systems(Update, super::apply_acceleration);
+
         let max_speed = 2.0;
         app.world_mut().spawn((
             Player,
@@ -354,6 +361,8 @@ mod tests {
     fn test_movement_intent_with_low_acceleration_results_in_acceleration_increase() {
         // setup
         let mut app = setup_acceleration_app();
+        app.add_systems(Update, super::apply_acceleration);
+
         let fixed_time = 0.016;
         let acceleration = 2.0;
         app.world_mut().spawn((
@@ -384,9 +393,11 @@ mod tests {
         assert_acceleration(&mut app, expected);
     }
     #[test]
-    fn test_if_moveable_is_stunned_no_acceleration_is_made_with_given_move_intent() {
+    fn test_stunned_moveable_with_movement_intent_results_in_no_acceleration() {
         // setup
         let mut app = setup_acceleration_app();
+        app.add_systems(Update, super::apply_acceleration);
+
         let fixed_time = 0.016;
         app.world_mut().spawn((
             Player,
@@ -408,9 +419,11 @@ mod tests {
         assert_acceleration(&mut app, 0.0);
     }
     #[test]
-    fn test_if_object_is_non_movable_no_acceleration_is_made_with_given_move_intent() {
+    fn test_non_moveable_with_movement_intent_results_in_no_acceleration() {
         // setup
         let mut app = setup_acceleration_app();
+        app.add_systems(Update, super::apply_acceleration);
+
         let fixed_time = 0.016;
         app.world_mut().spawn((
             Player,
@@ -438,5 +451,56 @@ mod tests {
         let dir = compute_direction(&input);
 
         assert!(dir.length() <= 1.0);
+    }
+
+    #[test]
+    fn test_velocity_translates_to_translation() {
+        let mut app = setup_acceleration_app();
+        app.add_systems(Update, super::apply_velocity);
+        let fixed_time = 0.016;
+        let velocity = 10.0;
+        app.world_mut().spawn((
+            Player,
+            Movable,
+            Transform::default(),
+            Velocity {
+                value: Vec3::new(velocity, 0.0, 0.0),
+            },
+        ));
+        tick(&mut app, fixed_time);
+        let world = app.world_mut();
+
+        let world = app.world_mut();
+        let mut q = world.query::<&mut Transform>();
+        let transform = q.single(world).unwrap();
+
+        assert_eq!(transform.translation.x, (fixed_time * velocity));
+    }
+
+    #[test]
+    fn test_velocity_keeps_growing_with_updates() {
+        let mut app = setup_acceleration_app();
+        app.add_systems(Update, super::apply_velocity);
+        let fixed_time = 0.16;
+        let velocity = 10.0;
+        let total_update = 20;
+        app.world_mut().spawn((
+            Player,
+            Movable,
+            Transform::default(),
+            Velocity {
+                value: Vec3::new(velocity, 0.0, 0.0),
+            },
+        ));
+        for _ in 0..total_update {
+            tick(&mut app, fixed_time);
+        }
+        let world = app.world_mut();
+
+        let world = app.world_mut();
+        let mut q = world.query::<&mut Transform>();
+        let transform = q.single(world).unwrap();
+
+        assert!((transform.translation.x- (fixed_time * velocity)*total_update as f32)<0.2);
     }
 }

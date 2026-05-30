@@ -4356,6 +4356,7 @@ dependencies = [
  "avian2d",
  "bevy",
  "bevy_ecs_tiled",
+ "paste",
  "rand 0.9.2",
 ]
 
