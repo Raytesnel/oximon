@@ -19,7 +19,7 @@ pub fn apply_friction(
             MovementState::Moving | MovementState::Idle => stats.friction,
         };
 
-        if speed > 0.0 {
+        if speed > 0.001 {
             let drop = friction * time.delta_secs();
             let new_speed = (speed - drop).max(0.0);
 
@@ -502,5 +502,125 @@ mod tests {
         let transform = q.single(world).unwrap();
 
         assert!((transform.translation.x- (fixed_time * velocity)*total_update as f32)<0.2);
+    }
+    #[test]
+    fn test_apply_friction_reduces_velocity() {
+        let mut app = setup_acceleration_app();
+        app.add_systems(Update, super::apply_friction);
+
+        let initial_speed = 10.0;
+        let friction = 2.0;
+        let dt = 0.016;
+
+        app.world_mut().spawn((
+            Player,
+            Movable,
+            MovementState::Idle,
+            ComputedStats {
+                speed: 10.0,
+                acceleration: 10.0,
+                friction,
+                dash_speed: 10.0,
+                dash_time: 10.0,
+                dash_friction: 10.0,
+                dash_stop_time: 10.0,
+            },
+            Velocity {
+                value: Vec3::new(initial_speed, 0.0, 0.0),
+            },
+        ));
+
+        tick(&mut app, dt);
+
+        let world = app.world_mut();
+        let mut q = world.query::<&Velocity>();
+        let velocity = q.single(world).unwrap();
+
+        let expected = initial_speed - friction * dt;
+
+        assert!(
+            (velocity.value.x - expected).abs() < 0.01,
+            "velocity {:?}, expected {}",
+            velocity.value,
+            expected
+        );
+    }
+    #[test]
+    fn test_apply_friction_clamps_to_zero() {
+        let mut app = setup_acceleration_app();
+        app.add_systems(Update, super::apply_friction);
+
+        let dt = 0.016;
+
+        app.world_mut().spawn((
+            Player,
+            Movable,
+            MovementState::Idle,
+            ComputedStats {
+                speed: 10.0,
+                acceleration: 10.0,
+                friction: 1000.0, // extreme friction
+                dash_speed: 10.0,
+                dash_time: 10.0,
+                dash_friction: 10.0,
+                dash_stop_time: 10.0,
+            },
+            Velocity {
+                value: Vec3::new(1.0, 0.0, 0.0),
+            },
+        ));
+
+        tick(&mut app, dt);
+
+        let world = app.world_mut();
+        let mut q = world.query::<&Velocity>();
+        let velocity = q.single(world).unwrap();
+
+        assert!(
+            velocity.value.length() == 0.0,
+            "velocity should be zero but was {:?}",
+            velocity.value
+        );
+    }
+    #[test]
+    fn test_apply_friction_preserves_direction() {
+        let mut app = setup_acceleration_app();
+        app.add_systems(Update, super::apply_friction);
+
+        let dt = 0.016;
+
+        let initial = Vec3::new(3.0, 4.0, 0.0); // direction ≠ axis-aligned
+
+        app.world_mut().spawn((
+            Player,
+            Movable,
+            MovementState::Idle,
+            ComputedStats {
+                speed: 10.0,
+                acceleration: 10.0,
+                friction: 1.0,
+                dash_speed: 10.0,
+                dash_time: 10.0,
+                dash_friction: 10.0,
+                dash_stop_time: 10.0,
+            },
+            Velocity { value: initial },
+        ));
+
+        tick(&mut app, dt);
+
+        let world = app.world_mut();
+        let mut q = world.query::<&Velocity>();
+        let velocity = q.single(world).unwrap();
+
+        let original_dir = initial.normalize();
+        let new_dir = velocity.value.normalize_or_zero();
+
+        assert!(
+            original_dir.distance(new_dir) < 0.01,
+            "direction changed: {:?} -> {:?}",
+            original_dir,
+            new_dir
+        );
     }
 }
