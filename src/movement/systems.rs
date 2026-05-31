@@ -501,7 +501,7 @@ mod tests {
         let mut q = world.query::<&mut Transform>();
         let transform = q.single(world).unwrap();
 
-        assert!((transform.translation.x- (fixed_time * velocity)*total_update as f32)<0.2);
+        assert!((transform.translation.x - (fixed_time * velocity) * total_update as f32) < 0.2);
     }
     #[test]
     fn test_apply_friction_reduces_velocity() {
