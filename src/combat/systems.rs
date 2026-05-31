@@ -457,3 +457,701 @@ pub fn cleanup_combat(mut commands: Commands, query: Query<Entity, With<CombatEn
         commands.entity(e).despawn();
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy::prelude::*;
+    use bevy::app::FixedMain;
+    use crate::combat::attack_definition::*;
+    use crate::combat::attacks::*;
+    use crate::combat::components::*;
+    use crate::combat::events::*;
+    use crate::common::components::*;
+    use crate::movement::components::Velocity;
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    fn tick(app: &mut App, dt: f32) {
+        let delta = std::time::Duration::from_secs_f32(dt);
+        {
+            let mut time = app.world_mut().resource_mut::<Time<Fixed>>();
+            time.advance_by(delta);
+        }
+        {
+            let mut time = app.world_mut().resource_mut::<Time>();
+            time.advance_by(delta);
+        }
+        app.world_mut().run_schedule(FixedMain);
+        app.update();
+    }
+
+    fn setup_app() -> App {
+        let mut app = App::new();
+        app.init_resource::<Time>();
+        app.insert_resource(Time::<Fixed>::from_seconds(0.016));
+        app.add_message::<DamageEvent>();
+        app
+    }
+
+    fn make_health(current: f32) -> Health {
+        Health { current, _max: current }
+    }
+
+    /// A minimal single-hit attack with one damage effect targeting the enemy.
+    fn damage_only_attack(owner: Entity, amount: f32) -> Attack {
+        let def = AttackDefinition {
+            name: "test_attack".to_string(),
+            effects: vec![TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Damage(DamageEffect {
+                    amount,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            }],
+            lifetime: 5.0,
+            hit_interval: 0.1,
+            cooldown: 1.0,
+            hit_behavior: HitBehavior::Single,
+            offset: Vec3::ZERO,
+            spawn: AttackSpawn::Hitbox {
+                color: Color::WHITE,
+                size: Vec2::new(10.0, 10.0),
+            },
+        };
+        Attack::from_definition(def, owner, AttackId(0))
+    }
+
+    /// A minimal multi-hit attack (no damage, just to test tick behavior).
+    fn multihit_attack(owner: Entity, amount: f32) -> Attack {
+        let def = AttackDefinition {
+            name: "test_multihit".to_string(),
+            effects: vec![TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Damage(DamageEffect {
+                    amount,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            }],
+            lifetime: 5.0,
+            hit_interval: 0.016,
+            cooldown: 1.0,
+            hit_behavior: HitBehavior::MultiHit,
+            offset: Vec3::ZERO,
+            spawn: AttackSpawn::Hitbox {
+                color: Color::WHITE,
+                size: Vec2::new(10.0, 10.0),
+            },
+        };
+        Attack::from_definition(def, owner, AttackId(1))
+    }
+
+    // ── apply_damage_system ───────────────────────────────────────────────────
+
+    fn setup_damage_app() -> App {
+        let mut app = setup_app();
+        app.add_systems(Update, super::apply_damage_system);
+        app
+    }
+
+    #[test]
+    fn test_damage_event_reduces_health() {
+        let mut app = setup_damage_app();
+
+        let entity = app
+            .world_mut()
+            .spawn((make_health(100.0), CombatState::Idle))
+            .id();
+
+        app.world_mut().write_message(DamageEvent { target: entity, amount: 30.0 });
+        tick(&mut app, 0.016);
+
+        let health = app.world().get::<Health>(entity).unwrap();
+        assert!(
+            (health.current - 70.0).abs() < 0.01,
+            "health should be 70 after 30 damage, was {}",
+            health.current
+        );
+    }
+
+    #[test]
+    fn test_damage_event_sets_dead_state_at_zero_health() {
+        let mut app = setup_damage_app();
+
+        let entity = app
+            .world_mut()
+            .spawn((make_health(10.0), CombatState::Idle))
+            .id();
+
+        app.world_mut().write_message(DamageEvent { target: entity, amount: 10.0 });
+        tick(&mut app, 0.016);
+
+        let state = app.world().get::<CombatState>(entity).unwrap();
+        assert_eq!(*state, CombatState::Dead, "entity should be Dead at 0 hp");
+    }
+
+    #[test]
+    fn test_damage_event_clamps_health_to_zero() {
+        let mut app = setup_damage_app();
+
+        let entity = app
+            .world_mut()
+            .spawn((make_health(5.0), CombatState::Idle))
+            .id();
+
+        app.world_mut().write_message(DamageEvent { target: entity, amount: 999.0 });
+        tick(&mut app, 0.016);
+
+        let health = app.world().get::<Health>(entity).unwrap();
+        assert!(
+            health.current >= 0.0,
+            "health should never go below 0, was {}",
+            health.current
+        );
+    }
+
+    #[test]
+    fn test_multiple_damage_events_stack() {
+        let mut app = setup_damage_app();
+
+        let entity = app
+            .world_mut()
+            .spawn((make_health(100.0), CombatState::Idle))
+            .id();
+
+        app.world_mut().write_message(DamageEvent { target: entity, amount: 10.0 });
+        app.world_mut().write_message(DamageEvent { target: entity, amount: 20.0 });
+        tick(&mut app, 0.016);
+
+        let health = app.world().get::<Health>(entity).unwrap();
+        assert!(
+            (health.current - 70.0).abs() < 0.01,
+            "health should be 70 after 10+20 damage, was {}",
+            health.current
+        );
+    }
+
+    // ── tick_hitstun ──────────────────────────────────────────────────────────
+
+    fn setup_hitstun_app() -> App {
+        let mut app = setup_app();
+        app.add_systems(Update, super::tick_hitstun);
+        app
+    }
+
+    #[test]
+    fn test_hitstun_removed_when_expired() {
+        let mut app = setup_hitstun_app();
+
+        let entity = app.world_mut().spawn(Hitstun { remaining: 0.016 }).id();
+
+        tick(&mut app, 0.016);
+
+        assert!(
+            app.world().get::<Hitstun>(entity).is_none(),
+            "Hitstun should be removed after remaining reaches 0"
+        );
+    }
+
+    #[test]
+    fn test_hitstun_still_present_when_not_expired() {
+        let mut app = setup_hitstun_app();
+
+        let entity = app.world_mut().spawn(Hitstun { remaining: 1.0 }).id();
+
+        tick(&mut app, 0.016);
+
+        assert!(
+            app.world().get::<Hitstun>(entity).is_some(),
+            "Hitstun should still be present before remaining reaches 0"
+        );
+    }
+
+    #[test]
+    fn test_hitstun_decrements_remaining_each_tick() {
+        let mut app = setup_hitstun_app();
+
+        let entity = app.world_mut().spawn(Hitstun { remaining: 1.0 }).id();
+
+        tick(&mut app, 0.016);
+
+        let hitstun = app.world().get::<Hitstun>(entity).unwrap();
+        assert!(
+            hitstun.remaining < 1.0,
+            "remaining should decrease each tick, was {}",
+            hitstun.remaining
+        );
+    }
+
+    // ── apply_knockback_system ────────────────────────────────────────────────
+
+    fn setup_knockback_app() -> App {
+        let mut app = setup_app();
+        app.add_systems(Update, super::apply_knockback_system);
+        app
+    }
+
+    #[test]
+    fn test_knockback_sets_velocity() {
+        let mut app = setup_knockback_app();
+
+        let entity = app
+            .world_mut()
+            .spawn((
+                Velocity { value: Vec3::ZERO },
+                KnockbackEffect {
+                    velocity: Vec3::new(100.0, 0.0, 0.0),
+                    timer: Timer::from_seconds(0.2, TimerMode::Once),
+                },
+            ))
+            .id();
+
+        tick(&mut app, 0.016);
+
+        let vel = app.world().get::<Velocity>(entity).unwrap();
+        assert!(
+            vel.value.x > 0.0,
+            "velocity.x should be set by knockback, was {}",
+            vel.value.x
+        );
+    }
+
+    #[test]
+    fn test_knockback_removed_after_timer_expires() {
+        let mut app = setup_knockback_app();
+
+        let entity = app
+            .world_mut()
+            .spawn((
+                Velocity { value: Vec3::ZERO },
+                KnockbackEffect {
+                    velocity: Vec3::new(100.0, 0.0, 0.0),
+                    timer: Timer::from_seconds(0.016, TimerMode::Once),
+                },
+            ))
+            .id();
+
+        tick(&mut app, 0.016);
+
+        assert!(
+            app.world().get::<KnockbackEffect>(entity).is_none(),
+            "KnockbackEffect should be removed after timer expires"
+        );
+    }
+
+    #[test]
+    fn test_knockback_not_removed_before_timer_expires() {
+        let mut app = setup_knockback_app();
+
+        let entity = app
+            .world_mut()
+            .spawn((
+                Velocity { value: Vec3::ZERO },
+                KnockbackEffect {
+                    velocity: Vec3::new(100.0, 0.0, 0.0),
+                    timer: Timer::from_seconds(1.0, TimerMode::Once),
+                },
+            ))
+            .id();
+
+        tick(&mut app, 0.016);
+
+        assert!(
+            app.world().get::<KnockbackEffect>(entity).is_some(),
+            "KnockbackEffect should still be present before timer expires"
+        );
+    }
+
+    #[test]
+    fn test_knockback_velocity_decays_each_tick() {
+        let mut app = setup_knockback_app();
+
+        let initial = 100.0;
+        let entity = app
+            .world_mut()
+            .spawn((
+                Velocity { value: Vec3::ZERO },
+                KnockbackEffect {
+                    velocity: Vec3::new(initial, 0.0, 0.0),
+                    timer: Timer::from_seconds(1.0, TimerMode::Once),
+                },
+            ))
+            .id();
+
+        tick(&mut app, 0.016);
+        tick(&mut app, 0.016);
+
+        // After first tick velocity is set to knockback.velocity (100),
+        // then knockback.velocity *= 0.9. On the second tick the entity
+        // receives that decayed value.
+        let vel = app.world().get::<Velocity>(entity).unwrap();
+        assert!(
+            vel.value.x < initial,
+            "knockback velocity should decay over ticks, was {}",
+            vel.value.x
+        );
+    }
+
+    // ── cooldown_tick_system ──────────────────────────────────────────────────
+
+    fn setup_cooldown_app() -> App {
+        let mut app = setup_app();
+        app.add_systems(Update, super::cooldown_tick_system);
+        app
+    }
+
+    #[test]
+    fn test_cooldown_timer_ticks_down() {
+        let mut app = setup_cooldown_app();
+
+        let mut cooldowns = Cooldowns::default();
+        cooldowns.timers.insert(
+            "test".to_string(),
+            Timer::from_seconds(1.0, TimerMode::Once),
+        );
+        let entity = app.world_mut().spawn(cooldowns).id();
+
+        tick(&mut app, 0.016);
+
+        // timer should still be in the map (not yet finished)
+        let cooldowns = app.world().get::<Cooldowns>(entity).unwrap();
+        assert!(
+            cooldowns.timers.contains_key("test"),
+            "cooldown timer should still exist before it finishes"
+        );
+    }
+
+    #[test]
+    fn test_cooldown_timer_removed_when_finished() {
+        let mut app = setup_cooldown_app();
+
+        let mut cooldowns = Cooldowns::default();
+        // Very short timer — finishes on first tick
+        cooldowns.timers.insert(
+            "test".to_string(),
+            Timer::from_seconds(0.001, TimerMode::Once),
+        );
+        let entity = app.world_mut().spawn(cooldowns).id();
+
+        tick(&mut app, 0.016);
+
+        let cooldowns = app.world().get::<Cooldowns>(entity).unwrap();
+        assert!(
+            !cooldowns.timers.contains_key("test"),
+            "finished cooldown timer should be removed from the map"
+        );
+    }
+
+    #[test]
+    fn test_multiple_cooldowns_tick_independently() {
+        let mut app = setup_cooldown_app();
+
+        let mut cooldowns = Cooldowns::default();
+        cooldowns.timers.insert(
+            "short".to_string(),
+            Timer::from_seconds(0.001, TimerMode::Once),
+        );
+        cooldowns.timers.insert(
+            "long".to_string(),
+            Timer::from_seconds(5.0, TimerMode::Once),
+        );
+        let entity = app.world_mut().spawn(cooldowns).id();
+
+        tick(&mut app, 0.016);
+
+        let cooldowns = app.world().get::<Cooldowns>(entity).unwrap();
+        assert!(
+            !cooldowns.timers.contains_key("short"),
+            "short cooldown should be removed"
+        );
+        assert!(
+            cooldowns.timers.contains_key("long"),
+            "long cooldown should still be present"
+        );
+    }
+
+    // ── attack_lifetime_system ────────────────────────────────────────────────
+
+    fn setup_lifetime_app() -> App {
+        let mut app = setup_app();
+        app.add_systems(Update, super::attack_lifetime_system);
+        app
+    }
+
+    #[test]
+    fn test_attack_despawned_after_lifetime_expires() {
+        let mut app = setup_lifetime_app();
+
+        let owner = app
+            .world_mut()
+            .spawn((CombatState::Attacking, Stats::default()))
+            .id();
+
+        let mut attack = damage_only_attack(owner, 10.0);
+        // Force lifetime to expire immediately
+        attack.lifetime_timer = Timer::from_seconds(0.001, TimerMode::Once);
+
+        let attack_entity = app.world_mut().spawn(attack).id();
+
+        tick(&mut app, 0.016);
+
+        assert!(
+            app.world().get_entity(attack_entity).is_err(),
+            "attack entity should be despawned after lifetime expires"
+        );
+    }
+
+    #[test]
+    fn test_attack_not_despawned_before_lifetime_expires() {
+        let mut app = setup_lifetime_app();
+
+        let owner = app
+            .world_mut()
+            .spawn((CombatState::Attacking, Stats::default()))
+            .id();
+
+        let attack_entity = app.world_mut().spawn(damage_only_attack(owner, 10.0)).id();
+
+        tick(&mut app, 0.016); // lifetime is 5.0 s, so still alive
+
+        assert!(
+            app.world().get_entity(attack_entity).is_ok(),
+            "attack entity should still exist before lifetime expires"
+        );
+    }
+
+    #[test]
+    fn test_attack_expiry_resets_owner_combat_state_to_idle() {
+        let mut app = setup_lifetime_app();
+
+        let owner = app
+            .world_mut()
+            .spawn((CombatState::Attacking, Stats::default()))
+            .id();
+
+        let mut attack = damage_only_attack(owner, 10.0);
+        attack.lifetime_timer = Timer::from_seconds(0.001, TimerMode::Once);
+        app.world_mut().spawn(attack);
+
+        tick(&mut app, 0.016);
+
+        let state = app.world().get::<CombatState>(owner).unwrap();
+        assert_eq!(
+            *state,
+            CombatState::Idle,
+            "owner CombatState should be reset to Idle when attack expires"
+        );
+    }
+
+    #[test]
+    fn test_attack_expiry_removes_onattackend_modifiers_from_owner() {
+        let mut app = setup_lifetime_app();
+
+        let mut stats = Stats::default();
+        // Pre-insert a modifier that should be cleaned up on attack end
+        stats.speed.push(RuntimeModifier {
+            source: AttackId(0),
+            stat_type: StatType::Speed,
+            flat: 0.0,
+            multiplier: 3.0,
+            lifetime: ModifierLifetime::OnAttackEnd,
+            timer: None,
+        });
+
+        let owner = app
+            .world_mut()
+            .spawn((CombatState::Attacking, stats))
+            .id();
+
+        let mut attack = damage_only_attack(owner, 10.0);
+        attack.lifetime_timer = Timer::from_seconds(0.001, TimerMode::Once);
+        app.world_mut().spawn(attack);
+
+        tick(&mut app, 0.016);
+
+        let stats = app.world().get::<Stats>(owner).unwrap();
+        assert!(
+            stats.speed.is_empty(),
+            "OnAttackEnd modifier should be removed when attack expires"
+        );
+    }
+
+    // ── attack_hit_system ─────────────────────────────────────────────────────
+
+    fn setup_hit_app() -> App {
+        let mut app = setup_app();
+        app.insert_resource(Hitstop { remaining: 0.0 });
+        app.add_systems(
+            Update,
+            (super::attack_hit_system, super::apply_damage_system).chain(),
+        );
+        app
+    }
+
+    #[test]
+    fn test_single_hit_attack_deals_damage_on_overlap() {
+        let mut app = setup_hit_app();
+
+        let owner = app.world_mut().spawn_empty().id();
+
+        let enemy = app
+            .world_mut()
+            .spawn((
+                Enemy,
+                Transform::default(),
+                Hurtbox { size: Vec2::new(20.0, 20.0) },
+                make_health(100.0),
+                CombatState::Idle,
+            ))
+            .id();
+
+        app.world_mut().spawn((
+            damage_only_attack(owner, 10.0),
+            Transform::default(), // same position → overlapping
+            Hitbox { size: Vec2::new(20.0, 20.0) },
+        ));
+
+        tick(&mut app, 0.016);
+
+        let health = app.world().get::<Health>(enemy).unwrap();
+        assert!(
+            health.current < 100.0,
+            "enemy health should decrease on hit, was {}",
+            health.current
+        );
+    }
+
+    #[test]
+    fn test_single_hit_attack_only_hits_once() {
+        let mut app = setup_hit_app();
+
+        let owner = app.world_mut().spawn_empty().id();
+
+        let enemy = app
+            .world_mut()
+            .spawn((
+                Enemy,
+                Transform::default(),
+                Hurtbox { size: Vec2::new(20.0, 20.0) },
+                make_health(100.0),
+                CombatState::Idle,
+            ))
+            .id();
+
+        app.world_mut().spawn((
+            damage_only_attack(owner, 10.0),
+            Transform::default(),
+            Hitbox { size: Vec2::new(20.0, 20.0) },
+        ));
+
+        tick(&mut app, 0.016);
+        tick(&mut app, 0.016);
+        tick(&mut app, 0.016);
+
+        let health = app.world().get::<Health>(enemy).unwrap();
+        assert!(
+            (health.current - 90.0).abs() < 0.01,
+            "Single hit attack should only deal damage once, health was {}",
+            health.current
+        );
+    }
+
+    #[test]
+    fn test_single_hit_attack_does_not_hit_when_not_overlapping() {
+        let mut app = setup_hit_app();
+
+        let owner = app.world_mut().spawn_empty().id();
+
+        let enemy = app
+            .world_mut()
+            .spawn((
+                Enemy,
+                Transform::from_translation(Vec3::new(1000.0, 1000.0, 0.0)), // far away
+                Hurtbox { size: Vec2::new(20.0, 20.0) },
+                make_health(100.0),
+                CombatState::Idle,
+            ))
+            .id();
+
+        app.world_mut().spawn((
+            damage_only_attack(owner, 10.0),
+            Transform::default(),
+            Hitbox { size: Vec2::new(20.0, 20.0) },
+        ));
+
+        tick(&mut app, 0.016);
+
+        let health = app.world().get::<Health>(enemy).unwrap();
+        assert!(
+            (health.current - 100.0).abs() < 0.01,
+            "enemy should not take damage when not overlapping, health was {}",
+            health.current
+        );
+    }
+
+    #[test]
+    fn test_multihit_attack_hits_multiple_times() {
+        let mut app = setup_hit_app();
+
+        let owner = app.world_mut().spawn_empty().id();
+
+        let enemy = app
+            .world_mut()
+            .spawn((
+                Enemy,
+                Transform::default(),
+                Hurtbox { size: Vec2::new(20.0, 20.0) },
+                make_health(100.0),
+                CombatState::Idle,
+            ))
+            .id();
+
+        app.world_mut().spawn((
+            multihit_attack(owner, 5.0),
+            Transform::default(),
+            Hitbox { size: Vec2::new(20.0, 20.0) },
+        ));
+
+        // tick enough times to get multiple hits
+        tick(&mut app, 0.016);
+        tick(&mut app, 0.016);
+        tick(&mut app, 0.016);
+
+        let health = app.world().get::<Health>(enemy).unwrap();
+        assert!(
+            health.current < 90.0, // more than one hit's worth
+            "MultiHit attack should deal damage more than once, health was {}",
+            health.current
+        );
+    }
+
+    #[test]
+    fn test_hit_sets_hitstop() {
+        let mut app = setup_hit_app();
+
+        let owner = app.world_mut().spawn_empty().id();
+
+        app.world_mut().spawn((
+            Enemy,
+            Transform::default(),
+            Hurtbox { size: Vec2::new(20.0, 20.0) },
+            make_health(100.0),
+            CombatState::Idle,
+        ));
+
+        app.world_mut().spawn((
+            damage_only_attack(owner, 10.0),
+            Transform::default(),
+            Hitbox { size: Vec2::new(20.0, 20.0) },
+        ));
+
+        tick(&mut app, 0.016);
+
+        let hitstop = app.world().resource::<Hitstop>();
+        assert!(
+            hitstop.remaining > 0.0,
+            "Hitstop should be set after a hit"
+        );
+    }
+}
