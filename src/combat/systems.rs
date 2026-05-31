@@ -463,12 +463,9 @@ mod tests {
     use super::*;
     use crate::combat::attack_definition::*;
     use crate::combat::attacks::*;
-    use crate::combat::components::*;
-    use crate::combat::events::*;
     use crate::common::components::*;
     use crate::movement::components::Velocity;
     use bevy::app::FixedMain;
-    use bevy::prelude::*;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
