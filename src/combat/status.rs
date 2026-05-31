@@ -82,7 +82,6 @@ mod tests {
     use super::*;
     use crate::combat::components::*;
     use bevy::app::FixedMain;
-    use bevy::prelude::*;
 
     fn tick(app: &mut App, dt: f32) {
         let delta = std::time::Duration::from_secs_f32(dt);

@@ -145,7 +145,6 @@ pub fn player_input_system(
 mod tests {
     use super::*;
     use bevy::app::FixedMain;
-    use bevy::prelude::*;
     use paste::paste;
 
     fn tick(app: &mut App, dt: f32) {
@@ -468,7 +467,6 @@ mod tests {
             },
         ));
         tick(&mut app, fixed_time);
-        let world = app.world_mut();
 
         let world = app.world_mut();
         let mut q = world.query::<&mut Transform>();
@@ -495,7 +493,6 @@ mod tests {
         for _ in 0..total_update {
             tick(&mut app, fixed_time);
         }
-        let world = app.world_mut();
 
         let world = app.world_mut();
         let mut q = world.query::<&mut Transform>();

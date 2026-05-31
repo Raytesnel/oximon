@@ -13,7 +13,6 @@ use crate::common::components::*;
 use crate::movement::MovementPlugin;
 #[allow(unused)]
 use crate::movement::components::Facing;
-use crate::movement::components::{Movable, MovementState, Velocity};
 use bevy::app::FixedMain;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
