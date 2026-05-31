@@ -8,18 +8,18 @@
 use crate::combat::attacks::{quick_attack, simple_beam, slow_down};
 use crate::combat::components::*;
 use crate::combat::*;
+use crate::common::CommonPlugin;
 use crate::common::components::*;
+use crate::movement::MovementPlugin;
 #[allow(unused)]
 use crate::movement::components::Facing;
+use crate::movement::components::{Movable, MovementState, Velocity};
 use bevy::app::FixedMain;
 use bevy::prelude::*;
+use bevy::state::app::StatesPlugin;
 #[allow(unused)]
 use bevy::time::TimeUpdateStrategy;
 use std::collections::HashMap;
-use bevy::state::app::StatesPlugin;
-use crate::common::CommonPlugin;
-use crate::movement::components::{Movable, MovementState, Velocity};
-use crate::movement::MovementPlugin;
 
 fn test_app() -> App {
     let mut app = App::new();
@@ -32,7 +32,9 @@ fn test_app() -> App {
     app.insert_resource(ButtonInput::<KeyCode>::default());
     app.insert_resource(Hitstop { remaining: 0.0 });
     app.insert_resource(AttackIdCounter::default());
-    app.insert_resource(CombatSpawnContext { player_world_pos: Vec3::ZERO });
+    app.insert_resource(CombatSpawnContext {
+        player_world_pos: Vec3::ZERO,
+    });
     app.init_state::<GameState>();
     app.world_mut()
         .resource_mut::<NextState<GameState>>()
@@ -60,7 +62,6 @@ fn tick(app: &mut App, dt: f32) {
     app.update();
 }
 
-
 /// Pressing an attack key spawns an Attack entity in the world.
 #[test]
 fn attack_is_spawned_on_input() {
@@ -87,7 +88,10 @@ fn attack_is_spawned_on_input() {
         .iter(app.world())
         .collect();
 
-    assert!(!attacks.is_empty(), "pressing attack key should spawn an Attack entity");
+    assert!(
+        !attacks.is_empty(),
+        "pressing attack key should spawn an Attack entity"
+    );
 }
 
 /// A cooldown prevents the same attack from being spawned a second time
@@ -123,7 +127,11 @@ fn cooldown_prevents_attack_spam() {
         .iter(app.world())
         .collect();
 
-    assert_eq!(attacks.len(), 1, "cooldown should prevent a second attack from spawning");
+    assert_eq!(
+        attacks.len(),
+        1,
+        "cooldown should prevent a second attack from spawning"
+    );
 }
 
 /// After the cooldown duration elapses the player can attack again.
@@ -239,8 +247,13 @@ fn hitting_enemy_reduces_health() {
         .spawn((
             Enemy,
             Transform::default(),
-            Hurtbox { size: Vec2::new(20.0, 20.0) },
-            Health { current: 100.0, _max: 100.0 },
+            Hurtbox {
+                size: Vec2::new(20.0, 20.0),
+            },
+            Health {
+                current: 100.0,
+                _max: 100.0,
+            },
             CombatState::Idle,
         ))
         .id();
@@ -248,7 +261,9 @@ fn hitting_enemy_reduces_health() {
     app.world_mut().spawn((
         Attack::from_definition(quick_attack(), owner, AttackId(0)),
         Transform::default(),
-        Hitbox { size: Vec2::new(20.0, 20.0) },
+        Hitbox {
+            size: Vec2::new(20.0, 20.0),
+        },
     ));
 
     tick(&mut app, 0.016);
@@ -274,8 +289,13 @@ fn hitting_enemy_applies_knockback_to_enemy() {
         .spawn((
             Enemy,
             Transform::default(),
-            Hurtbox { size: Vec2::new(20.0, 20.0) },
-            Health { current: 100.0, _max: 100.0 },
+            Hurtbox {
+                size: Vec2::new(20.0, 20.0),
+            },
+            Health {
+                current: 100.0,
+                _max: 100.0,
+            },
             CombatState::Idle,
         ))
         .id();
@@ -283,7 +303,9 @@ fn hitting_enemy_applies_knockback_to_enemy() {
     app.world_mut().spawn((
         Attack::from_definition(quick_attack(), owner, AttackId(0)),
         Transform::default(),
-        Hitbox { size: Vec2::new(20.0, 20.0) },
+        Hitbox {
+            size: Vec2::new(20.0, 20.0),
+        },
     ));
 
     tick(&mut app, 0.016);
@@ -306,8 +328,13 @@ fn hitting_enemy_applies_hitstun_to_enemy() {
         .spawn((
             Enemy,
             Transform::default(),
-            Hurtbox { size: Vec2::new(20.0, 20.0) },
-            Health { current: 100.0, _max: 100.0 },
+            Hurtbox {
+                size: Vec2::new(20.0, 20.0),
+            },
+            Health {
+                current: 100.0,
+                _max: 100.0,
+            },
             CombatState::Idle,
         ))
         .id();
@@ -315,7 +342,9 @@ fn hitting_enemy_applies_hitstun_to_enemy() {
     app.world_mut().spawn((
         Attack::from_definition(quick_attack(), owner, AttackId(0)),
         Transform::default(),
-        Hitbox { size: Vec2::new(20.0, 20.0) },
+        Hitbox {
+            size: Vec2::new(20.0, 20.0),
+        },
     ));
 
     tick(&mut app, 0.016);
@@ -338,8 +367,13 @@ fn hitstun_wears_off_after_duration() {
         .spawn((
             Enemy,
             Transform::default(),
-            Hurtbox { size: Vec2::new(20.0, 20.0) },
-            Health { current: 100.0, _max: 100.0 },
+            Hurtbox {
+                size: Vec2::new(20.0, 20.0),
+            },
+            Health {
+                current: 100.0,
+                _max: 100.0,
+            },
             CombatState::Idle,
         ))
         .id();
@@ -347,7 +381,9 @@ fn hitstun_wears_off_after_duration() {
     app.world_mut().spawn((
         Attack::from_definition(quick_attack(), owner, AttackId(0)),
         Transform::default(),
-        Hitbox { size: Vec2::new(20.0, 20.0) },
+        Hitbox {
+            size: Vec2::new(20.0, 20.0),
+        },
     ));
 
     tick(&mut app, 0.016); // hit lands, hitstun = 1.0 s
@@ -374,8 +410,13 @@ fn hitting_enemy_with_slow_attack_applies_slow() {
         .spawn((
             Enemy,
             Transform::default(),
-            Hurtbox { size: Vec2::new(200.0, 200.0) },
-            Health { current: 100.0, _max: 100.0 },
+            Hurtbox {
+                size: Vec2::new(200.0, 200.0),
+            },
+            Health {
+                current: 100.0,
+                _max: 100.0,
+            },
             CombatState::Idle,
             Stats::default(),
         ))
@@ -384,7 +425,9 @@ fn hitting_enemy_with_slow_attack_applies_slow() {
     app.world_mut().spawn((
         Attack::from_definition(slow_down(), owner, AttackId(0)),
         Transform::default(),
-        Hitbox { size: Vec2::new(200.0, 200.0) },
+        Hitbox {
+            size: Vec2::new(200.0, 200.0),
+        },
     ));
 
     tick(&mut app, 0.016);
@@ -408,8 +451,13 @@ fn slow_adds_speed_modifier_to_enemy_stats() {
         .spawn((
             Enemy,
             Transform::default(),
-            Hurtbox { size: Vec2::new(200.0, 200.0) },
-            Health { current: 100.0, _max: 100.0 },
+            Hurtbox {
+                size: Vec2::new(200.0, 200.0),
+            },
+            Health {
+                current: 100.0,
+                _max: 100.0,
+            },
             CombatState::Idle,
             Stats::default(),
         ))
@@ -418,7 +466,9 @@ fn slow_adds_speed_modifier_to_enemy_stats() {
     app.world_mut().spawn((
         Attack::from_definition(slow_down(), owner, AttackId(0)),
         Transform::default(),
-        Hitbox { size: Vec2::new(200.0, 200.0) },
+        Hitbox {
+            size: Vec2::new(200.0, 200.0),
+        },
     ));
 
     tick(&mut app, 0.016); // hit lands + slow_system applies modifier
@@ -442,8 +492,13 @@ fn hitting_enemy_with_slow_attack_applies_poison() {
         .spawn((
             Enemy,
             Transform::default(),
-            Hurtbox { size: Vec2::new(200.0, 200.0) },
-            Health { current: 100.0, _max: 100.0 },
+            Hurtbox {
+                size: Vec2::new(200.0, 200.0),
+            },
+            Health {
+                current: 100.0,
+                _max: 100.0,
+            },
             CombatState::Idle,
             Stats::default(),
         ))
@@ -452,7 +507,9 @@ fn hitting_enemy_with_slow_attack_applies_poison() {
     app.world_mut().spawn((
         Attack::from_definition(slow_down(), owner, AttackId(0)),
         Transform::default(),
-        Hitbox { size: Vec2::new(200.0, 200.0) },
+        Hitbox {
+            size: Vec2::new(200.0, 200.0),
+        },
     ));
 
     tick(&mut app, 0.016);
@@ -475,8 +532,13 @@ fn poisoned_enemy_loses_health_over_time() {
         .spawn((
             Enemy,
             Transform::default(),
-            Hurtbox { size: Vec2::new(200.0, 200.0) },
-            Health { current: 100.0, _max: 100.0 },
+            Hurtbox {
+                size: Vec2::new(200.0, 200.0),
+            },
+            Health {
+                current: 100.0,
+                _max: 100.0,
+            },
             CombatState::Idle,
             Stats::default(),
         ))
@@ -485,7 +547,9 @@ fn poisoned_enemy_loses_health_over_time() {
     app.world_mut().spawn((
         Attack::from_definition(slow_down(), owner, AttackId(0)),
         Transform::default(),
-        Hitbox { size: Vec2::new(200.0, 200.0) },
+        Hitbox {
+            size: Vec2::new(200.0, 200.0),
+        },
     ));
 
     tick(&mut app, 0.016); // hit lands, poison applied
@@ -518,8 +582,13 @@ fn enemy_at_zero_health_is_marked_dead() {
         .spawn((
             Enemy,
             Transform::default(),
-            Hurtbox { size: Vec2::new(20.0, 20.0) },
-            Health { current: 1.0, _max: 1.0 }, // one hit will kill
+            Hurtbox {
+                size: Vec2::new(20.0, 20.0),
+            },
+            Health {
+                current: 1.0,
+                _max: 1.0,
+            }, // one hit will kill
             CombatState::Idle,
         ))
         .id();
@@ -527,7 +596,9 @@ fn enemy_at_zero_health_is_marked_dead() {
     app.world_mut().spawn((
         Attack::from_definition(quick_attack(), owner, AttackId(0)),
         Transform::default(),
-        Hitbox { size: Vec2::new(20.0, 20.0) },
+        Hitbox {
+            size: Vec2::new(20.0, 20.0),
+        },
     ));
 
     tick(&mut app, 0.016);

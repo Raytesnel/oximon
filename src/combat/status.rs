@@ -80,9 +80,9 @@ impl Plugin for StatusEffectsPlugin {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::combat::components::*;
     use bevy::app::FixedMain;
     use bevy::prelude::*;
-    use crate::combat::components::*;
 
     fn tick(app: &mut App, dt: f32) {
         let delta = std::time::Duration::from_secs_f32(dt);
@@ -121,7 +121,10 @@ mod tests {
         let mut app = setup_app();
         // Both systems run together so we can observe health as the
         // end result of the message being written and then consumed.
-        app.add_systems(Update, (super::poison_system, crate::combat::apply_damage_system).chain());
+        app.add_systems(
+            Update,
+            (super::poison_system, crate::combat::apply_damage_system).chain(),
+        );
         app
     }
 
@@ -133,7 +136,10 @@ mod tests {
             .world_mut()
             .spawn((
                 make_poison(0.016, 10.0, 5.0),
-                Health { current: 20.0, _max: 20.0 },
+                Health {
+                    current: 20.0,
+                    _max: 20.0,
+                },
                 CombatState::Idle,
             ))
             .id();
@@ -156,7 +162,10 @@ mod tests {
             .world_mut()
             .spawn((
                 make_poison(0.016, 10.0, 5.0),
-                Health { current: 20.0, _max: 20.0 },
+                Health {
+                    current: 20.0,
+                    _max: 20.0,
+                },
                 CombatState::Idle,
             ))
             .id();
@@ -177,7 +186,10 @@ mod tests {
             .world_mut()
             .spawn((
                 make_poison(1.0, 10.0, 5.0), // tick every 1 s
-                Health { current: 20.0, _max: 20.0 },
+                Health {
+                    current: 20.0,
+                    _max: 20.0,
+                },
                 CombatState::Idle,
             ))
             .id();
@@ -200,7 +212,10 @@ mod tests {
             .world_mut()
             .spawn((
                 make_poison(0.016, 10.0, 3.0),
-                Health { current: 20.0, _max: 20.0 },
+                Health {
+                    current: 20.0,
+                    _max: 20.0,
+                },
                 CombatState::Idle,
             ))
             .id();
@@ -224,7 +239,10 @@ mod tests {
             .world_mut()
             .spawn((
                 make_poison(10.0, 0.016, 5.0),
-                Health { current: 20.0, _max: 20.0 },
+                Health {
+                    current: 20.0,
+                    _max: 20.0,
+                },
                 CombatState::Idle,
             ))
             .id();
@@ -245,7 +263,10 @@ mod tests {
             .world_mut()
             .spawn((
                 make_poison(10.0, 1.0, 5.0),
-                Health { current: 20.0, _max: 20.0 },
+                Health {
+                    current: 20.0,
+                    _max: 20.0,
+                },
                 CombatState::Idle,
             ))
             .id();
@@ -282,7 +303,10 @@ mod tests {
 
         let stats = app.world().get::<Stats>(entity).unwrap();
         assert!(
-            stats.speed.iter().any(|m| matches!(m.stat_type, StatType::Speed)),
+            stats
+                .speed
+                .iter()
+                .any(|m| matches!(m.stat_type, StatType::Speed)),
             "slow should add a Speed modifier"
         );
     }

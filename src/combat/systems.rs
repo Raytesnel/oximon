@@ -458,18 +458,17 @@ pub fn cleanup_combat(mut commands: Commands, query: Query<Entity, With<CombatEn
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bevy::prelude::*;
-    use bevy::app::FixedMain;
     use crate::combat::attack_definition::*;
     use crate::combat::attacks::*;
     use crate::combat::components::*;
     use crate::combat::events::*;
     use crate::common::components::*;
     use crate::movement::components::Velocity;
+    use bevy::app::FixedMain;
+    use bevy::prelude::*;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -496,7 +495,10 @@ mod tests {
     }
 
     fn make_health(current: f32) -> Health {
-        Health { current, _max: current }
+        Health {
+            current,
+            _max: current,
+        }
     }
 
     /// A minimal single-hit attack with one damage effect targeting the enemy.
@@ -564,7 +566,10 @@ mod tests {
             .spawn((make_health(100.0), CombatState::Idle))
             .id();
 
-        app.world_mut().write_message(DamageEvent { target: entity, amount: 30.0 });
+        app.world_mut().write_message(DamageEvent {
+            target: entity,
+            amount: 30.0,
+        });
         tick(&mut app, 0.016);
 
         let health = app.world().get::<Health>(entity).unwrap();
@@ -584,7 +589,10 @@ mod tests {
             .spawn((make_health(10.0), CombatState::Idle))
             .id();
 
-        app.world_mut().write_message(DamageEvent { target: entity, amount: 10.0 });
+        app.world_mut().write_message(DamageEvent {
+            target: entity,
+            amount: 10.0,
+        });
         tick(&mut app, 0.016);
 
         let state = app.world().get::<CombatState>(entity).unwrap();
@@ -600,7 +608,10 @@ mod tests {
             .spawn((make_health(5.0), CombatState::Idle))
             .id();
 
-        app.world_mut().write_message(DamageEvent { target: entity, amount: 999.0 });
+        app.world_mut().write_message(DamageEvent {
+            target: entity,
+            amount: 999.0,
+        });
         tick(&mut app, 0.016);
 
         let health = app.world().get::<Health>(entity).unwrap();
@@ -620,8 +631,14 @@ mod tests {
             .spawn((make_health(100.0), CombatState::Idle))
             .id();
 
-        app.world_mut().write_message(DamageEvent { target: entity, amount: 10.0 });
-        app.world_mut().write_message(DamageEvent { target: entity, amount: 20.0 });
+        app.world_mut().write_message(DamageEvent {
+            target: entity,
+            amount: 10.0,
+        });
+        app.world_mut().write_message(DamageEvent {
+            target: entity,
+            amount: 20.0,
+        });
         tick(&mut app, 0.016);
 
         let health = app.world().get::<Health>(entity).unwrap();
@@ -959,10 +976,7 @@ mod tests {
             timer: None,
         });
 
-        let owner = app
-            .world_mut()
-            .spawn((CombatState::Attacking, stats))
-            .id();
+        let owner = app.world_mut().spawn((CombatState::Attacking, stats)).id();
 
         let mut attack = damage_only_attack(owner, 10.0);
         attack.lifetime_timer = Timer::from_seconds(0.001, TimerMode::Once);
@@ -1000,7 +1014,9 @@ mod tests {
             .spawn((
                 Enemy,
                 Transform::default(),
-                Hurtbox { size: Vec2::new(20.0, 20.0) },
+                Hurtbox {
+                    size: Vec2::new(20.0, 20.0),
+                },
                 make_health(100.0),
                 CombatState::Idle,
             ))
@@ -1009,7 +1025,9 @@ mod tests {
         app.world_mut().spawn((
             damage_only_attack(owner, 10.0),
             Transform::default(), // same position → overlapping
-            Hitbox { size: Vec2::new(20.0, 20.0) },
+            Hitbox {
+                size: Vec2::new(20.0, 20.0),
+            },
         ));
 
         tick(&mut app, 0.016);
@@ -1033,7 +1051,9 @@ mod tests {
             .spawn((
                 Enemy,
                 Transform::default(),
-                Hurtbox { size: Vec2::new(20.0, 20.0) },
+                Hurtbox {
+                    size: Vec2::new(20.0, 20.0),
+                },
                 make_health(100.0),
                 CombatState::Idle,
             ))
@@ -1042,7 +1062,9 @@ mod tests {
         app.world_mut().spawn((
             damage_only_attack(owner, 10.0),
             Transform::default(),
-            Hitbox { size: Vec2::new(20.0, 20.0) },
+            Hitbox {
+                size: Vec2::new(20.0, 20.0),
+            },
         ));
 
         tick(&mut app, 0.016);
@@ -1068,7 +1090,9 @@ mod tests {
             .spawn((
                 Enemy,
                 Transform::from_translation(Vec3::new(1000.0, 1000.0, 0.0)), // far away
-                Hurtbox { size: Vec2::new(20.0, 20.0) },
+                Hurtbox {
+                    size: Vec2::new(20.0, 20.0),
+                },
                 make_health(100.0),
                 CombatState::Idle,
             ))
@@ -1077,7 +1101,9 @@ mod tests {
         app.world_mut().spawn((
             damage_only_attack(owner, 10.0),
             Transform::default(),
-            Hitbox { size: Vec2::new(20.0, 20.0) },
+            Hitbox {
+                size: Vec2::new(20.0, 20.0),
+            },
         ));
 
         tick(&mut app, 0.016);
@@ -1101,7 +1127,9 @@ mod tests {
             .spawn((
                 Enemy,
                 Transform::default(),
-                Hurtbox { size: Vec2::new(20.0, 20.0) },
+                Hurtbox {
+                    size: Vec2::new(20.0, 20.0),
+                },
                 make_health(100.0),
                 CombatState::Idle,
             ))
@@ -1110,7 +1138,9 @@ mod tests {
         app.world_mut().spawn((
             multihit_attack(owner, 5.0),
             Transform::default(),
-            Hitbox { size: Vec2::new(20.0, 20.0) },
+            Hitbox {
+                size: Vec2::new(20.0, 20.0),
+            },
         ));
 
         // tick enough times to get multiple hits
@@ -1135,7 +1165,9 @@ mod tests {
         app.world_mut().spawn((
             Enemy,
             Transform::default(),
-            Hurtbox { size: Vec2::new(20.0, 20.0) },
+            Hurtbox {
+                size: Vec2::new(20.0, 20.0),
+            },
             make_health(100.0),
             CombatState::Idle,
         ));
@@ -1143,15 +1175,14 @@ mod tests {
         app.world_mut().spawn((
             damage_only_attack(owner, 10.0),
             Transform::default(),
-            Hitbox { size: Vec2::new(20.0, 20.0) },
+            Hitbox {
+                size: Vec2::new(20.0, 20.0),
+            },
         ));
 
         tick(&mut app, 0.016);
 
         let hitstop = app.world().resource::<Hitstop>();
-        assert!(
-            hitstop.remaining > 0.0,
-            "Hitstop should be set after a hit"
-        );
+        assert!(hitstop.remaining > 0.0, "Hitstop should be set after a hit");
     }
 }
