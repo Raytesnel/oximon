@@ -6,6 +6,7 @@ pub mod events;
 mod setup;
 mod status;
 pub mod systems;
+#[cfg(test)]
 mod tests;
 
 use crate::GameState;

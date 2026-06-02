@@ -5,7 +5,7 @@ use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget, StatusEffect,
 };
 use crate::combat::attacks::{
-    AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, slow_down, speedo,
+    AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, simple_beam, slow_down, speedo,
 };
 use crate::common::components::{Enemy, ModifierLifetime, RuntimeModifier, Stats};
 use crate::movement::components::Velocity;
@@ -15,12 +15,15 @@ use bevy::prelude::*;
 pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
 pub const QUICK_ATTACK: KeyCode = KeyCode::KeyQ;
 pub const PEWPEW: KeyCode = KeyCode::KeyW;
+pub const POWPOW: KeyCode = KeyCode::KeyE;
 
 fn get_attack_for_key(key: KeyCode) -> Option<AttackDefinition> {
     match key {
         QUICK_ATTACK => Some(quick_attack()),
         JUMP_BUTTON => Some(speedo()),
         PEWPEW => Some(slow_down()),
+        POWPOW => Some(simple_beam()),
+
         _ => None,
     }
 }

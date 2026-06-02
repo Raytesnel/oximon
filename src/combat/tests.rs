@@ -45,6 +45,8 @@ fn test_app() -> App {
             timers: HashMap::new(),
         },
     ));
+    app.update(); // laat de state transitie plaatsvinden
+    app.update(); // OnEnter systemen draaien nu ook
     app
 }
 
@@ -591,7 +593,7 @@ fn enemy_at_zero_health_is_marked_dead() {
             CombatState::Idle,
         ))
         .id();
-
+    tick(&mut app, 0.016);
     app.world_mut().spawn((
         Attack::from_definition(quick_attack(), owner, AttackId(0)),
         Transform::default(),
