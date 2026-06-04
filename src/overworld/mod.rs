@@ -11,6 +11,8 @@ mod input_systems;
 mod interactables;
 mod player_movement;
 mod setup;
+#[cfg(test)]
+mod test;
 
 pub struct OverworldPlugin;
 

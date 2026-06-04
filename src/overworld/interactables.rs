@@ -362,3 +362,236 @@ pub fn tick_block_sliding(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use bevy::app::FixedMain;
+    use bevy::prelude::*;
+    use bevy::time::TimeUpdateStrategy;
+
+    use crate::overworld::components::*;
+    use crate::overworld::interactables::*;
+
+    fn make_app_with_time(step_seconds: f32) -> App {
+        let mut app = App::new();
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(
+            std::time::Duration::from_secs_f32(step_seconds),
+        ));
+        app.add_plugins(MinimalPlugins);
+        app
+    }
+
+    // ── to_grid ───────────────────────────────────────────────────────────────
+
+    fn to_grid(pos: Vec2, grid_size: f32) -> IVec2 {
+        IVec2::new(
+            (pos.x / grid_size).round() as i32,
+            (pos.y / grid_size).round() as i32,
+        )
+    }
+    fn tick(app: &mut App, dt: f32) {
+        app.update();
+    }
+    #[test]
+    fn to_grid_exact_cell_centre() {
+        assert_eq!(to_grid(Vec2::new(64.0, 96.0), 32.0), IVec2::new(2, 3));
+    }
+
+    #[test]
+    fn to_grid_rounds_to_nearest() {
+        assert_eq!(to_grid(Vec2::new(47.0, 0.0), 32.0), IVec2::new(1, 0));
+        assert_eq!(to_grid(Vec2::new(49.0, 0.0), 32.0), IVec2::new(2, 0));
+    }
+
+    #[test]
+    fn to_grid_negative_coords() {
+        assert_eq!(to_grid(Vec2::new(-32.0, -64.0), 32.0), IVec2::new(-1, -2));
+    }
+
+    // ── tick_sign_popups ──────────────────────────────────────────────────────
+
+    #[test]
+    fn sign_popup_despawns_after_timer() {
+        // Each update() advances time by 2 seconds
+        let mut app = make_app_with_time(2.0);
+        app.add_systems(Update, tick_sign_popups);
+
+        let popup = app
+            .world_mut()
+            .spawn(SignPopup {
+                timer: Timer::from_seconds(3.0, TimerMode::Once),
+            })
+            .id();
+        app.update();
+        app.update();
+        assert!(app.world().get_entity(popup).is_ok(), "popup alive at 2 s");
+        for _ in 0..15 {
+            app.update();
+        }
+        assert!(
+            app.world().get_entity(popup).is_err(),
+            "popup must be despawned after timer expires"
+        );
+    }
+
+    #[test]
+    fn sign_popup_survives_before_timer() {
+        let mut app = make_app_with_time(1.0);
+        app.add_systems(Update, tick_sign_popups);
+
+        let popup = app
+            .world_mut()
+            .spawn(SignPopup {
+                timer: Timer::from_seconds(3.0, TimerMode::Once),
+            })
+            .id();
+
+        app.update(); // +1 s
+        app.update(); // +2 s
+        assert!(app.world().get_entity(popup).is_ok());
+    }
+
+    // ── tick_lamp_animation ───────────────────────────────────────────────────
+
+    fn spawn_lamp_visual(app: &mut App, frames: Vec<usize>) -> Entity {
+        app.world_mut()
+            .spawn((
+                Sprite::default(),
+                LampAnimationState {
+                    // Use a 1-second frame interval so our 2-second step fires it
+                    timer: Timer::from_seconds(1.0, TimerMode::Repeating),
+                    frames,
+                    current: 0,
+                    hold_on_last: true,
+                },
+            ))
+            .id()
+    }
+
+    #[test]
+    fn lamp_animation_advances_frame() {
+        let mut app = make_app_with_time(1.1); // advances past the 1 s frame timer
+        app.add_systems(Update, tick_lamp_animation);
+
+        let entity = spawn_lamp_visual(&mut app, vec![0, 1, 2, 3]);
+        for _ in 0..5 {
+            app.update();
+        }
+        let anim = app.world().get::<LampAnimationState>(entity).unwrap();
+        assert_eq!(anim.current, 1, "frame should have advanced to index 1");
+    }
+
+    #[test]
+    fn lamp_animation_hold_on_last_removes_component() {
+        let mut app = make_app_with_time(1.1);
+        app.add_systems(Update, tick_lamp_animation);
+
+        let entity = spawn_lamp_visual(&mut app, vec![0, 1]);
+        for _ in 0..15 {
+            app.update();
+        }
+
+        assert!(
+            app.world().get::<LampAnimationState>(entity).is_none(),
+            "LampAnimationState should be removed on last frame with hold_on_last"
+        );
+    }
+
+    // ── tick_block_sliding ────────────────────────────────────────────────────
+
+    fn make_dummy_handle() -> SpriteSheetHandle {
+        SpriteSheetHandle {
+            image: Handle::default(),
+            layout: Handle::default(),
+        }
+    }
+
+    #[test]
+    fn block_slide_moves_transform_over_time() {
+        // 0.5 s step → timer fraction = 0.5 → block should be mid-slide
+        let mut app = make_app_with_time(0.5);
+        app.add_systems(Update, tick_block_sliding);
+
+        let from = Vec2::new(0.0, 0.0);
+        let to = Vec2::new(32.0, 0.0);
+
+        let entity = app
+            .world_mut()
+            .spawn((
+                Transform::from_xyz(from.x, from.y, 0.0),
+                GlobalTransform::default(),
+                BlockSliding {
+                    from,
+                    to,
+                    timer: Timer::from_seconds(1.0, TimerMode::Once),
+                },
+                make_dummy_handle(),
+            ))
+            .id();
+
+        for _ in 0..2 {
+            app.update();
+        }
+
+        let x = app.world().get::<Transform>(entity).unwrap().translation.x;
+        assert!(x > 0.0 && x < 32.0, "block should be mid-slide, got x={x}");
+    }
+
+    #[test]
+    fn block_slide_snaps_to_target_and_removes_component() {
+        // 1.1 s step → timer finishes in first update
+        let mut app = make_app_with_time(1.1);
+        app.add_systems(Update, tick_block_sliding);
+
+        let from = Vec2::new(0.0, 0.0);
+        let to = Vec2::new(32.0, 0.0);
+
+        let entity = app
+            .world_mut()
+            .spawn((
+                Transform::from_xyz(from.x, from.y, 0.0),
+                GlobalTransform::default(),
+                BlockSliding {
+                    from,
+                    to,
+                    timer: Timer::from_seconds(1.0, TimerMode::Once),
+                },
+                make_dummy_handle(),
+            ))
+            .id();
+
+        for _ in 0..15 {
+            app.update();
+        }
+
+        let tf = app.world().get::<Transform>(entity).unwrap().translation;
+        assert_eq!(tf.x, to.x, "block must snap exactly to target x");
+        assert_eq!(tf.y, to.y, "block must snap exactly to target y");
+        assert!(
+            app.world().get::<BlockSliding>(entity).is_none(),
+            "BlockSliding must be removed after slide completes"
+        );
+    }
+
+    // ── InteractionState toggle ───────────────────────────────────────────────
+
+    #[test]
+    fn interaction_state_off_to_on() {
+        let state = InteractionState::Off;
+        let next = match state {
+            InteractionState::Off => InteractionState::On,
+            _ => InteractionState::Off,
+        };
+        assert_eq!(next, InteractionState::On);
+    }
+
+    #[test]
+    fn interaction_state_on_to_off() {
+        let state = InteractionState::On;
+        let next = match state {
+            InteractionState::Off => InteractionState::On,
+            _ => InteractionState::Off,
+        };
+        assert_eq!(next, InteractionState::Off);
+    }
+}

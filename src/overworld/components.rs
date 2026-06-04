@@ -47,7 +47,7 @@ pub enum InteractionType {
     Monster,
 }
 
-#[derive(Component, PartialEq)]
+#[derive(Component, PartialEq, Debug)]
 pub enum InteractionState {
     Closed,
     Off,
@@ -70,7 +70,7 @@ pub struct InteractionEvent {
     pub entity: Entity,
 }
 
-#[derive(Component, Clone, Copy)]
+#[derive(Component, Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Facing {
     Up,
     Down,
