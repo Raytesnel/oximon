@@ -165,7 +165,7 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                             InteractionType::Block,
                             PushableBlock { grid_size: 32.0 },
                             Name::new(object.name.clone()),
-                            RigidBody::Dynamic,
+                            RigidBody::Kinematic,
                             LockedAxes::ROTATION_LOCKED,
                             LinearDamping(100.0), // high damping so physics doesn't interfere
                             GravityScale(0.0),
