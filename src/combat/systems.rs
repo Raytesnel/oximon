@@ -10,6 +10,7 @@ use crate::combat::attacks::{
 use crate::common::components::{Enemy, ModifierLifetime, RuntimeModifier, Stats};
 use crate::movement::components::Velocity;
 use crate::movement::types::AllowedMovable;
+use bevy::ecs::schedule::And;
 use bevy::prelude::*;
 
 pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
@@ -455,7 +456,10 @@ pub fn apply_knockback_system(
     }
 }
 
-pub fn cleanup_combat(mut commands: Commands, query: Query<Entity, With<CombatEntity>>) {
+pub fn cleanup_combat(
+    mut commands: Commands,
+    query: Query<Entity, (With<CombatEntity>, Without<CombatSceneEntity>)>,
+) {
     for e in &query {
         commands.entity(e).despawn();
     }

@@ -13,7 +13,7 @@ use crate::GameState;
 use crate::combat::ai::*;
 use crate::combat::components::{AttackEvent, AttackIdCounter};
 use crate::combat::events::DamageEvent;
-use crate::combat::setup::setup_combat_players;
+use crate::combat::setup::{hide_combat, setup_combat_players, setup_combat_world, show_combat};
 use crate::combat::status::StatusEffectsPlugin;
 use bevy::prelude::*;
 use systems::*;
@@ -22,7 +22,14 @@ pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Combat), setup_combat_players);
+        app.add_systems(
+            OnEnter(GameState::Combat),
+            (setup_combat_players, show_combat),
+        );
+        app.add_systems(
+            Startup,
+            (setup_combat_world, hide_combat.after(setup_combat_world)),
+        );
         app.add_message::<DamageEvent>();
         app.add_message::<AttackEvent>();
         app.add_plugins(StatusEffectsPlugin);
@@ -50,6 +57,6 @@ impl Plugin for CombatPlugin {
         );
         app.add_systems(FixedUpdate, (ai_decision_system, ai_attack_system))
             .insert_resource(AttackIdCounter::default());
-        app.add_systems(OnExit(GameState::Combat), cleanup_combat);
+        app.add_systems(OnExit(GameState::Combat), (hide_combat, cleanup_combat));
     }
 }

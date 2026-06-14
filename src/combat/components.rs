@@ -4,6 +4,8 @@ use std::collections::HashMap;
 #[derive(Component, Debug)]
 
 pub struct CombatEntity;
+#[derive(Component)]
+pub struct CombatSceneEntity;
 
 #[derive(Component, Debug)]
 pub struct Health {

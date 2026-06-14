@@ -1,11 +1,24 @@
 {
-    "activeFile": "map/main.tmx",
+    "activeFile": "map/2d_main.tmx",
     "expandedProjectPaths": [
-        "tiles",
         "map",
+        "tiles",
         "."
     ],
     "fileStates": {
+        "map/2d_main.tmx": {
+            "expandedObjectLayers": [
+                7,
+                5,
+                9
+            ],
+            "scale": 1,
+            "selectedLayer": 6,
+            "viewCenter": {
+                "x": 688,
+                "y": 1423
+            }
+        },
         "map/Sprite-lamp.tsx": {
             "scaleInDock": 1,
             "scaleInEditor": 1
@@ -53,25 +66,41 @@
             "scaleInEditor": 1
         },
         "map/main.tmx": {
-            "scale": 1.549,
+            "expandedObjectLayers": [
+                12
+            ],
+            "scale": 1,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 319.8837959974177,
-                "y": 1363.7830858618463
+                "x": 974,
+                "y": 1042
             }
+        },
+        "map/top_down_Sprite-lamp.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "map/transition_bol_prototype.tsx": {
+            "scaleInDock": 0.3777,
+            "scaleInEditor": 0.0829
         },
         "tiles/TX Tileset Grass.tsx": {
             "scaleInDock": 1,
             "scaleInEditor": 1
+        },
+        "tiles/dungeon/top_down_tree.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 7.9855
         }
     },
     "last.externalTilesetPath": "/home/raytesnel/RustroverProjects/oximon/assets/map",
-    "last.imagePath": "/home/raytesnel/RustroverProjects/oximon/assets/sprites/objects",
+    "last.imagePath": "/home/raytesnel/RustroverProjects/oximon/assets/tiles/dungeon",
     "map.height": 60,
     "map.lastUsedFormat": "tmx",
     "map.width": 60,
     "openFiles": [
         "map/main.tmx",
+        "map/2d_main.tmx",
         "map/TilesetFloorDetail.tsx",
         "map/TX Plant.tsx",
         "map/TX Props.tsx",
@@ -79,11 +108,18 @@
         "map/TXPlant-ezgif.com-crop.tsx",
         "map/TX Struct.tsx",
         "map/Sprite-lamp.tsx",
-        "map/block_push.tsx"
+        "map/block_push.tsx",
+        "tiles/dungeon/top_down_tree.tsx",
+        "map/top_down_Sprite-lamp.tsx",
+        "map/transition_bol_prototype.tsx"
     ],
     "project": "oximon.tiled-project",
     "property.type": "int",
     "recentFiles": [
+        "map/main.tmx",
+        "map/transition_bol_prototype.tsx",
+        "map/top_down_Sprite-lamp.tsx",
+        "tiles/dungeon/top_down_tree.tsx",
         "map/block_push.tsx",
         "map/Sprite-lamp.tsx",
         "map/TX Struct.tsx",
@@ -91,15 +127,12 @@
         "map/TX Tileset Wall.tsx",
         "map/TX Props.tsx",
         "map/TX Plant.tsx",
-        "map/TilesetFloorDetail.tsx",
-        "map/main.tmx",
-        "map/block-0003.tsx",
-        "tiles/TX Tileset Grass.tsx"
+        "map/TilesetFloorDetail.tsx"
     ],
     "tileset.lastUsedFilter": "Tiled tileset files (*.tsx *.xml)",
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {
-        "height": 46,
-        "width": 32
+        "height": 525,
+        "width": 525
     }
 }
