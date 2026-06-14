@@ -197,9 +197,15 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
     player_movement::spawn_player_overworld(&mut commands);
 }
 
-pub fn cleanup_overworld(mut commands: Commands, query: Query<Entity, With<OverworldEntity>>) {
+pub fn hide_overworld(mut commands: Commands, query: Query<Entity, With<OverworldEntity>>) {
     for e in &query {
-        commands.entity(e).despawn();
+        commands.entity(e).insert(Visibility::Hidden);
+    }
+}
+
+pub fn show_overworld(mut commands: Commands, query: Query<Entity, With<OverworldEntity>>) {
+    for e in &query {
+        commands.entity(e).insert(Visibility::Visible);
     }
 }
 

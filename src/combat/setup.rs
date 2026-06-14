@@ -1,15 +1,17 @@
 use crate::combat::ai::{AI, AIConfig, AIIntent, AIState, Target};
 use crate::combat::components::{
-    AttackId, AttackStats, CombatEntity, CombatState, Cooldowns, Health, Hurtbox,
+    AttackId, AttackStats, CombatEntity, CombatSceneEntity, CombatState, Cooldowns, Health, Hurtbox,
 };
 use crate::common::components::{
     CombatSpawnContext, ComputedStats, Enemy, ModifierLifetime, Player, RuntimeModifier, StatType,
     Stats,
 };
 use crate::movement::components::{Facing, Movable, MoveIntent, MovementState, Velocity};
+use avian2d::dynamics::rigid_body::RigidBody;
 use bevy::color::Color;
 use bevy::math::{Vec2, Vec3};
 use bevy::prelude::*;
+use bevy_ecs_tiled::prelude::*;
 use std::collections::HashMap;
 
 pub fn setup_combat_players(mut commands: Commands, spawn_ctx: Res<CombatSpawnContext>) {
@@ -260,4 +262,31 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
             },
         },
     ));
+}
+pub fn hide_combat(mut commands: Commands, query: Query<Entity, With<CombatSceneEntity>>) {
+    for e in &query {
+        commands.entity(e).insert(Visibility::Hidden);
+    }
+}
+
+pub fn show_combat(mut commands: Commands, query: Query<Entity, With<CombatSceneEntity>>) {
+    for e in &query {
+        commands.entity(e).insert(Visibility::Visible);
+    }
+}
+pub fn setup_combat_world(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let map_handle: Handle<TiledMapAsset> = asset_server.load("map/2d_main.tmx");
+    commands
+        .spawn((
+            TiledMap(map_handle),
+            CombatSceneEntity,
+            TiledPhysicsSettings::<TiledPhysicsAvianBackend>::default(),
+        ))
+        .observe(
+            |collider_created: On<TiledEvent<ColliderCreated>>, mut commands: Commands| {
+                commands
+                    .entity(collider_created.event().origin)
+                    .insert(RigidBody::Static);
+            },
+        );
 }

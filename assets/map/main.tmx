@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="60" height="60" tilewidth="32" tileheight="32" infinite="0" nextlayerid="21" nextobjectid="124">
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="60" height="60" tilewidth="32" tileheight="32" infinite="0" nextlayerid="21" nextobjectid="127">
  <tileset firstgid="1" source="TilesetFloorDetail.tsx"/>
  <tileset firstgid="65" source="TX Plant.tsx"/>
  <tileset firstgid="321" source="TX Props.tsx"/>
@@ -11,6 +11,7 @@
  <tileset firstgid="1665" source="TXPlant-ezgif.com-crop.tsx"/>
  <tileset firstgid="1666" source="Sprite-lamp.tsx"/>
  <tileset firstgid="1676" source="block_push.tsx"/>
+ <tileset firstgid="1685" source="transition_bol_prototype.tsx"/>
  <layer id="1" name="Tile Layer 1" width="60" height="60">
   <data encoding="csv">
 0,0,18,0,0,0,0,0,0,0,18,0,18,0,0,0,0,0,0,0,18,0,18,0,0,18,18,0,0,0,0,0,0,18,0,0,18,18,0,0,0,0,18,18,0,0,0,18,0,0,0,0,18,0,0,18,18,18,0,0,

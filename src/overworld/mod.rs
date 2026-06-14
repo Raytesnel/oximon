@@ -18,7 +18,7 @@ pub struct OverworldPlugin;
 
 impl Plugin for OverworldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Overworld), (setup_overworld,))
+        app.add_systems(Startup, setup_overworld)
             .add_systems(
                 Update,
                 (
@@ -33,7 +33,8 @@ impl Plugin for OverworldPlugin {
                 )
                     .run_if(in_state(GameState::Overworld)),
             )
-            .add_systems(OnExit(GameState::Overworld), cleanup_overworld)
+            .add_systems(OnEnter(GameState::Overworld), show_overworld)
+            .add_systems(OnExit(GameState::Overworld), hide_overworld)
             .add_systems(
                 FixedUpdate,
                 overworld_movement.run_if(in_state(GameState::Overworld)),
