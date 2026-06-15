@@ -1,9 +1,5 @@
 use bevy::prelude::*;
 
-#[derive(Component, Default, Debug)]
-pub struct Velocity {
-    pub value: Vec3,
-}
 #[derive(Component, Debug)]
 pub struct Dash {
     pub direction: Vec3,

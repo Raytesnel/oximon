@@ -8,9 +8,9 @@ use crate::combat::attacks::{
     AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, simple_beam, slow_down, speedo,
 };
 use crate::common::components::{Enemy, ModifierLifetime, RuntimeModifier, Stats};
-use crate::movement::components::Velocity;
 use crate::movement::types::AllowedMovable;
-use bevy::ecs::schedule::And;
+use avian2d::collision::collider::CollidingEntities;
+use avian2d::dynamics::rigid_body::LinearVelocity;
 use bevy::prelude::*;
 
 pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
@@ -441,15 +441,12 @@ pub fn not_in_hitstop(hitstop: Res<Hitstop>) -> bool {
 pub fn apply_knockback_system(
     time: Res<Time>,
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Velocity, &mut KnockbackEffect)>,
+    mut query: Query<(Entity, &mut LinearVelocity, &mut KnockbackEffect)>,
 ) {
-    for (entity, mut velocity, mut knockback) in &mut query {
-        // Apply knockback velocity
-        velocity.value = knockback.velocity;
+    for (entity, mut lv, mut knockback) in &mut query {
+        lv.0 = knockback.velocity.truncate();
         knockback.velocity *= 0.9;
-
         knockback.timer.tick(time.delta());
-
         if knockback.timer.is_finished() {
             commands.entity(entity).remove::<KnockbackEffect>();
         }
@@ -465,13 +462,20 @@ pub fn cleanup_combat(
     }
 }
 
+pub fn debug_collisions(query: Query<(Entity, &CollidingEntities), With<CombatEntity>>) {
+    for (e, colliding) in &query {
+        if !colliding.is_empty() {
+            info!("{:?} is colliding with {:?}", e, colliding);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::combat::attack_definition::*;
     use crate::combat::attacks::*;
     use crate::common::components::*;
-    use crate::movement::components::Velocity;
     use bevy::app::FixedMain;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -716,45 +720,39 @@ mod tests {
     #[test]
     fn test_knockback_sets_velocity() {
         let mut app = setup_knockback_app();
-
         let entity = app
             .world_mut()
             .spawn((
-                Velocity { value: Vec3::ZERO },
+                LinearVelocity::default(),
                 KnockbackEffect {
                     velocity: Vec3::new(100.0, 0.0, 0.0),
                     timer: Timer::from_seconds(0.2, TimerMode::Once),
                 },
             ))
             .id();
-
         tick(&mut app, 0.016);
-
-        let vel = app.world().get::<Velocity>(entity).unwrap();
+        let lv = app.world().get::<LinearVelocity>(entity).unwrap();
         assert!(
-            vel.value.x > 0.0,
+            lv.0.x > 0.0,
             "velocity.x should be set by knockback, was {}",
-            vel.value.x
+            lv.0.x
         );
     }
 
     #[test]
     fn test_knockback_removed_after_timer_expires() {
         let mut app = setup_knockback_app();
-
         let entity = app
             .world_mut()
             .spawn((
-                Velocity { value: Vec3::ZERO },
+                LinearVelocity::default(),
                 KnockbackEffect {
                     velocity: Vec3::new(100.0, 0.0, 0.0),
                     timer: Timer::from_seconds(0.016, TimerMode::Once),
                 },
             ))
             .id();
-
         tick(&mut app, 0.016);
-
         assert!(
             app.world().get::<KnockbackEffect>(entity).is_none(),
             "KnockbackEffect should be removed after timer expires"
@@ -764,53 +762,41 @@ mod tests {
     #[test]
     fn test_knockback_not_removed_before_timer_expires() {
         let mut app = setup_knockback_app();
-
         let entity = app
             .world_mut()
             .spawn((
-                Velocity { value: Vec3::ZERO },
+                LinearVelocity::default(),
                 KnockbackEffect {
                     velocity: Vec3::new(100.0, 0.0, 0.0),
                     timer: Timer::from_seconds(1.0, TimerMode::Once),
                 },
             ))
             .id();
-
         tick(&mut app, 0.016);
-
-        assert!(
-            app.world().get::<KnockbackEffect>(entity).is_some(),
-            "KnockbackEffect should still be present before timer expires"
-        );
+        assert!(app.world().get::<KnockbackEffect>(entity).is_some());
     }
 
     #[test]
     fn test_knockback_velocity_decays_each_tick() {
         let mut app = setup_knockback_app();
-
         let initial = 100.0;
         let entity = app
             .world_mut()
             .spawn((
-                Velocity { value: Vec3::ZERO },
+                LinearVelocity::default(),
                 KnockbackEffect {
                     velocity: Vec3::new(initial, 0.0, 0.0),
                     timer: Timer::from_seconds(1.0, TimerMode::Once),
                 },
             ))
             .id();
-
         tick(&mut app, 0.016);
         tick(&mut app, 0.016);
-
-        // After first tick velocity is set to knockback.velocity (100),
-        // then knockback.velocity *= 0.9. On the second tick the entity
-        // receives that decayed value.
-        let vel = app.world().get::<Velocity>(entity).unwrap();
+        let lv = app.world().get::<LinearVelocity>(entity).unwrap();
         assert!(
-            vel.value.x < initial,
+            lv.0.x < initial,
             "knockback velocity should decay over ticks, was {}",
-            vel.value.x
+            lv.0.x
         );
     }
 

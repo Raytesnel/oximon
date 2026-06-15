@@ -1,3 +1,4 @@
+use crate::common::components::GameLayer;
 use crate::overworld::components::*;
 use crate::overworld::player_movement;
 use avian2d::prelude::*;
@@ -16,9 +17,10 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
         ))
         .observe(
             |collider_created: On<TiledEvent<ColliderCreated>>, mut commands: Commands| {
-                commands
-                    .entity(collider_created.event().origin)
-                    .insert(RigidBody::Static);
+                commands.entity(collider_created.event().origin).insert((
+                    RigidBody::Static,
+                    CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
+                ));
             },
         )
         .observe(
@@ -46,6 +48,7 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                         entity_cmd.insert((
                             Interactable,
                             YSort,
+                            CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
                             InteractionType::Chest,
                             InteractionState::Closed,
                             Name::new(object.name.clone()),
@@ -85,6 +88,7 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                                 },
                                 Collider::rectangle(32.0, 32.0),
                                 Sensor,
+                                CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
                                 CollidingEntities::default(),
                                 CollisionEventsEnabled,
                                 Transform::from_xyz(16.0, 16.0, 0.0),
@@ -100,6 +104,7 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                         entity_cmd.insert((
                             Interactable,
                             YSort,
+                            CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
                             InteractionType::Lamp,
                             InteractionState::Off,
                         ));
@@ -136,6 +141,7 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                         commands.entity(entity).insert((
                             Interactable,
                             YSort,
+                            CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
                             InteractionType::Sign,
                             SignText(text),
                             Name::new(object.name.clone()),
@@ -166,6 +172,7 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                             PushableBlock { grid_size: 32.0 },
                             Name::new(object.name.clone()),
                             RigidBody::Kinematic,
+                            CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
                             LockedAxes::ROTATION_LOCKED,
                             LinearDamping(100.0), // high damping so physics doesn't interfere
                             GravityScale(0.0),

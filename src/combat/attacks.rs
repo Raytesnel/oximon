@@ -117,7 +117,7 @@ pub fn quick_attack() -> AttackDefinition {
 
         spawn: AttackSpawn::Hitbox {
             color: Color::srgb(1.0, 0.0, 0.0),
-            size: Vec2::new(10.0, 10.0),
+            size: Vec2::new(20.0, 20.0),
         },
     }
 }

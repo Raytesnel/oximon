@@ -1,11 +1,17 @@
 use crate::combat::components::AttackId;
+use avian2d::prelude::PhysicsLayer;
 use bevy::prelude::*;
 
 #[derive(Resource)]
 pub struct CombatSpawnContext {
     pub player_world_pos: Vec3,
 }
-
+#[derive(PhysicsLayer, Default)]
+pub enum GameLayer {
+    #[default]
+    Overworld,
+    Combat,
+}
 #[derive(Component, Debug)]
 pub struct Player;
 
