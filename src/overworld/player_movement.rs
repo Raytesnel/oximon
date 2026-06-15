@@ -1,4 +1,5 @@
 use crate::MainCamera;
+use crate::common::components::GameLayer;
 use crate::movement::input::*;
 use crate::overworld::components::{Facing, OverworldEntity, OverworldPlayer, YSort};
 use avian2d::prelude::*;
@@ -24,6 +25,7 @@ pub fn spawn_player_overworld(commands: &mut Commands) {
         Restitution::new(0.0),
         GravityScale(0.0),
         CollisionEventsEnabled,
+        CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
     ));
 }
 

@@ -1,11 +1,8 @@
-use crate::movement::input::{MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON, MOVE_UP_BUTTON};
 use crate::overworld::{
-    components::*,
-    input_systems::{interaction_input_system, overworld_movement},
-    interactables::*,
-    player_movement::{update_facing, y_sort},
+    components::*, input_systems::interaction_input_system, interactables::*,
+    player_movement::y_sort,
 };
-use avian2d::prelude::{CollidingEntities, LinearVelocity};
+use avian2d::prelude::CollidingEntities;
 use bevy::input::InputPlugin;
 use bevy::prelude::*;
 

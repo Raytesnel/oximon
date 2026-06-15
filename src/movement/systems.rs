@@ -5,35 +5,24 @@ use crate::movement::input::{
     MOVE_DOWN_BUTTON, MOVE_LEFT_BUTTON, MOVE_RIGHT_BUTTON, MOVE_UP_BUTTON,
 };
 use crate::movement::types::*;
+use avian2d::prelude::*;
 use bevy::prelude::*;
 
 pub fn apply_friction(
     time: Res<Time>,
-    mut query: Query<(&mut Velocity, &MovementState, &ComputedStats), With<Movable>>,
+    mut query: Query<(&mut LinearVelocity, &MovementState, &ComputedStats), With<Movable>>,
 ) {
-    for (mut velocity, state, stats) in &mut query {
-        let speed = velocity.value.length();
-
+    for (mut lv, state, stats) in &mut query {
+        let speed = lv.0.length();
         let friction = match state {
             MovementState::Recovering => stats.dash_speed / stats.dash_stop_time,
             MovementState::Moving | MovementState::Idle => stats.friction,
         };
-
         if speed > 0.001 {
             let drop = friction * time.delta_secs();
             let new_speed = (speed - drop).max(0.0);
-
-            velocity.value = velocity.value.normalize_or_zero() * new_speed;
+            lv.0 = lv.0.normalize_or_zero() * new_speed;
         }
-    }
-}
-
-pub fn apply_velocity(
-    time: Res<Time>,
-    mut query: Query<(&mut Transform, &Velocity), NoneOverWorldMovable>,
-) {
-    for (mut transform, velocity) in &mut query {
-        transform.translation += velocity.value * time.delta_secs();
     }
 }
 
@@ -58,22 +47,24 @@ fn compute_direction(input: &ButtonInput<KeyCode>) -> Vec3 {
 
 pub fn apply_acceleration(
     time: Res<Time>,
-    mut query: Query<(&mut Velocity, &MovementState, &ComputedStats, &MoveIntent), AllowedMovable>,
+    mut query: Query<
+        (
+            &mut LinearVelocity,
+            &MovementState,
+            &ComputedStats,
+            &MoveIntent,
+        ),
+        AllowedMovable,
+    >,
 ) {
-    for (mut velocity, state, stats, move_intent) in &mut query {
+    for (mut lv, state, stats, move_intent) in &mut query {
         match state {
-            MovementState::Recovering => {
-                info!("we are still need to remove recovering");
-            }
-
+            MovementState::Recovering => {}
             MovementState::Moving | MovementState::Idle => {
-                let acceleration = stats.acceleration;
-                let speed = stats.speed;
-                let input_dir = move_intent.direction;
-                velocity.value += input_dir * acceleration * time.delta_secs();
-
-                if velocity.value.length() > speed {
-                    velocity.value = velocity.value.normalize() * speed;
+                let input_dir = move_intent.direction.truncate();
+                lv.0 += input_dir * stats.acceleration * time.delta_secs();
+                if lv.0.length() > stats.speed {
+                    lv.0 = lv.0.normalize() * stats.speed;
                 }
             }
         }
@@ -81,22 +72,17 @@ pub fn apply_acceleration(
 }
 
 pub fn update_movement_state(
-    mut query: Query<(&Velocity, &mut MovementState, &MoveIntent), AllowedMovable>,
+    mut query: Query<(&LinearVelocity, &mut MovementState, &MoveIntent), AllowedMovable>,
 ) {
-    for (velocity, mut movement_state, move_intent) in &mut query {
+    for (lv, mut movement_state, move_intent) in &mut query {
         let input_dir = move_intent.direction;
-        let speed = velocity.value.length();
-        let new_state = if input_dir != Vec3::ZERO {
-            MovementState::Moving
-        } else if speed > 1.0 {
-            // still sliding
+        let speed = lv.0.length();
+        let new_state = if input_dir != Vec3::ZERO || speed > 1.0 {
             MovementState::Moving
         } else {
             MovementState::Idle
         };
-
         if *movement_state != new_state {
-            debug!("State change: {:?} -> {:?}", *movement_state, new_state);
             *movement_state = new_state;
         }
     }
@@ -313,22 +299,19 @@ mod tests {
     }
     fn assert_acceleration(app: &mut App, expected_speed: f32) {
         let world = app.world_mut();
-        let mut q = world.query::<&Velocity>();
-        let velocity = q.single(world).unwrap();
-        let expected_speed = Vec3::new(expected_speed, 0.0, 0.0);
+        let mut q = world.query::<&LinearVelocity>();
+        let lv = q.single(world).unwrap();
         assert!(
-            velocity.value.distance(expected_speed) < 0.01,
-            "Velocity {:?}, expected {:?}",
-            velocity.value,
+            (lv.0.x - expected_speed).abs() < 0.01,
+            "LinearVelocity {:?}, expected {}",
+            lv.0,
             expected_speed
         );
     }
     #[test]
     fn test_movement_intent_with_high_acceleration_results_in_max_speed() {
-        // setup
         let mut app = setup_acceleration_app();
         app.add_systems(Update, super::apply_acceleration);
-
         let max_speed = 2.0;
         app.world_mut().spawn((
             Player,
@@ -342,26 +325,19 @@ mod tests {
                 dash_friction: 10.0,
                 dash_stop_time: 10.0,
             },
-            Velocity::default(),
+            LinearVelocity::default(),
             Movable,
             MoveIntent {
                 direction: Vec3::new(1.0, 0.0, 0.0),
             },
         ));
-        app.update();
-        // act
-        let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
-        input.press(MOVE_LEFT_BUTTON);
         tick(&mut app, 0.016);
-        // assert
         assert_acceleration(&mut app, max_speed);
     }
     #[test]
     fn test_movement_intent_with_low_acceleration_results_in_acceleration_increase() {
-        // setup
         let mut app = setup_acceleration_app();
         app.add_systems(Update, super::apply_acceleration);
-
         let fixed_time = 0.016;
         let acceleration = 2.0;
         app.world_mut().spawn((
@@ -369,34 +345,26 @@ mod tests {
             MovementState::Idle,
             ComputedStats {
                 speed: 10.0,
-                acceleration: acceleration,
+                acceleration,
                 friction: 10.0,
                 dash_speed: 10.0,
                 dash_time: 10.0,
                 dash_friction: 10.0,
                 dash_stop_time: 10.0,
             },
-            Velocity::default(),
+            LinearVelocity::default(),
             Movable,
             MoveIntent {
                 direction: Vec3::new(1.0, 0.0, 0.0),
             },
         ));
-        app.update();
-        // act
-        let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
-        input.press(MOVE_LEFT_BUTTON);
         tick(&mut app, fixed_time);
-        // assert
-        let expected = acceleration * fixed_time;
-        assert_acceleration(&mut app, expected);
+        assert_acceleration(&mut app, acceleration * fixed_time);
     }
     #[test]
     fn test_stunned_moveable_with_movement_intent_results_in_no_acceleration() {
-        // setup
         let mut app = setup_acceleration_app();
         app.add_systems(Update, super::apply_acceleration);
-
         let fixed_time = 0.016;
         app.world_mut().spawn((
             Player,
@@ -404,41 +372,29 @@ mod tests {
             base_stats(),
             Hitstun { remaining: 10.0 },
             Movable,
-            Velocity::default(),
+            LinearVelocity::default(),
             MoveIntent {
                 direction: Vec3::new(1.0, 0.0, 0.0),
             },
         ));
-        app.update();
-        // act
-        let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
-        input.press(MOVE_LEFT_BUTTON);
         tick(&mut app, fixed_time);
-        // assert
         assert_acceleration(&mut app, 0.0);
     }
     #[test]
     fn test_non_moveable_with_movement_intent_results_in_no_acceleration() {
-        // setup
         let mut app = setup_acceleration_app();
         app.add_systems(Update, super::apply_acceleration);
-
         let fixed_time = 0.016;
         app.world_mut().spawn((
             Player,
             MovementState::Idle,
             base_stats(),
-            Velocity::default(),
+            LinearVelocity::default(),
             MoveIntent {
                 direction: Vec3::new(1.0, 0.0, 0.0),
             },
         ));
-        app.update();
-        // act
-        let mut input = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
-        input.press(MOVE_LEFT_BUTTON);
         tick(&mut app, fixed_time);
-        // assert
         assert_acceleration(&mut app, 0.0);
     }
     #[test]
@@ -453,62 +409,50 @@ mod tests {
     }
 
     #[test]
-    fn test_velocity_translates_to_translation() {
+    fn test_acceleration_sets_linear_velocity() {
         let mut app = setup_acceleration_app();
-        app.add_systems(Update, super::apply_velocity);
+        app.add_systems(Update, super::apply_acceleration);
         let fixed_time = 0.016;
-        let velocity = 10.0;
+        let acceleration = 100.0;
+
         app.world_mut().spawn((
             Player,
             Movable,
-            Transform::default(),
-            Velocity {
-                value: Vec3::new(velocity, 0.0, 0.0),
+            MovementState::Idle,
+            LinearVelocity::default(),
+            ComputedStats {
+                speed: 1000.0,
+                acceleration,
+                friction: 0.0,
+                dash_speed: 0.0,
+                dash_time: 0.0,
+                dash_friction: 0.0,
+                dash_stop_time: 0.0,
             },
+            MoveIntent { direction: Vec3::X },
         ));
+
         tick(&mut app, fixed_time);
 
         let world = app.world_mut();
-        let mut q = world.query::<&mut Transform>();
-        let transform = q.single(world).unwrap();
+        let mut q = world.query::<&LinearVelocity>();
+        let lv = q.single(world).unwrap();
 
-        assert_eq!(transform.translation.x, (fixed_time * velocity));
+        let expected = acceleration * fixed_time;
+        assert!(
+            (lv.0.x - expected).abs() < 0.01,
+            "expected lv.x = {expected}, got {}",
+            lv.0.x
+        );
     }
 
-    #[test]
-    fn test_velocity_keeps_growing_with_updates() {
-        let mut app = setup_acceleration_app();
-        app.add_systems(Update, super::apply_velocity);
-        let fixed_time = 0.16;
-        let velocity = 10.0;
-        let total_update = 20;
-        app.world_mut().spawn((
-            Player,
-            Movable,
-            Transform::default(),
-            Velocity {
-                value: Vec3::new(velocity, 0.0, 0.0),
-            },
-        ));
-        for _ in 0..total_update {
-            tick(&mut app, fixed_time);
-        }
-
-        let world = app.world_mut();
-        let mut q = world.query::<&mut Transform>();
-        let transform = q.single(world).unwrap();
-
-        assert!((transform.translation.x - (fixed_time * velocity) * total_update as f32) < 0.2);
-    }
     #[test]
     fn test_apply_friction_reduces_velocity() {
         let mut app = setup_acceleration_app();
         app.add_systems(Update, super::apply_friction);
-
         let initial_speed = 10.0;
         let friction = 2.0;
         let dt = 0.016;
-
         app.world_mut().spawn((
             Player,
             Movable,
@@ -522,23 +466,17 @@ mod tests {
                 dash_friction: 10.0,
                 dash_stop_time: 10.0,
             },
-            Velocity {
-                value: Vec3::new(initial_speed, 0.0, 0.0),
-            },
+            LinearVelocity(Vec2::new(initial_speed, 0.0)),
         ));
-
         tick(&mut app, dt);
-
         let world = app.world_mut();
-        let mut q = world.query::<&Velocity>();
-        let velocity = q.single(world).unwrap();
-
+        let mut q = world.query::<&LinearVelocity>();
+        let lv = q.single(world).unwrap();
         let expected = initial_speed - friction * dt;
-
         assert!(
-            (velocity.value.x - expected).abs() < 0.01,
-            "velocity {:?}, expected {}",
-            velocity.value,
+            (lv.0.x - expected).abs() < 0.01,
+            "lv {:?}, expected {}",
+            lv.0,
             expected
         );
     }
@@ -546,9 +484,7 @@ mod tests {
     fn test_apply_friction_clamps_to_zero() {
         let mut app = setup_acceleration_app();
         app.add_systems(Update, super::apply_friction);
-
         let dt = 0.016;
-
         app.world_mut().spawn((
             Player,
             Movable,
@@ -556,38 +492,26 @@ mod tests {
             ComputedStats {
                 speed: 10.0,
                 acceleration: 10.0,
-                friction: 1000.0, // extreme friction
+                friction: 1000.0,
                 dash_speed: 10.0,
                 dash_time: 10.0,
                 dash_friction: 10.0,
                 dash_stop_time: 10.0,
             },
-            Velocity {
-                value: Vec3::new(1.0, 0.0, 0.0),
-            },
+            LinearVelocity(Vec2::new(1.0, 0.0)),
         ));
-
         tick(&mut app, dt);
-
         let world = app.world_mut();
-        let mut q = world.query::<&Velocity>();
-        let velocity = q.single(world).unwrap();
-
-        assert!(
-            velocity.value.length() == 0.0,
-            "velocity should be zero but was {:?}",
-            velocity.value
-        );
+        let mut q = world.query::<&LinearVelocity>();
+        let lv = q.single(world).unwrap();
+        assert!(lv.0.length() == 0.0, "should be zero but was {:?}", lv.0);
     }
     #[test]
     fn test_apply_friction_preserves_direction() {
         let mut app = setup_acceleration_app();
         app.add_systems(Update, super::apply_friction);
-
         let dt = 0.016;
-
-        let initial = Vec3::new(3.0, 4.0, 0.0); // direction ≠ axis-aligned
-
+        let initial = Vec2::new(3.0, 4.0);
         app.world_mut().spawn((
             Player,
             Movable,
@@ -601,18 +525,14 @@ mod tests {
                 dash_friction: 10.0,
                 dash_stop_time: 10.0,
             },
-            Velocity { value: initial },
+            LinearVelocity(initial),
         ));
-
         tick(&mut app, dt);
-
         let world = app.world_mut();
-        let mut q = world.query::<&Velocity>();
-        let velocity = q.single(world).unwrap();
-
+        let mut q = world.query::<&LinearVelocity>();
+        let lv = q.single(world).unwrap();
         let original_dir = initial.normalize();
-        let new_dir = velocity.value.normalize_or_zero();
-
+        let new_dir = lv.0.normalize_or_zero();
         assert!(
             original_dir.distance(new_dir) < 0.01,
             "direction changed: {:?} -> {:?}",

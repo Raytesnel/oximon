@@ -365,11 +365,9 @@ pub fn tick_block_sliding(
 
 #[cfg(test)]
 mod tests {
-    use bevy::app::FixedMain;
     use bevy::prelude::*;
     use bevy::time::TimeUpdateStrategy;
 
-    use crate::overworld::components::*;
     use crate::overworld::interactables::*;
 
     fn make_app_with_time(step_seconds: f32) -> App {
@@ -388,9 +386,6 @@ mod tests {
             (pos.x / grid_size).round() as i32,
             (pos.y / grid_size).round() as i32,
         )
-    }
-    fn tick(app: &mut App, dt: f32) {
-        app.update();
     }
     #[test]
     fn to_grid_exact_cell_centre() {

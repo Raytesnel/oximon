@@ -23,7 +23,6 @@ impl Plugin for MovementPlugin {
                 update_facing,
                 apply_acceleration.after(update_facing),
                 apply_friction.after(apply_acceleration),
-                apply_velocity.after(apply_acceleration),
             )
                 .run_if(not_in_hitstop),
         );

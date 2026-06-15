@@ -3,11 +3,11 @@ use crate::combat::components::{
     AttackId, AttackStats, CombatEntity, CombatSceneEntity, CombatState, Cooldowns, Health, Hurtbox,
 };
 use crate::common::components::{
-    CombatSpawnContext, ComputedStats, Enemy, ModifierLifetime, Player, RuntimeModifier, StatType,
-    Stats,
+    CombatSpawnContext, ComputedStats, Enemy, GameLayer, ModifierLifetime, Player, RuntimeModifier,
+    StatType, Stats,
 };
-use crate::movement::components::{Facing, Movable, MoveIntent, MovementState, Velocity};
-use avian2d::dynamics::rigid_body::RigidBody;
+use crate::movement::components::{Facing, Movable, MoveIntent, MovementState};
+use avian2d::prelude::*;
 use bevy::color::Color;
 use bevy::math::{Vec2, Vec3};
 use bevy::prelude::*;
@@ -40,7 +40,6 @@ pub struct EnemyBundle {
     pub ai_intent: AIIntent,
     pub target: Target,
 
-    pub velocity: Velocity,
     pub movement_state: MovementState,
     pub facing: Facing,
 
@@ -49,6 +48,11 @@ pub struct EnemyBundle {
     pub combat: CombatState,
     pub move_intent: MoveIntent,
     pub hurtbox: Hurtbox,
+    pub rigidbody: RigidBody,
+    pub collider: Collider,
+    pub loackaxes: LockedAxes,
+    pub gravityscale: GravityScale,
+    pub colission_layer: CollisionLayers,
 }
 
 fn spawn_combat_player(commands: &mut Commands, pos: Vec3) -> Entity {
@@ -134,12 +138,20 @@ fn spawn_combat_player(commands: &mut Commands, pos: Vec3) -> Entity {
                 }],
             },
             Facing(Vec2::X),
-            Velocity::default(),
             MovementState::Idle,
             Health {
                 current: 100.0,
                 _max: 100.0,
             },
+        ))
+        .insert((
+            CollisionLayers::new(GameLayer::Combat, [GameLayer::Combat]),
+            RigidBody::Dynamic,
+            Collider::rectangle(18.0, 18.0),
+            LockedAxes::ROTATION_LOCKED,
+            LinearDamping(0.0),
+            GravityScale(0.0),
+            LinearVelocity::default(),
             AttackStats { _attack: 25.0 },
             CombatState::Idle,
             MoveIntent {
@@ -153,6 +165,7 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
     commands.spawn((
         CombatEntity,
         EnemyBundle {
+            colission_layer: CollisionLayers::new(GameLayer::Combat, [GameLayer::Combat]),
             transform: Transform::from_translation(pos),
             enemy: Enemy,
             movable: Movable,
@@ -233,7 +246,10 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
             hurtbox: Hurtbox {
                 size: Vec2::new(20.0, 20.0),
             },
-
+            rigidbody: RigidBody::Kinematic,
+            collider: Collider::rectangle(18.0, 18.0),
+            loackaxes: LockedAxes::ROTATION_LOCKED,
+            gravityscale: GravityScale(0.0),
             ai: AI {
                 state: AIState::Wander,
                 timer: 0.0,
@@ -247,7 +263,6 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
             },
             target: Target { entity: target },
 
-            velocity: Velocity::default(),
             movement_state: MovementState::Idle,
             facing: Facing(Vec2::X),
 
@@ -274,7 +289,10 @@ pub fn show_combat(mut commands: Commands, query: Query<Entity, With<CombatScene
         commands.entity(e).insert(Visibility::Visible);
     }
 }
-pub fn setup_combat_world(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_combat_world(mut commands: Commands, asset_server: Option<Res<AssetServer>>) {
+    let Some(asset_server) = asset_server else {
+        return; // skip in tests
+    };
     let map_handle: Handle<TiledMapAsset> = asset_server.load("map/2d_main.tmx");
     commands
         .spawn((
@@ -284,9 +302,10 @@ pub fn setup_combat_world(mut commands: Commands, asset_server: Res<AssetServer>
         ))
         .observe(
             |collider_created: On<TiledEvent<ColliderCreated>>, mut commands: Commands| {
-                commands
-                    .entity(collider_created.event().origin)
-                    .insert(RigidBody::Static);
+                commands.entity(collider_created.event().origin).insert((
+                    RigidBody::Static,
+                    CollisionLayers::new(GameLayer::Combat, [GameLayer::Combat]),
+                ));
             },
         );
 }

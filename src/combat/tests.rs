@@ -604,12 +604,12 @@ fn enemy_at_zero_health_is_marked_dead() {
 
     tick(&mut app, 0.016);
     tick(&mut app, 0.016);
+    tick(&mut app, 0.016);
+    tick(&mut app, 0.016);
 
-    let state = app.world().get::<CombatState>(enemy).unwrap();
-    assert_eq!(
-        *state,
-        CombatState::Dead,
-        "enemy should be in Dead state when health reaches 0"
+    assert!(
+        app.world().get_entity(enemy).is_err(),
+        "enemy should be despawned after reaching 0 health"
     );
 }
 
