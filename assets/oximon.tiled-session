@@ -8,14 +8,14 @@
     "fileStates": {
         "map/2d_main.tmx": {
             "expandedObjectLayers": [
-                7,
+                9,
                 5,
-                9
+                7
             ],
             "scale": 1,
-            "selectedLayer": 6,
+            "selectedLayer": 4,
             "viewCenter": {
-                "x": 688,
+                "x": 537.5,
                 "y": 1423
             }
         },

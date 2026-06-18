@@ -137,3 +137,12 @@ impl Stats {
         Self::compute(&self.dash_stop_time)
     }
 }
+
+#[derive(States, Clone, Eq, PartialEq, Hash, Debug, Default)]
+pub enum BattleState {
+    #[default]
+    Inactive,
+    Entering, // domain expanding + swap
+    Active,   // looping outline, combat running
+    Ending,   // someone died, domain reversing
+}

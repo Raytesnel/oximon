@@ -1,4 +1,5 @@
 use crate::GameState;
+use crate::overworld::components::DomainExpansionAsset;
 use crate::overworld::interactables::*;
 use crate::overworld::player_movement::*;
 use bevy::prelude::*;
@@ -6,11 +7,12 @@ use input_systems::{interaction_input_system, overworld_movement};
 use interactables::{on_sign_interaction, tick_sign_popups};
 use setup::*;
 
-mod components;
+pub mod components;
 mod input_systems;
 mod interactables;
 mod player_movement;
 mod setup;
+
 #[cfg(test)]
 mod test;
 
@@ -43,5 +45,6 @@ impl Plugin for OverworldPlugin {
             .add_observer(on_block_interaction)
             .add_observer(on_monster_interaction)
             .add_observer(on_lamp_interaction);
+        app.init_resource::<DomainExpansionAsset>();
     }
 }

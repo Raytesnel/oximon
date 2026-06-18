@@ -7,6 +7,7 @@ use crate::combat::attack_definition::{
 use crate::combat::attacks::{
     AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, simple_beam, slow_down, speedo,
 };
+use crate::common::components::BattleState;
 use crate::common::components::{Enemy, ModifierLifetime, RuntimeModifier, Stats};
 use crate::movement::types::AllowedMovable;
 use avian2d::collision::collider::CollidingEntities;
@@ -399,13 +400,13 @@ pub fn attack_follow_system(
 pub fn despawn_dead_system(
     mut commands: Commands,
     query: Query<(Entity, &CombatState)>,
-    mut next_state: ResMut<NextState<GameState>>,
+    mut next_state: ResMut<NextState<BattleState>>,
 ) {
     for (entity, state) in &query {
         if *state == CombatState::Dead {
             commands.entity(entity).despawn();
             info!("monster:{:?} is dead, ending battle...", entity);
-            next_state.set(GameState::Overworld);
+            next_state.set(BattleState::Ending);
         }
     }
 }
