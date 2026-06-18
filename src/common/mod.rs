@@ -1,4 +1,5 @@
 use crate::combat::components::Hitstop;
+use crate::common::components::BattleState;
 use crate::common::systems::*;
 use bevy::app::{App, Plugin, Update};
 
@@ -10,7 +11,12 @@ impl Plugin for CommonPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (compute_stats_system, update_stat_timers, tick_hitstop),
+            (
+                compute_stats_system,
+                update_stat_timers,
+                tick_hitstop,
+                tick_domain_anim,
+            ),
         )
         .insert_resource(Hitstop { remaining: 0.0 });
     }

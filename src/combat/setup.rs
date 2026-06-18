@@ -246,7 +246,7 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
             hurtbox: Hurtbox {
                 size: Vec2::new(20.0, 20.0),
             },
-            rigidbody: RigidBody::Kinematic,
+            rigidbody: RigidBody::Dynamic,
             collider: Collider::rectangle(18.0, 18.0),
             loackaxes: LockedAxes::ROTATION_LOCKED,
             gravityscale: GravityScale(0.0),

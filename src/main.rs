@@ -5,6 +5,7 @@ mod overworld;
 
 use crate::combat::CombatPlugin;
 use crate::common::CommonPlugin;
+use crate::common::components::BattleState;
 use crate::movement::MovementPlugin;
 use crate::overworld::OverworldPlugin;
 use avian2d::prelude::*;
@@ -36,6 +37,7 @@ fn main() {
                 }),
         )
         .init_state::<GameState>()
+        .init_state::<BattleState>()
         .add_plugins(TiledPlugin::default())
         .add_plugins(TiledPhysicsPlugin::<TiledPhysicsAvianBackend>::default())
         .add_plugins(PhysicsPlugins::default().with_length_unit(32.0))

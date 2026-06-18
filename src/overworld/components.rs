@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+
+use crate::GameState;
 #[derive(Component)]
 pub struct LampAnimationState {
     pub timer: Timer,
@@ -21,6 +23,11 @@ pub struct PushableBlock {
 pub struct SpriteSheetHandle {
     pub image: Handle<Image>,
     pub layout: Handle<TextureAtlasLayout>,
+}
+
+#[derive(Resource, Default)]
+pub struct DomainExpansionAsset {
+    pub handle: Option<SpriteSheetHandle>,
 }
 
 #[derive(Component)]
@@ -87,4 +94,13 @@ pub struct YSort;
 #[derive(Component)]
 pub struct SignPopup {
     pub timer: Timer,
+}
+
+#[derive(Component)]
+pub struct DomainExpansionAnim {
+    pub timer: Timer,
+    pub total_frames: usize,
+    pub current_frame: usize,
+    pub border_frame: usize,
+    pub swap_frame: usize, // the frame index where the sphere is fullest
 }
