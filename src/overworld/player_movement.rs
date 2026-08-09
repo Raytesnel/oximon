@@ -1,7 +1,9 @@
 use crate::MainCamera;
 use crate::common::components::GameLayer;
 use crate::movement::input::*;
-use crate::overworld::components::{Facing, OverworldEntity, OverworldPlayer, YSort};
+use crate::overworld::components::{
+    DomainExpansionAnim, Facing, OverworldEntity, OverworldPlayer, YSort,
+};
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
@@ -32,6 +34,22 @@ pub fn spawn_player_overworld(commands: &mut Commands) {
 pub fn y_sort(mut query: Query<&mut Transform, With<YSort>>) {
     for mut transform in &mut query {
         transform.translation.z = -transform.translation.y / 1000.0;
+    }
+}
+
+pub fn domain_consume_sort(
+    anim_q: Query<&DomainExpansionAnim>,
+    mut ysort_q: Query<&mut Transform, (With<YSort>, Without<DomainExpansionAnim>)>,
+) {
+    let Ok(anim) = anim_q.single() else { return };
+    let sphere_z = 10.0; // fixed depth for the sphere, above normal y_sort range
+
+    for mut tf in &mut ysort_q {
+        let dist = tf.translation.truncate().distance(anim.center);
+        if dist <= anim.current_radius {
+            tf.translation.z = sphere_z - 1.0; // force behind sphere = "consumed"
+        }
+        // else: leave normal y_sort z untouched (set earlier in the frame by y_sort)
     }
 }
 
