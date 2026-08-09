@@ -95,7 +95,7 @@ pub fn tick_domain_anim(
                 }),
                 ..default()
             },
-            Transform::from_xyz(pos.x, pos.y, 100.0),
+            Transform::from_xyz(pos.x, pos.y, 10.0),
             RigidBody::Static,
             Collider::polyline(points, None),
             CollisionLayers::new(GameLayer::Combat, [GameLayer::Combat]),
@@ -105,6 +105,9 @@ pub fn tick_domain_anim(
                 current_frame: 0,
                 border_frame: 24,
                 swap_frame: 19,
+                center: Vec2::new(pos.x, pos.y),
+                current_radius: 0.0,
+                max_radius: 960.0,
             },
         ));
         return;
@@ -123,6 +126,8 @@ pub fn tick_domain_anim(
     match battle_state.get() {
         BattleState::Entering => {
             anim.current_frame += 1;
+            anim.current_radius =
+                (anim.current_frame as f32 / anim.swap_frame as f32) * anim.max_radius;
             if anim.current_frame == anim.swap_frame {
                 next_game_state.set(GameState::Combat);
             }
@@ -133,6 +138,7 @@ pub fn tick_domain_anim(
         }
         BattleState::Active => {
             anim.current_frame += 1;
+            anim.current_radius = anim.max_radius;
             if anim.current_frame >= anim.total_frames {
                 anim.current_frame = anim.border_frame;
             }
@@ -147,6 +153,8 @@ pub fn tick_domain_anim(
                 next_game_state.set(GameState::Overworld);
             }
             anim.current_frame -= 1;
+            anim.current_radius =
+                (anim.current_frame as f32 / anim.swap_frame as f32) * anim.max_radius;
         }
         BattleState::Inactive => {}
     }

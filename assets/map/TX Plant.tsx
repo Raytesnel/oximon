@@ -23,4 +23,13 @@
    </object>
   </objectgroup>
  </tile>
+ <tile id="193">
+  <animation>
+   <frame tileid="193" duration="100"/>
+   <frame tileid="210" duration="100"/>
+   <frame tileid="226" duration="100"/>
+   <frame tileid="193" duration="100"/>
+   <frame tileid="208" duration="100"/>
+  </animation>
+ </tile>
 </tileset>

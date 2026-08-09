@@ -1,6 +1,5 @@
 use super::components::*;
 use super::events::*;
-use crate::GameState;
 use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget, StatusEffect,
 };

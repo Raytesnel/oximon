@@ -26,6 +26,7 @@ impl Plugin for OverworldPlugin {
                 (
                     camera_follow,
                     y_sort,
+                    domain_consume_sort.after(y_sort),
                     tick_sign_popups,
                     tick_lamp_animation,
                     tick_block_sliding,

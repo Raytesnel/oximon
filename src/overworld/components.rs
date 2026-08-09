@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-use crate::GameState;
 #[derive(Component)]
 pub struct LampAnimationState {
     pub timer: Timer,
@@ -103,4 +102,7 @@ pub struct DomainExpansionAnim {
     pub current_frame: usize,
     pub border_frame: usize,
     pub swap_frame: usize, // the frame index where the sphere is fullest
+    pub center: Vec2,
+    pub current_radius: f32,
+    pub max_radius: f32,
 }
