@@ -19,6 +19,7 @@ use bevy::state::app::StatesPlugin;
 #[allow(unused)]
 use bevy::time::TimeUpdateStrategy;
 use std::collections::HashMap;
+use crate::overworld::components::DomainExpansionAsset;
 
 fn test_app() -> App {
     let mut app = App::new();
@@ -28,6 +29,9 @@ fn test_app() -> App {
     app.add_plugins(CommonPlugin);
     app.add_plugins(MovementPlugin);
     app.insert_resource(Time::<Fixed>::from_seconds(0.016));
+    app.init_state::<BattleState>();
+    app.init_resource::<DomainExpansionAsset>();
+    app.add_plugins(bevy::log::LogPlugin::default());
     app.insert_resource(ButtonInput::<KeyCode>::default());
     app.insert_resource(Hitstop { remaining: 0.0 });
     app.insert_resource(AttackIdCounter::default());
