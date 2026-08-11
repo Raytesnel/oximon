@@ -45,7 +45,7 @@ pub fn tick_hitstop(mut hitstop: ResMut<Hitstop>, time: Res<Time>) {
         hitstop.remaining -= time.delta_secs();
     }
 }
-
+#[allow(clippy::too_many_arguments)]
 pub fn tick_domain_anim(
     mut commands: Commands,
     mut query: Query<(Entity, &mut DomainExpansionAnim, &mut Sprite)>,
