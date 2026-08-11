@@ -53,11 +53,14 @@ pub fn tick_domain_anim(
     mut next_battle_state: ResMut<NextState<BattleState>>,
     battle_state: Res<State<BattleState>>,
     mut domain_asset: ResMut<DomainExpansionAsset>,
-    asset_server: Res<AssetServer>,
-    mut layouts: ResMut<Assets<TextureAtlasLayout>>,
+    asset_server: Option<Res<AssetServer>>,
+    mut layouts: Option<ResMut<Assets<TextureAtlasLayout>>>,
     player_q: Query<&Transform, With<OverworldPlayer>>,
     time: Res<Time>,
 ) {
+    let (Some(asset_server), Some(layouts)) = (asset_server, layouts.as_mut()) else {
+        return;
+    };
     // Spawn the entity when entering
     if *battle_state.get() == BattleState::Entering && query.is_empty() {
         let handle = domain_asset.handle.get_or_insert_with(|| {
