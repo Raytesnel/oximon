@@ -95,7 +95,7 @@ pub struct SignPopup {
     pub timer: Timer,
 }
 
-#[derive(Component)]
+#[derive(Component,Clone)]
 pub struct DomainExpansionAnim {
     pub timer: Timer,
     pub total_frames: usize,
