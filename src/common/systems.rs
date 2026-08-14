@@ -166,3 +166,260 @@ pub fn tick_domain_anim(
         atlas.index = anim.current_frame;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy::app::App;
+    use bevy::state::app::StatesPlugin;
+    use bevy::time::TimeUpdateStrategy;
+    use std::time::Duration;
+
+    fn anim_test_app() -> App {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins);
+        app.add_plugins(StatesPlugin);
+        app.add_plugins(AssetPlugin::default());
+        app.init_asset::<TextureAtlasLayout>();
+        app.init_state::<GameState>();
+        app.init_state::<BattleState>();
+        app.init_resource::<DomainExpansionAsset>();
+        app.add_systems(Update, tick_domain_anim);
+        app
+    }
+
+    /// Tick with a given dt, driving the anim system once.
+    fn tick(app: &mut App, dt: f32) {
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_secs_f32(dt)));
+        app.update();
+    }
+
+    /// Flush any queued NextState without advancing the animation timer.
+    fn flush_state(app: &mut App) {
+        tick(app, 0.0);
+    }
+
+    fn set_battle_state(app: &mut App, state: BattleState) {
+        app.world_mut()
+            .resource_mut::<NextState<BattleState>>()
+            .set(state);
+        flush_state(app);
+    }
+
+    fn spawn_anim(app: &mut App, current_frame: usize, current_radius: f32) -> Entity {
+        app.world_mut()
+            .spawn((
+                DomainExpansionAnim {
+                    timer: Timer::from_seconds(1.0 / 12.0, TimerMode::Repeating),
+                    total_frames: 28,
+                    current_frame,
+                    border_frame: 24,
+                    swap_frame: 19,
+                    center: Vec2::ZERO,
+                    current_radius,
+                    max_radius: 960.0,
+                },
+                Sprite {
+                    texture_atlas: Some(TextureAtlas {
+                        layout: Handle::default(),
+                        index: current_frame,
+                    }),
+                    ..default()
+                },
+            ))
+            .id()
+    }
+
+    // one full frame period plus a hair, so the repeating timer fires exactly once
+    const ONE_FRAME: f32 = 1.0 / 12.0 + 0.001;
+
+    fn anim_of<'a>(app: &'a mut App) -> DomainExpansionAnim {
+        app.world_mut()
+            .query::<&DomainExpansionAnim>()
+            .single(app.world())
+            .expect("anim entity should exist")
+            .clone() // requires DomainExpansionAnim: Clone; swap for field reads if not
+    }
+
+    // ---------- basic frame ticking ----------
+
+    #[test]
+    fn frame_advances_after_timer_finishes() {
+        let mut app = anim_test_app();
+        set_battle_state(&mut app, BattleState::Active);
+        spawn_anim(&mut app, 24, 960.0);
+
+        tick(&mut app, ONE_FRAME);
+
+        assert_eq!(anim_of(&mut app).current_frame, 25);
+    }
+
+    #[test]
+    fn frame_does_not_advance_before_timer_finishes() {
+        let mut app = anim_test_app();
+        set_battle_state(&mut app, BattleState::Active);
+        spawn_anim(&mut app, 24, 960.0);
+
+        tick(&mut app, 0.01); // well under 1/12s
+
+        assert_eq!(
+            anim_of(&mut app).current_frame,
+            24,
+            "frame shouldn't advance before the timer fires"
+        );
+    }
+
+    // ---------- Entering phase ----------
+
+    #[test]
+    fn entering_reaching_swap_frame_triggers_combat_state() {
+        let mut app = anim_test_app();
+        spawn_anim(&mut app, 18, 0.0);
+        set_battle_state(&mut app, BattleState::Entering);
+
+        tick(&mut app, ONE_FRAME);
+        flush_state(&mut app);
+
+        assert_eq!(*app.world().resource::<State<GameState>>().get(), GameState::Combat);
+    }
+
+    #[test]
+    fn entering_reaching_last_frame_resets_and_transitions_to_active() {
+        let mut app = anim_test_app();
+        spawn_anim(&mut app, 26, 0.0);
+        set_battle_state(&mut app, BattleState::Entering);
+
+        tick(&mut app, ONE_FRAME);
+        flush_state(&mut app);
+
+        let anim = anim_of(&mut app);
+        assert_eq!(anim.current_frame, 24, "should reset to border_frame");
+        assert_eq!(*app.world().resource::<State<BattleState>>().get(), BattleState::Active);
+    }
+
+    #[test]
+    fn entering_radius_scales_with_frame() {
+        let mut app = anim_test_app();
+        spawn_anim(&mut app, 8, 0.0);
+        set_battle_state(&mut app, BattleState::Entering);
+
+        tick(&mut app, ONE_FRAME);
+
+        let anim = anim_of(&mut app);
+        let expected = (9.0 / anim.swap_frame as f32) * anim.max_radius;
+        assert!((anim.current_radius - expected).abs() < 0.01);
+    }
+
+    // ---------- Active phase ----------
+
+    #[test]
+    fn active_radius_stays_at_max() {
+        let mut app = anim_test_app();
+        set_battle_state(&mut app, BattleState::Active);
+        spawn_anim(&mut app, 24, 500.0); // radius deliberately wrong beforehand
+
+        tick(&mut app, ONE_FRAME);
+
+        assert_eq!(anim_of(&mut app).current_radius, 960.0);
+    }
+
+    #[test]
+    fn active_frame_wraps_at_total_frames() {
+        let mut app = anim_test_app();
+        set_battle_state(&mut app, BattleState::Active);
+        spawn_anim(&mut app, 27, 960.0); // one tick from total_frames (28)
+
+        tick(&mut app, ONE_FRAME);
+
+        let anim = anim_of(&mut app);
+        assert_eq!(anim.current_frame, 24, "should wrap back to border_frame");
+        assert_eq!(*app.world().resource::<State<BattleState>>().get(), BattleState::Active);
+    }
+
+    // ---------- Ending phase ----------
+
+    #[test]
+    fn ending_reaching_swap_frame_triggers_overworld_state() {
+        let mut app = anim_test_app();
+        set_battle_state(&mut app, BattleState::Ending);
+        spawn_anim(&mut app, 20, 0.0); // one tick from swap_frame (19), counting down
+
+        tick(&mut app, ONE_FRAME);
+        flush_state(&mut app);
+
+        assert_eq!(*app.world().resource::<State<GameState>>().get(), GameState::Overworld);
+    }
+
+    #[test]
+    fn ending_at_zero_despawns_and_sets_inactive() {
+        let mut app = anim_test_app();
+        set_battle_state(&mut app, BattleState::Ending);
+        let entity = spawn_anim(&mut app, 0, 0.0);
+
+        tick(&mut app, ONE_FRAME);
+        flush_state(&mut app);
+
+        assert!(app.world().get_entity(entity).is_err(), "anim entity should despawn");
+        assert_eq!(*app.world().resource::<State<BattleState>>().get(), BattleState::Inactive);
+    }
+
+    #[test]
+    fn ending_radius_scales_down_with_frame() {
+        let mut app = anim_test_app();
+        set_battle_state(&mut app, BattleState::Ending);
+        spawn_anim(&mut app, 10, 0.0);
+
+        tick(&mut app, ONE_FRAME); // frame becomes 9
+
+        let anim = anim_of(&mut app);
+        let expected = (9.0 / anim.swap_frame as f32) * anim.max_radius;
+        assert!((anim.current_radius - expected).abs() < 0.01);
+    }
+
+    // ---------- Inactive phase ----------
+
+    #[test]
+    fn inactive_state_is_a_no_op() {
+        let mut app = anim_test_app();
+        set_battle_state(&mut app, BattleState::Inactive);
+        spawn_anim(&mut app, 10, 300.0);
+
+        tick(&mut app, ONE_FRAME);
+
+        let anim = anim_of(&mut app);
+        assert_eq!(anim.current_frame, 10, "Inactive should not tick the frame");
+        assert_eq!(anim.current_radius, 300.0, "Inactive should not touch radius");
+    }
+
+    // ---------- sprite index sync ----------
+
+    #[test]
+    fn sprite_atlas_index_follows_current_frame() {
+        let mut app = anim_test_app();
+        set_battle_state(&mut app, BattleState::Active);
+        spawn_anim(&mut app, 24, 960.0);
+
+        tick(&mut app, ONE_FRAME);
+
+        let mut query = app.world_mut().query::<(&DomainExpansionAnim, &Sprite)>();
+        let (anim, sprite) = query.single(app.world()).unwrap();
+        assert_eq!(sprite.texture_atlas.as_ref().unwrap().index, anim.current_frame);
+    }
+
+    // ---------- regression: missing assets shouldn't panic ----------
+
+    #[test]
+    fn system_no_ops_without_asset_server() {
+        // Deliberately skip AssetPlugin/init_asset — mirrors the combat test harness.
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins);
+        app.add_plugins(StatesPlugin);
+        app.init_state::<GameState>();
+        app.init_state::<BattleState>();
+        app.init_resource::<DomainExpansionAsset>();
+        app.add_systems(Update, tick_domain_anim);
+
+        // should not panic
+        app.update();
+    }
+}
