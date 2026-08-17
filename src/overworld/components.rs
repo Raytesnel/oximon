@@ -95,7 +95,7 @@ pub struct SignPopup {
     pub timer: Timer,
 }
 
-#[derive(Component,Clone)]
+#[derive(Component, Clone)]
 pub struct DomainExpansionAnim {
     pub timer: Timer,
     pub total_frames: usize,
@@ -106,3 +106,12 @@ pub struct DomainExpansionAnim {
     pub current_radius: f32,
     pub max_radius: f32,
 }
+
+#[derive(Component, Debug, Clone, Copy)]
+pub struct Elevation(pub i32);
+
+#[derive(Component)]
+pub struct DebugLocation(pub String);
+
+#[derive(Resource, Default)]
+pub struct LayerElevations(pub std::collections::HashMap<Entity, i32>);

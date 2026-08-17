@@ -19,8 +19,8 @@ enum GameState {
     Overworld,
     Combat,
 }
-const SCALING:f32 = 2.0;
-const PIXELS_PER_VIEW:f32 = 650.0;
+const SCALING: f32 = 2.0;
+const PIXELS_PER_VIEW: f32 = 650.0;
 
 fn main() {
     App::new()
@@ -34,7 +34,11 @@ fn main() {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "oximon".into(),
-                        resolution: WindowResolution::new((PIXELS_PER_VIEW *SCALING) as u32, (PIXELS_PER_VIEW *SCALING) as u32).with_scale_factor_override(SCALING),
+                        resolution: WindowResolution::new(
+                            (PIXELS_PER_VIEW * SCALING) as u32,
+                            (PIXELS_PER_VIEW * SCALING) as u32,
+                        )
+                        .with_scale_factor_override(SCALING),
                         resizable: false,
                         ..default()
                     }),

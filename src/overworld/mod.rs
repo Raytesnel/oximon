@@ -1,5 +1,5 @@
 use crate::GameState;
-use crate::overworld::components::DomainExpansionAsset;
+use crate::overworld::components::{DomainExpansionAsset, LayerElevations};
 use crate::overworld::interactables::*;
 use crate::overworld::player_movement::*;
 use bevy::prelude::*;
@@ -26,6 +26,7 @@ impl Plugin for OverworldPlugin {
                 (
                     camera_follow,
                     y_sort,
+                    debug_player_z,
                     domain_consume_sort.after(y_sort),
                     tick_sign_popups,
                     tick_lamp_animation,
@@ -47,5 +48,6 @@ impl Plugin for OverworldPlugin {
             .add_observer(on_monster_interaction)
             .add_observer(on_lamp_interaction);
         app.init_resource::<DomainExpansionAsset>();
+        app.init_resource::<LayerElevations>();
     }
 }

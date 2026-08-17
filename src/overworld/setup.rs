@@ -7,6 +7,21 @@ use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::tiled::PropertyValue;
 use bevy_ecs_tiled::prelude::*;
 
+fn get_elevation(object: &tiled::Object<'_>) -> Option<i32> {
+    fn get_int(props: &tiled::Properties, key: &str) -> Option<i32> {
+        match props.get(key) {
+            Some(PropertyValue::IntValue(n)) => Some(*n),
+            _ => None,
+        }
+    }
+    get_int(&object.properties, "elevation").or_else(|| {
+        object
+            .get_tile()
+            .and_then(|ot| ot.get_tile())
+            .and_then(|t| get_int(&t.properties, "elevation"))
+    })
+}
+
 pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
     let map_handle: Handle<TiledMapAsset> = asset_server.load("map/main.tmx");
     commands
@@ -24,12 +39,49 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
         )
         .observe(
+            |layer_created: On<TiledEvent<LayerCreated>>,
+             assets: Res<Assets<TiledMapAsset>>,
+             mut layer_elevations: ResMut<LayerElevations>| {
+                let event = layer_created.event();
+                let Some(layer) = event.get_layer(&assets) else {
+                    return;
+                };
+                if let Some(PropertyValue::IntValue(n)) = layer.properties.get("elevation") {
+                    layer_elevations.0.insert(event.origin, *n);
+                }
+            },
+        )
+        .observe(
             move |object_created: On<TiledEvent<ObjectCreated>>,
                   assets: Res<Assets<TiledMapAsset>>,
+                  layer_elevations: Res<LayerElevations>,
+                  parent_q: Query<&ChildOf>,
                   mut commands: Commands| {
                 let event = object_created.event();
                 let object = event.get_object(&assets).expect("object must exist");
                 let entity = event.origin;
+
+                let from_layer = parent_q
+                    .get(entity)
+                    .ok()
+                    .and_then(|child_of| layer_elevations.0.get(&child_of.parent()).copied());
+
+                let level = get_elevation(&object).or(from_layer).unwrap_or(0);
+                commands.entity(entity).insert(Elevation(level));
+                let debug_location =
+                    object
+                        .properties
+                        .get("debug_location")
+                        .and_then(|v| match v {
+                            PropertyValue::StringValue(s) => Some(s.clone()),
+                            _ => None,
+                        });
+
+                if let Some(debug_location) = debug_location {
+                    commands
+                        .entity(entity)
+                        .insert(DebugLocation(debug_location));
+                }
                 let obj_type = if !object.user_type.is_empty() {
                     object.user_type.clone()
                 } else {
@@ -265,7 +317,7 @@ pub fn debug_ysort(
     keyboard: Res<ButtonInput<KeyCode>>,
     query: Query<(Entity, &Transform, Option<&Name>), With<YSort>>,
 ) {
-    if !keyboard.just_pressed(KeyCode::F1) {
+    if !keyboard.just_pressed(KeyCode::F2) {
         return;
     }
     for (entity, tf, name) in &query {
