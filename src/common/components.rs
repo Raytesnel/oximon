@@ -6,11 +6,15 @@ use bevy::prelude::*;
 pub struct CombatSpawnContext {
     pub player_world_pos: Vec3,
 }
-#[derive(PhysicsLayer, Default)]
+#[derive(PhysicsLayer, Default, Clone, Copy)]
 pub enum GameLayer {
     #[default]
     Overworld,
     Combat,
+    Elevation0,
+    Elevation1,
+    Elevation2,
+    Elevation3,
 }
 #[derive(Component, Debug)]
 pub struct Player;

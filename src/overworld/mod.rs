@@ -36,6 +36,8 @@ impl Plugin for OverworldPlugin {
                     debug_ysort,
                     stair_elevation_system,
                     apply_fixed_elevation,
+                    sync_player_elevation_filter,
+                    debug_collision_layers
                 )
                     .run_if(in_state(GameState::Overworld)),
             )

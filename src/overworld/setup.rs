@@ -11,6 +11,18 @@ use bevy_ecs_tiled::prelude::*;
 const ELEVATION_STEP: f32 = 10.0;
 const FLOOR_BACK_OFFSET: f32 = 1.0;
 
+pub fn sync_player_elevation_filter(
+    mut player_q: Query<(&Elevation, &mut CollisionLayers), (Changed<Elevation>, With<OverworldPlayer>)>,
+) {
+    for (elevation, mut layers) in &mut player_q {
+        let layer = elevation_layer(elevation.0);
+        *layers = CollisionLayers::new(
+            [GameLayer::Overworld, layer],
+            [GameLayer::Overworld, layer],
+        );
+    }
+}
+
 pub fn apply_fixed_elevation(
     mut query: Query<(&FixedElevation, &mut Transform, Option<&ChildOf>)>,
     parent_transform_q: Query<&Transform, Without<FixedElevation>>,
@@ -61,7 +73,14 @@ fn get_elevation(object: &tiled::Object<'_>) -> Option<i32> {
             .and_then(|t| get_int(&t.properties, "elevation"))
     })
 }
-
+pub fn elevation_layer(level: i32) -> GameLayer {
+    match level {
+        -1 => GameLayer::Elevation0,
+        0 => GameLayer::Elevation1,
+        1 => GameLayer::Elevation2,
+        _ => GameLayer::Elevation3,
+    }
+}
 pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
     let map_handle: Handle<TiledMapAsset> = asset_server.load("map/main.tmx");
     commands
@@ -73,6 +92,8 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
         .observe(
             |collider_created: On<TiledEvent<ColliderCreated>>,
              assets: Res<Assets<TiledMapAsset>>,
+             layer_elevations: Res<LayerElevations>,
+             parent_q: Query<&ChildOf>,
              mut commands: Commands| {
                 let event = collider_created.event();
                 let is_stair_zone = event
@@ -81,15 +102,27 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                     .unwrap_or(false);
 
                 if is_stair_zone {
-                    commands
-                        .entity(event.origin)
-                        .insert((Sensor, CollisionEventsEnabled));
-                } else {
-                    commands.entity(event.origin).insert((
-                        RigidBody::Static,
-                        CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
-                    ));
+                    commands.entity(event.origin).insert((Sensor, CollisionEventsEnabled));
+                    return;
                 }
+
+                // Walk up the hierarchy until we find an ancestor layer with a known elevation.
+                let mut level = 0;
+                let mut current = event.origin;
+                while let Ok(child_of) = parent_q.get(current) {
+                    let parent = child_of.parent();
+                    if let Some(l) = layer_elevations.0.get(&parent) {
+                        level = *l;
+                        break;
+                    }
+                    current = parent;
+                }
+
+                let layer = elevation_layer(level);
+                commands.entity(event.origin).insert((
+                    RigidBody::Static,
+                    CollisionLayers::new(layer, [layer]),
+                ));
             },
         )
         .observe(
@@ -414,5 +447,27 @@ pub fn debug_ysort(
             "YSort entity {:?} name={:?} z={:.3} y={:.3}",
             entity, name, tf.translation.z, tf.translation.y
         );
+    }
+}
+
+pub fn debug_collision_layers(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    player_q: Query<(&Elevation, &Transform, &CollisionLayers), With<OverworldPlayer>>,
+    collider_q: Query<Entity, With<Collider>>,
+    elevation_collider_q: Query<&Elevation, With<Collider>>,
+) {
+    if !keyboard.just_pressed(KeyCode::F3) {
+        return;
+    }
+    if let Ok((elevation, transform, layers)) = player_q.single() {
+        info!(
+            "PLAYER: elevation={} z={:.3} membership={:?} filter={:?}",
+            elevation.0, transform.translation.z, layers.memberships, layers.filters,
+        );
+    }
+    info!("Total colliders: {}", collider_q.iter().count());
+    for level in [-1, 0, 1, 2] {
+        let count = elevation_collider_q.iter().filter(|e| e.0 == level).count();
+        info!("  elevation {}: {} colliders", level, count);
     }
 }

@@ -6,31 +6,33 @@ use crate::overworld::components::{
 };
 use avian2d::prelude::*;
 use bevy::prelude::*;
+use crate::overworld::setup::elevation_layer;
 
 pub fn spawn_player_overworld(commands: &mut Commands) {
-    commands
-        .spawn((
-            OverworldPlayer,
-            OverworldEntity,
-            Sprite {
-                color: Color::srgb(1.0, 0., 1.0),
-                custom_size: Some(Vec2::new(20.0, 20.0)),
-                ..default()
-            },
-            YSort,
-            Facing::Down,
-            Transform::from_xyz(0., 0., 10.),
-            RigidBody::Dynamic,
-            Collider::rectangle(18.0, 18.0),
-            LockedAxes::ROTATION_LOCKED,
-            LinearDamping(8.0),
-            Friction::new(0.0),
-            Restitution::new(0.0),
-            GravityScale(0.0),
-            CollisionEventsEnabled,
-            CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
-        ))
-        .insert(Elevation(0));
+    commands.spawn((
+        OverworldPlayer,
+        OverworldEntity,
+        Sprite {
+            color: Color::srgb(1.0, 0., 1.0),
+            custom_size: Some(Vec2::new(20.0, 20.0)),
+            ..default()
+        },
+        YSort,
+        Facing::Down,
+        Transform::from_xyz(0., 0., 10.),
+        RigidBody::Dynamic,
+        Collider::rectangle(18.0, 18.0),
+        LockedAxes::ROTATION_LOCKED,
+        LinearDamping(8.0),
+        Friction::new(0.0),
+        Restitution::new(0.0),
+        GravityScale(0.0),
+        CollisionEventsEnabled,
+        CollisionLayers::new(
+            [GameLayer::Overworld, elevation_layer(0)],
+            [GameLayer::Overworld, elevation_layer(0)],
+        ),
+    )).insert(Elevation(0));
 }
 
 const ELEVATION_STEP: f32 = 10.0;

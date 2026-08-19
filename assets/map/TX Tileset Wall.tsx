@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tileset version="1.10" tiledversion="1.12.1" name="TX Tileset Wall" tilewidth="32" tileheight="32" tilecount="256" columns="16">
  <image source="../tiles/dungeon/TX Tileset Wall.png" width="512" height="512"/>
+ <tile id="18">
+  <objectgroup draworder="index" id="2">
+   <object id="1" x="0" y="-0.293191" width="31.8112" height="8.35593"/>
+  </objectgroup>
+ </tile>
  <tile id="20">
   <objectgroup draworder="index" id="2">
    <object id="1" x="24.4482" y="0.23284" width="8.14941" height="31.5886"/>
@@ -69,6 +74,11 @@
  <tile id="42">
   <objectgroup draworder="index" id="2">
    <object id="1" x="24.3706" y="0" width="7.21805" height="31.8991"/>
+  </objectgroup>
+ </tile>
+ <tile id="50">
+  <objectgroup draworder="index" id="2">
+   <object id="1" x="0" y="0" width="31.8112" height="18.3244"/>
   </objectgroup>
  </tile>
  <tile id="56">
