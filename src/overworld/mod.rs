@@ -34,6 +34,8 @@ impl Plugin for OverworldPlugin {
                     update_facing,
                     interaction_input_system,
                     debug_ysort,
+                    stair_elevation_system,
+                    apply_fixed_elevation,
                 )
                     .run_if(in_state(GameState::Overworld)),
             )

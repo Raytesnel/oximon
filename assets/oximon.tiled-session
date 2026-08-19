@@ -1,11 +1,15 @@
 {
-    "activeFile": "map/TX Plant.tsx",
+    "activeFile": "map/main.tmx",
     "expandedProjectPaths": [
-        "tiles",
         ".",
+        "tiles/dungeon",
+        "tiles",
         "map"
     ],
     "fileStates": {
+        "": {
+            "scaleInEditor": 1
+        },
         "map/2d_main.tmx": {
             "expandedObjectLayers": [
                 7,
@@ -67,17 +71,17 @@
         "map/main.tmx": {
             "expandedGroupLayers": [
                 34,
-                32,
-                33
+                33,
+                32
             ],
             "expandedObjectLayers": [
                 12
             ],
-            "scale": 1.6604,
-            "selectedLayer": 12,
+            "scale": 1.1691,
+            "selectedLayer": 7,
             "viewCenter": {
-                "x": 777.5234883160683,
-                "y": 1543.0016863406408
+                "x": 959.7125994354632,
+                "y": 959.7125994354632
             }
         },
         "map/main.tmx#TX Struct": {
@@ -89,7 +93,7 @@
         },
         "map/transition_bol_prototype.tsx": {
             "scaleInDock": 0.3777,
-            "scaleInEditor": 0.0829
+            "scaleInEditor": 1
         },
         "tiles/TX Tileset Grass.tsx": {
             "scaleInDock": 1,
@@ -97,7 +101,7 @@
         },
         "tiles/dungeon/top_down_tree.tsx": {
             "scaleInDock": 1,
-            "scaleInEditor": 7.9855
+            "scaleInEditor": 1
         }
     },
     "frame.defaultDuration": 500,
@@ -125,9 +129,6 @@
     "project": "oximon.tiled-project",
     "property.type": "int",
     "recentFiles": [
-        "map/main.tmx",
-        "map/2d_main.tmx",
-        "map/TilesetFloorDetail.tsx",
         "map/transition_bol_prototype.tsx",
         "map/top_down_Sprite-lamp.tsx",
         "tiles/dungeon/top_down_tree.tsx",
@@ -136,7 +137,10 @@
         "map/TX Struct.tsx",
         "map/TXPlant-ezgif.com-crop.tsx",
         "map/TX Tileset Wall.tsx",
-        "map/TX Props.tsx"
+        "map/TX Props.tsx",
+        "map/TX Plant.tsx",
+        "map/TilesetFloorDetail.tsx",
+        "map/2d_main.tmx"
     ],
     "tileset.lastUsedFilter": "Tiled tileset files (*.tsx *.xml)",
     "tileset.lastUsedFormat": "tsx",

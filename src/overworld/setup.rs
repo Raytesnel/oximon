@@ -3,9 +3,49 @@ use crate::overworld::components::*;
 use crate::overworld::player_movement;
 use avian2d::prelude::*;
 use bevy::asset::{AssetServer, Assets, Handle};
+use bevy::ecs::message::MessageReader;
 use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::tiled::PropertyValue;
 use bevy_ecs_tiled::prelude::*;
+
+const ELEVATION_STEP: f32 = 10.0;
+const FLOOR_BACK_OFFSET: f32 = 1.0;
+
+pub fn apply_fixed_elevation(
+    mut query: Query<(&FixedElevation, &mut Transform, Option<&ChildOf>)>,
+    parent_transform_q: Query<&Transform, Without<FixedElevation>>,
+) {
+    for (fixed, mut transform, child_of) in &mut query {
+        let parent_z = child_of
+            .and_then(|c| parent_transform_q.get(c.parent()).ok())
+            .map(|t| t.translation.z)
+            .unwrap_or(0.0);
+        transform.translation.z = -parent_z + fixed.0;
+    }
+}
+
+pub fn stair_elevation_system(
+    mut collision_started: MessageReader<CollisionStart>,
+    stair_q: Query<&StairZone>,
+    mut player_q: Query<(Entity, &mut Elevation), With<OverworldPlayer>>,
+) {
+    let Ok((player_entity, mut elevation)) = player_q.single_mut() else {
+        return;
+    };
+
+    for event in collision_started.read() {
+        let zone_entity = if event.collider1 == player_entity {
+            event.collider2
+        } else if event.collider2 == player_entity {
+            event.collider1
+        } else {
+            continue;
+        };
+        if let Ok(zone) = stair_q.get(zone_entity) {
+            elevation.0 = zone.target;
+        }
+    }
+}
 
 fn get_elevation(object: &tiled::Object<'_>) -> Option<i32> {
     fn get_int(props: &tiled::Properties, key: &str) -> Option<i32> {
@@ -31,11 +71,25 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
             TiledPhysicsSettings::<TiledPhysicsAvianBackend>::default(),
         ))
         .observe(
-            |collider_created: On<TiledEvent<ColliderCreated>>, mut commands: Commands| {
-                commands.entity(collider_created.event().origin).insert((
-                    RigidBody::Static,
-                    CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
-                ));
+            |collider_created: On<TiledEvent<ColliderCreated>>,
+             assets: Res<Assets<TiledMapAsset>>,
+             mut commands: Commands| {
+                let event = collider_created.event();
+                let is_stair_zone = event
+                    .get_object(&assets)
+                    .map(|object| object.properties.contains_key("target_elevation"))
+                    .unwrap_or(false);
+
+                if is_stair_zone {
+                    commands
+                        .entity(event.origin)
+                        .insert((Sensor, CollisionEventsEnabled));
+                } else {
+                    commands.entity(event.origin).insert((
+                        RigidBody::Static,
+                        CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
+                    ));
+                }
             },
         )
         .observe(
@@ -82,6 +136,30 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                         .entity(entity)
                         .insert(DebugLocation(debug_location));
                 }
+                let target_elevation =
+                    object
+                        .properties
+                        .get("target_elevation")
+                        .and_then(|v| match v {
+                            PropertyValue::IntValue(n) => Some(*n),
+                            _ => None,
+                        });
+
+                if let Some(target) = target_elevation {
+                    let (width, height) = match object.shape {
+                        tiled::ObjectShape::Rect { width, height } => (width, height),
+                        _ => (32.0, 32.0), // fallback for non-rect shapes
+                    };
+                    commands.entity(entity).insert((
+                        StairZone { target },
+                        Sensor,
+                        Collider::rectangle(width, height),
+                        CollidingEntities::default(),
+                        CollisionEventsEnabled,
+                    ));
+                    return; // stair zones are invisible triggers, skip the obj_type match entirely
+                }
+
                 let obj_type = if !object.user_type.is_empty() {
                     object.user_type.clone()
                 } else {
@@ -245,6 +323,17 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                                 GlobalTransform::default(),
                             ));
                         });
+                    }
+                    "overhang" => {
+                        commands.entity(entity).insert(FixedElevation(
+                            level as f32 * ELEVATION_STEP - FLOOR_BACK_OFFSET,
+                        ));
+                    }
+
+                    "floor" => {
+                        commands.entity(entity).insert(FixedElevation(
+                            level as f32 * ELEVATION_STEP + FLOOR_BACK_OFFSET,
+                        ));
                     }
                     _ => {
                         commands.entity(entity).insert(YSort);

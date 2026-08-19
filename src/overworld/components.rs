@@ -115,3 +115,10 @@ pub struct DebugLocation(pub String);
 
 #[derive(Resource, Default)]
 pub struct LayerElevations(pub std::collections::HashMap<Entity, i32>);
+
+#[derive(Component)]
+pub struct StairZone {
+    pub target: i32,
+}
+#[derive(Component)]
+pub struct FixedElevation(pub f32);
