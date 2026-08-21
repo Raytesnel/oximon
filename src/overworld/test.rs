@@ -20,13 +20,18 @@ fn walking_behind_object_gets_lower_z_value() {
     // Player is high on screen (y=200) — "behind" the tree below them.
     let player = app
         .world_mut()
-        .spawn((OverworldPlayer, YSort, Transform::from_xyz(0.0, 200.0, 0.0)))
+        .spawn((
+            OverworldPlayer,
+            YSort,
+            Elevation(0),
+            Transform::from_xyz(0.0, 200.0, 0.0),
+        ))
         .id();
 
     // Tree is lower on screen (y=50) — should render in front.
     let tree = app
         .world_mut()
-        .spawn((YSort, Transform::from_xyz(0.0, 50.0, 0.0)))
+        .spawn((YSort, Elevation(0), Transform::from_xyz(0.0, 50.0, 0.0)))
         .id();
 
     app.update();
@@ -48,12 +53,12 @@ fn moving_player_down_increases_z_relative_to_static_object() {
 
     let player = app
         .world_mut()
-        .spawn((YSort, Transform::from_xyz(0.0, 100.0, 0.0)))
+        .spawn((YSort, Elevation(0), Transform::from_xyz(0.0, 100.0, 0.0)))
         .id();
 
     let npc = app
         .world_mut()
-        .spawn((YSort, Transform::from_xyz(0.0, 120.0, 0.0)))
+        .spawn((YSort, Elevation(0), Transform::from_xyz(0.0, 120.0, 0.0)))
         .id();
 
     app.update();

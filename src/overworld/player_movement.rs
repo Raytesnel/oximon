@@ -4,35 +4,37 @@ use crate::movement::input::*;
 use crate::overworld::components::{
     DebugLocation, DomainExpansionAnim, Elevation, Facing, OverworldEntity, OverworldPlayer, YSort,
 };
+use crate::overworld::setup::elevation_layer;
 use avian2d::prelude::*;
 use bevy::prelude::*;
-use crate::overworld::setup::elevation_layer;
 
 pub fn spawn_player_overworld(commands: &mut Commands) {
-    commands.spawn((
-        OverworldPlayer,
-        OverworldEntity,
-        Sprite {
-            color: Color::srgb(1.0, 0., 1.0),
-            custom_size: Some(Vec2::new(20.0, 20.0)),
-            ..default()
-        },
-        YSort,
-        Facing::Down,
-        Transform::from_xyz(0., 0., 10.),
-        RigidBody::Dynamic,
-        Collider::rectangle(18.0, 18.0),
-        LockedAxes::ROTATION_LOCKED,
-        LinearDamping(8.0),
-        Friction::new(0.0),
-        Restitution::new(0.0),
-        GravityScale(0.0),
-        CollisionEventsEnabled,
-        CollisionLayers::new(
-            [GameLayer::Overworld, elevation_layer(0)],
-            [GameLayer::Overworld, elevation_layer(0)],
-        ),
-    )).insert(Elevation(0));
+    commands
+        .spawn((
+            OverworldPlayer,
+            OverworldEntity,
+            Sprite {
+                color: Color::srgb(1.0, 0., 1.0),
+                custom_size: Some(Vec2::new(20.0, 20.0)),
+                ..default()
+            },
+            YSort,
+            Facing::Down,
+            Transform::from_xyz(0., 0., 10.),
+            RigidBody::Dynamic,
+            Collider::rectangle(18.0, 18.0),
+            LockedAxes::ROTATION_LOCKED,
+            LinearDamping(8.0),
+            Friction::new(0.0),
+            Restitution::new(0.0),
+            GravityScale(0.0),
+            CollisionEventsEnabled,
+            CollisionLayers::new(
+                [GameLayer::Overworld, elevation_layer(0)],
+                [GameLayer::Overworld, elevation_layer(0)],
+            ),
+        ))
+        .insert(Elevation(0));
 }
 
 const ELEVATION_STEP: f32 = 10.0;
@@ -145,8 +147,8 @@ pub fn update_facing(
 #[cfg(test)]
 mod tests {
     use crate::movement::input::{MOVE_LEFT_BUTTON, MOVE_UP_BUTTON};
-    use crate::overworld::components::Facing;
     use crate::overworld::components::YSort;
+    use crate::overworld::components::{Elevation, Facing};
     use crate::overworld::player_movement::update_facing;
     use crate::overworld::player_movement::y_sort;
     use bevy::prelude::*;
@@ -166,12 +168,12 @@ mod tests {
 
         let high = app
             .world_mut()
-            .spawn((YSort, Transform::from_xyz(0.0, 200.0, 0.0)))
+            .spawn((YSort, Elevation(0), Transform::from_xyz(0.0, 200.0, 0.0)))
             .id();
 
         let low = app
             .world_mut()
-            .spawn((YSort, Transform::from_xyz(0.0, 50.0, 0.0)))
+            .spawn((YSort, Elevation(0), Transform::from_xyz(0.0, 50.0, 0.0)))
             .id();
 
         app.update();
@@ -192,7 +194,7 @@ mod tests {
 
         let entity = app
             .world_mut()
-            .spawn((YSort, Transform::from_xyz(0.0, 300.0, 0.0)))
+            .spawn((YSort, Elevation(0), Transform::from_xyz(0.0, 300.0, 0.0)))
             .id();
 
         app.update();

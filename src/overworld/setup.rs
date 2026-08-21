@@ -11,15 +11,17 @@ use bevy_ecs_tiled::prelude::*;
 const ELEVATION_STEP: f32 = 10.0;
 const FLOOR_BACK_OFFSET: f32 = 1.0;
 
+#[allow(clippy::type_complexity)]
 pub fn sync_player_elevation_filter(
-    mut player_q: Query<(&Elevation, &mut CollisionLayers), (Changed<Elevation>, With<OverworldPlayer>)>,
+    mut player_q: Query<
+        (&Elevation, &mut CollisionLayers),
+        (Changed<Elevation>, With<OverworldPlayer>),
+    >,
 ) {
     for (elevation, mut layers) in &mut player_q {
         let layer = elevation_layer(elevation.0);
-        *layers = CollisionLayers::new(
-            [GameLayer::Overworld, layer],
-            [GameLayer::Overworld, layer],
-        );
+        *layers =
+            CollisionLayers::new([GameLayer::Overworld, layer], [GameLayer::Overworld, layer]);
     }
 }
 
@@ -102,7 +104,9 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                     .unwrap_or(false);
 
                 if is_stair_zone {
-                    commands.entity(event.origin).insert((Sensor, CollisionEventsEnabled));
+                    commands
+                        .entity(event.origin)
+                        .insert((Sensor, CollisionEventsEnabled));
                     return;
                 }
 
@@ -119,10 +123,9 @@ pub fn setup_overworld(mut commands: Commands, asset_server: Res<AssetServer>) {
                 }
 
                 let layer = elevation_layer(level);
-                commands.entity(event.origin).insert((
-                    RigidBody::Static,
-                    CollisionLayers::new(layer, [layer]),
-                ));
+                commands
+                    .entity(event.origin)
+                    .insert((RigidBody::Static, CollisionLayers::new(layer, [layer])));
             },
         )
         .observe(

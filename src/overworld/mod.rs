@@ -15,6 +15,8 @@ mod setup;
 
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod test_elevation;
 
 pub struct OverworldPlugin;
 
@@ -37,7 +39,7 @@ impl Plugin for OverworldPlugin {
                     stair_elevation_system,
                     apply_fixed_elevation,
                     sync_player_elevation_filter,
-                    debug_collision_layers
+                    debug_collision_layers,
                 )
                     .run_if(in_state(GameState::Overworld)),
             )
