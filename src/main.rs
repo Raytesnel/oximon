@@ -62,5 +62,15 @@ fn main() {
 struct MainCamera;
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn((Camera2d, MainCamera, Msaa::Off, Transform::default()));
+    commands.spawn((
+        Camera2d,
+        MainCamera,
+        Msaa::Off,
+        Transform::default(),
+        Projection::Orthographic(OrthographicProjection {
+            near: -2000.0, // Allows seeing layers shifted forward
+            far: 2000.0,   // Allows seeing layers shifted backward
+            ..OrthographicProjection::default_2d()
+        }),
+    ));
 }
