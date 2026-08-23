@@ -190,7 +190,9 @@ mod tests {
 
     /// Tick with a given dt, driving the anim system once.
     fn tick(app: &mut App, dt: f32) {
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_secs_f32(dt)));
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_secs_f32(
+            dt,
+        )));
         app.update();
     }
 
@@ -280,7 +282,10 @@ mod tests {
         tick(&mut app, ONE_FRAME);
         flush_state(&mut app);
 
-        assert_eq!(*app.world().resource::<State<GameState>>().get(), GameState::Combat);
+        assert_eq!(
+            *app.world().resource::<State<GameState>>().get(),
+            GameState::Combat
+        );
     }
 
     #[test]
@@ -294,7 +299,10 @@ mod tests {
 
         let anim = anim_of(&mut app);
         assert_eq!(anim.current_frame, 24, "should reset to border_frame");
-        assert_eq!(*app.world().resource::<State<BattleState>>().get(), BattleState::Active);
+        assert_eq!(
+            *app.world().resource::<State<BattleState>>().get(),
+            BattleState::Active
+        );
     }
 
     #[test]
@@ -333,7 +341,10 @@ mod tests {
 
         let anim = anim_of(&mut app);
         assert_eq!(anim.current_frame, 24, "should wrap back to border_frame");
-        assert_eq!(*app.world().resource::<State<BattleState>>().get(), BattleState::Active);
+        assert_eq!(
+            *app.world().resource::<State<BattleState>>().get(),
+            BattleState::Active
+        );
     }
 
     // ---------- Ending phase ----------
@@ -347,7 +358,10 @@ mod tests {
         tick(&mut app, ONE_FRAME);
         flush_state(&mut app);
 
-        assert_eq!(*app.world().resource::<State<GameState>>().get(), GameState::Overworld);
+        assert_eq!(
+            *app.world().resource::<State<GameState>>().get(),
+            GameState::Overworld
+        );
     }
 
     #[test]
@@ -359,8 +373,14 @@ mod tests {
         tick(&mut app, ONE_FRAME);
         flush_state(&mut app);
 
-        assert!(app.world().get_entity(entity).is_err(), "anim entity should despawn");
-        assert_eq!(*app.world().resource::<State<BattleState>>().get(), BattleState::Inactive);
+        assert!(
+            app.world().get_entity(entity).is_err(),
+            "anim entity should despawn"
+        );
+        assert_eq!(
+            *app.world().resource::<State<BattleState>>().get(),
+            BattleState::Inactive
+        );
     }
 
     #[test]
@@ -388,7 +408,10 @@ mod tests {
 
         let anim = anim_of(&mut app);
         assert_eq!(anim.current_frame, 10, "Inactive should not tick the frame");
-        assert_eq!(anim.current_radius, 300.0, "Inactive should not touch radius");
+        assert_eq!(
+            anim.current_radius, 300.0,
+            "Inactive should not touch radius"
+        );
     }
 
     // ---------- sprite index sync ----------
@@ -403,7 +426,10 @@ mod tests {
 
         let mut query = app.world_mut().query::<(&DomainExpansionAnim, &Sprite)>();
         let (anim, sprite) = query.single(app.world()).unwrap();
-        assert_eq!(sprite.texture_atlas.as_ref().unwrap().index, anim.current_frame);
+        assert_eq!(
+            sprite.texture_atlas.as_ref().unwrap().index,
+            anim.current_frame
+        );
     }
 
     // ---------- regression: missing assets shouldn't panic ----------

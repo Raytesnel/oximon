@@ -2,38 +2,85 @@ use crate::MainCamera;
 use crate::common::components::GameLayer;
 use crate::movement::input::*;
 use crate::overworld::components::{
-    DomainExpansionAnim, Facing, OverworldEntity, OverworldPlayer, YSort,
+    DebugLocation, DomainExpansionAnim, Elevation, Facing, OverworldEntity, OverworldPlayer, YSort,
 };
+use crate::overworld::setup::elevation_layer;
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
 pub fn spawn_player_overworld(commands: &mut Commands) {
-    commands.spawn((
-        OverworldPlayer,
-        OverworldEntity,
-        Sprite {
-            color: Color::srgb(1.0, 0., 1.0),
-            custom_size: Some(Vec2::new(20.0, 20.0)),
-            ..default()
-        },
-        YSort,
-        Facing::Down,
-        Transform::from_xyz(0., 0., 10.),
-        RigidBody::Dynamic,
-        Collider::rectangle(18.0, 18.0),
-        LockedAxes::ROTATION_LOCKED,
-        LinearDamping(8.0),
-        Friction::new(0.0),
-        Restitution::new(0.0),
-        GravityScale(0.0),
-        CollisionEventsEnabled,
-        CollisionLayers::new(GameLayer::Overworld, [GameLayer::Overworld]),
-    ));
+    commands
+        .spawn((
+            OverworldPlayer,
+            OverworldEntity,
+            Sprite {
+                color: Color::srgb(1.0, 0., 1.0),
+                custom_size: Some(Vec2::new(20.0, 20.0)),
+                ..default()
+            },
+            YSort,
+            Facing::Down,
+            Transform::from_xyz(0., 0., 10.),
+            RigidBody::Dynamic,
+            Collider::rectangle(18.0, 18.0),
+            LockedAxes::ROTATION_LOCKED,
+            LinearDamping(8.0),
+            Friction::new(0.0),
+            Restitution::new(0.0),
+            GravityScale(0.0),
+            CollisionEventsEnabled,
+            CollisionLayers::new(
+                [GameLayer::Overworld, elevation_layer(0)],
+                [GameLayer::Overworld, elevation_layer(0)],
+            ),
+        ))
+        .insert(Elevation(0));
 }
 
-pub fn y_sort(mut query: Query<&mut Transform, With<YSort>>) {
-    for mut transform in &mut query {
-        transform.translation.z = -transform.translation.y / 1000.0;
+const ELEVATION_STEP: f32 = 10.0;
+const Y_SORT_SCALE: f32 = 1000.0;
+
+pub fn y_sort(
+    mut query: Query<(&Elevation, &mut Transform, Option<&ChildOf>), With<YSort>>,
+    parent_transform_q: Query<&Transform, Without<YSort>>,
+) {
+    for (elevation, mut transform, child_of) in &mut query {
+        let parent_z = child_of
+            .and_then(|c| parent_transform_q.get(c.parent()).ok())
+            .map(|t| t.translation.z)
+            .unwrap_or(0.0);
+
+        transform.translation.z = -parent_z + elevation.0 as f32 * ELEVATION_STEP
+            - transform.translation.y / Y_SORT_SCALE;
+    }
+}
+pub fn debug_player_z(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    player_query: Query<(&Transform, &GlobalTransform), With<OverworldPlayer>>,
+    debug_query: Query<(&Transform, &GlobalTransform, &DebugLocation), Without<OverworldPlayer>>,
+) {
+    if !keyboard.just_pressed(KeyCode::F1) {
+        return;
+    }
+    let Ok((player_transform, player_global)) = player_query.single() else {
+        return;
+    };
+    info!(
+        "PLAYER: x={:.2}, y={:.2}, local_z={:.4}, global_z={:.4}",
+        player_transform.translation.x,
+        player_transform.translation.y,
+        player_transform.translation.z,
+        player_global.translation().z,
+    );
+    for (transform, global, debug_location) in &debug_query {
+        info!(
+            "{}: x={:.2}, y={:.2}, local_z={:.4}, global_z={:.4}",
+            debug_location.0,
+            transform.translation.x,
+            transform.translation.y,
+            transform.translation.z,
+            global.translation().z,
+        );
     }
 }
 
@@ -100,8 +147,8 @@ pub fn update_facing(
 #[cfg(test)]
 mod tests {
     use crate::movement::input::{MOVE_LEFT_BUTTON, MOVE_UP_BUTTON};
-    use crate::overworld::components::Facing;
     use crate::overworld::components::YSort;
+    use crate::overworld::components::{Elevation, Facing};
     use crate::overworld::player_movement::update_facing;
     use crate::overworld::player_movement::y_sort;
     use bevy::prelude::*;
@@ -121,12 +168,12 @@ mod tests {
 
         let high = app
             .world_mut()
-            .spawn((YSort, Transform::from_xyz(0.0, 200.0, 0.0)))
+            .spawn((YSort, Elevation(0), Transform::from_xyz(0.0, 200.0, 0.0)))
             .id();
 
         let low = app
             .world_mut()
-            .spawn((YSort, Transform::from_xyz(0.0, 50.0, 0.0)))
+            .spawn((YSort, Elevation(0), Transform::from_xyz(0.0, 50.0, 0.0)))
             .id();
 
         app.update();
@@ -147,7 +194,7 @@ mod tests {
 
         let entity = app
             .world_mut()
-            .spawn((YSort, Transform::from_xyz(0.0, 300.0, 0.0)))
+            .spawn((YSort, Elevation(0), Transform::from_xyz(0.0, 300.0, 0.0)))
             .id();
 
         app.update();

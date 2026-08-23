@@ -13,13 +13,13 @@ use crate::common::components::*;
 use crate::movement::MovementPlugin;
 #[allow(unused)]
 use crate::movement::components::Facing;
+use crate::overworld::components::DomainExpansionAsset;
 use bevy::app::FixedMain;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
 #[allow(unused)]
 use bevy::time::TimeUpdateStrategy;
 use std::collections::HashMap;
-use crate::overworld::components::DomainExpansionAsset;
 
 fn test_app() -> App {
     let mut app = App::new();
