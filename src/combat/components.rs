@@ -36,7 +36,6 @@ pub struct Attack {
     pub definition: AttackDefinition,
     pub lifetime_timer: Timer,
     pub hit_timer: Timer,
-    pub follow_entity: Option<Entity>,
     pub applied_start_modifiers: bool,
     pub hits_done: u32,
     pub has_hit: bool,
@@ -51,7 +50,6 @@ impl Attack {
             definition: def,
             hits_done: 0,
             has_hit: false,
-            follow_entity: Some(owner),
             applied_start_modifiers: false,
         }
     }

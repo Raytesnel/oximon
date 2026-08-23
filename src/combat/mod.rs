@@ -51,6 +51,7 @@ impl Plugin for CombatPlugin {
                 attack_start_system,
                 attack_lifetime_system,
                 attack_hit_system,
+                projectile_movement_system,
                 attack_follow_system,
                 cooldown_tick_system,
             )

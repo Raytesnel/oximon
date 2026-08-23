@@ -1,6 +1,6 @@
 use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, DamageEffect, EffectTrigger, KnockbackEffectDef,
-    ModifierTarget, StatModifierEffect, StatusEffect, TimedEffect,
+    ModifierTarget, ProjectileDef, StatModifierEffect, StatusEffect, TimedEffect,
 };
 use crate::common::components::{ModifierLifetime, StatModifier, StatType};
 use bevy::prelude::*;
@@ -47,7 +47,8 @@ pub enum HitBehavior {
 pub fn quick_attack() -> AttackDefinition {
     AttackDefinition {
         name: "quick_attack".to_string(),
-
+        projectile: None,
+        follow_caster: true,
         effects: vec![
             // DAMAGE
             TimedEffect {
@@ -124,7 +125,8 @@ pub fn quick_attack() -> AttackDefinition {
 pub fn simple_beam() -> AttackDefinition {
     AttackDefinition {
         name: "simple_beam".to_string(),
-
+        follow_caster: true,
+        projectile: None,
         effects: vec![
             TimedEffect {
                 trigger: EffectTrigger::OnHit,
@@ -162,7 +164,8 @@ pub fn simple_beam() -> AttackDefinition {
 pub fn speedo() -> AttackDefinition {
     AttackDefinition {
         name: "speedo".to_string(),
-
+        follow_caster: true,
+        projectile: None,
         effects: vec![
             TimedEffect {
                 trigger: EffectTrigger::OnCast,
@@ -210,6 +213,8 @@ pub fn speedo() -> AttackDefinition {
 pub fn slow_down() -> AttackDefinition {
     AttackDefinition {
         name: "speedo".to_string(),
+        follow_caster: true,
+        projectile: None,
         lifetime: 2.0,
         hit_interval: 2.0,
         cooldown: 3.0,
@@ -243,5 +248,45 @@ pub fn slow_down() -> AttackDefinition {
                 }),
             },
         ],
+    }
+}
+pub fn shoot_square() -> AttackDefinition {
+    AttackDefinition {
+        name: "shoot_square".to_string(),
+        projectile: Some(ProjectileDef { speed: 500.0 }),
+        follow_caster: false,
+        effects: vec![
+            // DAMAGE
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Damage(DamageEffect {
+                    amount: 10.0,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            },
+            // KNOCKBACK TARGET
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Knockback(KnockbackEffectDef {
+                    force: 3000.0,
+                    direction: KnockbackDirection::SourceToTarget,
+                    _mode: KnockbackMode::Override,
+                    hitstun: 1.0,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            },
+        ],
+
+        lifetime: 2.0,
+        hit_interval: 0.1,
+        cooldown: 0.1,
+
+        hit_behavior: HitBehavior::Single,
+        offset: Vec3::ZERO,
+
+        spawn: AttackSpawn::Hitbox {
+            color: Color::srgb(1.0, 0.0, 0.0),
+            size: Vec2::new(20.0, 20.0),
+        },
     }
 }

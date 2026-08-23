@@ -4,7 +4,8 @@ use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget, StatusEffect,
 };
 use crate::combat::attacks::{
-    AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, simple_beam, slow_down, speedo,
+    AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, shoot_square, simple_beam,
+    slow_down, speedo,
 };
 use crate::common::components::BattleState;
 use crate::common::components::{Enemy, ModifierLifetime, RuntimeModifier, Stats};
@@ -13,7 +14,8 @@ use avian2d::collision::collider::CollidingEntities;
 use avian2d::dynamics::rigid_body::LinearVelocity;
 use bevy::prelude::*;
 
-pub const JUMP_BUTTON: KeyCode = KeyCode::Space;
+pub const PEW: KeyCode = KeyCode::Space;
+pub const JUMP_BUTTON: KeyCode = KeyCode::KeyU;
 pub const QUICK_ATTACK: KeyCode = KeyCode::KeyQ;
 pub const PEWPEW: KeyCode = KeyCode::KeyW;
 pub const POWPOW: KeyCode = KeyCode::KeyE;
@@ -22,6 +24,7 @@ fn get_attack_for_key(key: KeyCode) -> Option<AttackDefinition> {
     match key {
         QUICK_ATTACK => Some(quick_attack()),
         JUMP_BUTTON => Some(speedo()),
+        PEW => Some(shoot_square()),
         PEWPEW => Some(slow_down()),
         POWPOW => Some(simple_beam()),
 
@@ -32,9 +35,9 @@ pub fn attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut id_counter: ResMut<AttackIdCounter>,
-    mut query: Query<(Entity, &mut Cooldowns, &mut CombatState), AllowedMovable>,
+    mut query: Query<(Entity, &Transform, &mut Cooldowns, &mut CombatState), AllowedMovable>,
 ) {
-    for (entity, mut cooldowns, mut combat_state) in &mut query {
+    for (entity, caster_transform, mut cooldowns, mut combat_state) in &mut query {
         for key in keyboard.get_just_pressed() {
             let Some(def) = get_attack_for_key(*key) else {
                 continue;
@@ -60,9 +63,11 @@ pub fn attack_input_system(
             let sprite = def.spawn.build_sprite();
 
             // 🔥 spawn attack
+            let spawn_position = caster_transform.translation + def.offset;
+
             let mut entity_commands = commands.spawn((
                 Attack::from_definition(def.clone(), entity, id),
-                Transform::default(),
+                Transform::from_translation(spawn_position),
                 CombatEntity,
                 sprite,
             ));
@@ -388,9 +393,11 @@ pub fn attack_follow_system(
     targets: Query<&Transform, Without<Attack>>,
 ) {
     for (mut transform, attack) in &mut attacks {
-        if let Some(entity) = attack.follow_entity
-            && let Ok(target_transform) = targets.get(entity)
-        {
+        if !attack.definition.follow_caster {
+            continue;
+        }
+
+        if let Ok(target_transform) = targets.get(attack.owner) {
             transform.translation = target_transform.translation + attack.definition.offset;
         }
     }
@@ -470,6 +477,16 @@ pub fn debug_collisions(query: Query<(Entity, &CollidingEntities), With<CombatEn
     }
 }
 
+pub fn projectile_movement_system(time: Res<Time>, mut query: Query<(&mut Transform, &Attack)>) {
+    for (mut transform, attack) in &mut query {
+        let Some(projectile) = &attack.definition.projectile else {
+            continue;
+        };
+
+        transform.translation.x += projectile.speed * time.delta_secs();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -513,6 +530,8 @@ mod tests {
     fn damage_only_attack(owner: Entity, amount: f32) -> Attack {
         let def = AttackDefinition {
             name: "test_attack".to_string(),
+            follow_caster: true,
+            projectile: None,
             effects: vec![TimedEffect {
                 trigger: EffectTrigger::OnHit,
                 effect: AttackEffect::Damage(DamageEffect {
@@ -537,6 +556,8 @@ mod tests {
     fn multihit_attack(owner: Entity, amount: f32) -> Attack {
         let def = AttackDefinition {
             name: "test_multihit".to_string(),
+            follow_caster: true,
+            projectile: None,
             effects: vec![TimedEffect {
                 trigger: EffectTrigger::OnHit,
                 effect: AttackEffect::Damage(DamageEffect {
