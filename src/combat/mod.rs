@@ -41,6 +41,7 @@ impl Plugin for CombatPlugin {
                 despawn_dead_system,
                 tick_hitstun,
                 apply_knockback_system,
+                projectile_obstacle_collision_system,
             )
                 .run_if(in_state(GameState::Combat)),
         );

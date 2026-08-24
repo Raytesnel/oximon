@@ -7,13 +7,15 @@ use crate::combat::attacks::{
     AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, shoot_square, simple_beam,
     slow_down, speedo,
 };
-use crate::common::components::{BattleState, Player};
+use avian2d::prelude::*; // This should include collision events
+use bevy::prelude::*; // For EventReader
+
+use crate::common::components::{BattleState, GameLayer, Player};
 use crate::common::components::{Enemy, ModifierLifetime, RuntimeModifier, Stats};
 use crate::movement::components::Facing;
 use crate::movement::types::AllowedMovable;
 use avian2d::collision::collider::CollidingEntities;
 use avian2d::dynamics::rigid_body::LinearVelocity;
-use bevy::prelude::*;
 
 pub const PEW: KeyCode = KeyCode::Space;
 pub const JUMP_BUTTON: KeyCode = KeyCode::KeyU;
@@ -71,23 +73,22 @@ pub fn attack_input_system(
             id_counter.next += 1;
 
             let sprite = def.spawn.build_sprite();
-
-            // 🔥 spawn attack
             let spawn_position = caster_transform.translation + def.offset;
+            let spawn_size = match &def.spawn {
+                AttackSpawn::Hitbox { size, .. } => *size,
+            };
 
-            let mut entity_commands = commands.spawn((
+            commands.spawn((
                 Attack::from_definition(def.clone(), entity, id, facing.0),
                 Transform::from_translation(spawn_position),
                 CombatEntity,
                 sprite,
+                Collider::rectangle(spawn_size.x, spawn_size.y),
+                Sensor,
+                CollidingEntities::default(),
+                CollisionLayers::new(GameLayer::Combat, [GameLayer::Combat]),
+                Hitbox { size: spawn_size },
             ));
-
-            let size = match &def.spawn {
-                AttackSpawn::Hitbox { size, .. } => *size,
-            };
-
-            entity_commands.insert(Hitbox { size });
-
             *combat_state = CombatState::Attacking;
         }
     }
@@ -171,6 +172,27 @@ pub fn check_facing(
     info!("PLAYER: x={:?}", facing);
 }
 
+pub fn projectile_obstacle_collision_system(
+    mut commands: Commands,
+    mut attacks: Query<(Entity, &Attack, &CollidingEntities)>,
+) {
+    for (attack_entity, attack, colliding) in &mut attacks {
+        if attack.definition.projectile.is_none() {
+            continue;
+        }
+
+        // Check if anything OTHER than the owner is colliding
+        for &colliding_entity in colliding.iter() {
+            if colliding_entity == attack.owner {
+                continue; // Skip owner
+            }
+
+            info!("🎯 Projectile hit obstacle, despawning");
+            commands.entity(attack_entity).despawn();
+            break; // Stop checking once we hit something
+        }
+    }
+}
 pub fn attack_hit_system(
     mut commands: Commands,
     mut attacks: Query<(&Transform, &Hitbox, &mut Attack)>,
