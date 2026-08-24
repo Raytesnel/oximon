@@ -7,8 +7,9 @@ use crate::combat::attacks::{
     AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, shoot_square, simple_beam,
     slow_down, speedo,
 };
-use crate::common::components::BattleState;
+use crate::common::components::{BattleState, Player};
 use crate::common::components::{Enemy, ModifierLifetime, RuntimeModifier, Stats};
+use crate::movement::components::Facing;
 use crate::movement::types::AllowedMovable;
 use avian2d::collision::collider::CollidingEntities;
 use avian2d::dynamics::rigid_body::LinearVelocity;
@@ -35,9 +36,18 @@ pub fn attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut id_counter: ResMut<AttackIdCounter>,
-    mut query: Query<(Entity, &Transform, &mut Cooldowns, &mut CombatState), AllowedMovable>,
+    mut query: Query<
+        (
+            Entity,
+            &Transform,
+            &mut Cooldowns,
+            &mut CombatState,
+            &Facing,
+        ),
+        AllowedMovable,
+    >,
 ) {
-    for (entity, caster_transform, mut cooldowns, mut combat_state) in &mut query {
+    for (entity, caster_transform, mut cooldowns, mut combat_state, facing) in &mut query {
         for key in keyboard.get_just_pressed() {
             let Some(def) = get_attack_for_key(*key) else {
                 continue;
@@ -66,7 +76,7 @@ pub fn attack_input_system(
             let spawn_position = caster_transform.translation + def.offset;
 
             let mut entity_commands = commands.spawn((
-                Attack::from_definition(def.clone(), entity, id),
+                Attack::from_definition(def.clone(), entity, id, facing.0),
                 Transform::from_translation(spawn_position),
                 CombatEntity,
                 sprite,
@@ -144,6 +154,21 @@ fn intersects(pos_a: Vec3, size_a: Vec2, pos_b: Vec3, size_b: Vec2) -> bool {
     let delta = pos_a - pos_b;
 
     delta.x.abs() <= (half_a.x + half_b.x) && delta.y.abs() <= (half_a.y + half_b.y)
+}
+
+pub fn check_facing(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    player_query: Query<&Facing, With<Player>>,
+) {
+    if !keyboard.just_pressed(KeyCode::F5) {
+        return;
+    }
+    info!("f5 pressed");
+    let Ok(facing) = player_query.single() else {
+        info!("no facing, count:{:?}", player_query.iter().count());
+        return;
+    };
+    info!("PLAYER: x={:?}", facing);
 }
 
 pub fn attack_hit_system(
@@ -483,7 +508,8 @@ pub fn projectile_movement_system(time: Res<Time>, mut query: Query<(&mut Transf
             continue;
         };
 
-        transform.translation.x += projectile.speed * time.delta_secs();
+        transform.translation +=
+            attack.direction.extend(0.0) * projectile.speed * time.delta_secs();
     }
 }
 
@@ -549,7 +575,7 @@ mod tests {
                 size: Vec2::new(10.0, 10.0),
             },
         };
-        Attack::from_definition(def, owner, AttackId(0))
+        Attack::from_definition(def, owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 })
     }
 
     /// A minimal multi-hit attack (no damage, just to test tick behavior).
@@ -575,7 +601,7 @@ mod tests {
                 size: Vec2::new(10.0, 10.0),
             },
         };
-        Attack::from_definition(def, owner, AttackId(1))
+        Attack::from_definition(def, owner, AttackId(1), Vec2 { x: 1.0, y: 0.0 })
     }
 
     // ── apply_damage_system ───────────────────────────────────────────────────

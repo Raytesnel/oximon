@@ -53,6 +53,7 @@ impl Plugin for CombatPlugin {
                 attack_hit_system,
                 projectile_movement_system,
                 attack_follow_system,
+                check_facing,
                 cooldown_tick_system,
             )
                 .run_if(in_state(GameState::Combat).and(not_in_hitstop)),
