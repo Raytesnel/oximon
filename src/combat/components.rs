@@ -36,22 +36,27 @@ pub struct Attack {
     pub definition: AttackDefinition,
     pub lifetime_timer: Timer,
     pub hit_timer: Timer,
-    pub follow_entity: Option<Entity>,
     pub applied_start_modifiers: bool,
     pub hits_done: u32,
     pub has_hit: bool,
+    pub direction: Vec2,
 }
 impl Attack {
-    pub fn from_definition(def: AttackDefinition, owner: Entity, id: AttackId) -> Self {
+    pub fn from_definition(
+        def: AttackDefinition,
+        owner: Entity,
+        id: AttackId,
+        direction: Vec2,
+    ) -> Self {
         Self {
             id,
             owner,
+            direction,
             lifetime_timer: Timer::from_seconds(def.lifetime, TimerMode::Once),
             hit_timer: Timer::from_seconds(def.hit_interval, TimerMode::Repeating),
             definition: def,
             hits_done: 0,
             has_hit: false,
-            follow_entity: Some(owner),
             applied_start_modifiers: false,
         }
     }

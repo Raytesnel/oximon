@@ -54,6 +54,7 @@ pub fn y_sort(
             - transform.translation.y / Y_SORT_SCALE;
     }
 }
+
 pub fn debug_player_z(
     keyboard: Res<ButtonInput<KeyCode>>,
     player_query: Query<(&Transform, &GlobalTransform), With<OverworldPlayer>>,

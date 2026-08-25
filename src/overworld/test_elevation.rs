@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod test_elevation {
-    use crate::common::components::GameLayer;
     use crate::overworld::components::{
         Elevation, FixedElevation, OverworldPlayer, StairZone, YSort,
     };

@@ -59,6 +59,10 @@ pub enum AttackEffect {
     // Status(StatusEffectDef),
     // Protect(ProtectEffect),
 }
+#[derive(Clone, Debug)]
+pub struct ProjectileDef {
+    pub speed: f32,
+}
 
 #[derive(Component, Clone, Debug)]
 pub struct AttackDefinition {
@@ -72,4 +76,6 @@ pub struct AttackDefinition {
     pub spawn: AttackSpawn,
     pub offset: Vec3,
     pub hit_behavior: HitBehavior,
+    pub follow_caster: bool,
+    pub projectile: Option<ProjectileDef>,
 }

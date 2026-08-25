@@ -145,6 +145,7 @@ fn spawn_combat_player(commands: &mut Commands, pos: Vec3) -> Entity {
             },
         ))
         .insert((
+            Facing(Vec2::X),
             CollisionLayers::new(GameLayer::Combat, [GameLayer::Combat]),
             RigidBody::Dynamic,
             Collider::rectangle(18.0, 18.0),

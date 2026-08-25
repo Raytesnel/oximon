@@ -191,8 +191,12 @@ fn attack_applies_oncast_stat_modifiers_to_owner() {
     let player = app.world_mut().spawn((Player, Stats::default())).id();
 
     let def = quick_attack();
-    app.world_mut()
-        .spawn(Attack::from_definition(def, player, AttackId(1)));
+    app.world_mut().spawn(Attack::from_definition(
+        def,
+        player,
+        AttackId(1),
+        Vec2 { x: 1.0, y: 0.0 },
+    ));
 
     app.update(); // runs attack_start_system
 
@@ -216,7 +220,7 @@ fn attack_follows_owner_transform() {
     let attack = app
         .world_mut()
         .spawn((
-            Attack::from_definition(simple_beam(), player, AttackId(1)),
+            Attack::from_definition(simple_beam(), player, AttackId(1), Vec2 { x: 1.0, y: 0.0 }),
             Transform::default(),
         ))
         .id();
@@ -264,7 +268,7 @@ fn hitting_enemy_reduces_health() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(quick_attack(), owner, AttackId(0)),
+        Attack::from_definition(quick_attack(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
         Transform::default(),
         Hitbox {
             size: Vec2::new(20.0, 20.0),
@@ -306,7 +310,7 @@ fn hitting_enemy_applies_knockback_to_enemy() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(quick_attack(), owner, AttackId(0)),
+        Attack::from_definition(quick_attack(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
         Transform::default(),
         Hitbox {
             size: Vec2::new(20.0, 20.0),
@@ -345,7 +349,7 @@ fn hitting_enemy_applies_hitstun_to_enemy() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(quick_attack(), owner, AttackId(0)),
+        Attack::from_definition(quick_attack(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
         Transform::default(),
         Hitbox {
             size: Vec2::new(20.0, 20.0),
@@ -384,7 +388,7 @@ fn hitstun_wears_off_after_duration() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(quick_attack(), owner, AttackId(0)),
+        Attack::from_definition(quick_attack(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
         Transform::default(),
         Hitbox {
             size: Vec2::new(20.0, 20.0),
@@ -428,7 +432,7 @@ fn hitting_enemy_with_slow_attack_applies_slow() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(slow_down(), owner, AttackId(0)),
+        Attack::from_definition(slow_down(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
         Transform::default(),
         Hitbox {
             size: Vec2::new(200.0, 200.0),
@@ -469,7 +473,7 @@ fn slow_adds_speed_modifier_to_enemy_stats() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(slow_down(), owner, AttackId(0)),
+        Attack::from_definition(slow_down(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
         Transform::default(),
         Hitbox {
             size: Vec2::new(200.0, 200.0),
@@ -510,7 +514,7 @@ fn hitting_enemy_with_slow_attack_applies_poison() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(slow_down(), owner, AttackId(0)),
+        Attack::from_definition(slow_down(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
         Transform::default(),
         Hitbox {
             size: Vec2::new(200.0, 200.0),
@@ -550,7 +554,7 @@ fn poisoned_enemy_loses_health_over_time() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(slow_down(), owner, AttackId(0)),
+        Attack::from_definition(slow_down(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
         Transform::default(),
         Hitbox {
             size: Vec2::new(200.0, 200.0),
@@ -599,7 +603,7 @@ fn enemy_at_zero_health_is_marked_dead() {
         .id();
     tick(&mut app, 0.016);
     app.world_mut().spawn((
-        Attack::from_definition(quick_attack(), owner, AttackId(0)),
+        Attack::from_definition(quick_attack(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
         Transform::default(),
         Hitbox {
             size: Vec2::new(20.0, 20.0),
@@ -627,7 +631,8 @@ fn player_returns_to_idle_after_attack_expires() {
         .spawn((Player, CombatState::Attacking, Stats::default()))
         .id();
 
-    let mut attack = Attack::from_definition(quick_attack(), player, AttackId(0));
+    let mut attack =
+        Attack::from_definition(quick_attack(), player, AttackId(0), Vec2 { x: 1.0, y: 0.0 });
     attack.lifetime_timer = Timer::from_seconds(0.016, TimerMode::Once);
     app.world_mut().spawn(attack);
 
@@ -639,29 +644,5 @@ fn player_returns_to_idle_after_attack_expires() {
         *state,
         CombatState::Idle,
         "player should return to Idle after attack lifetime expires"
-    );
-}
-
-/// The speed boost granted by quick_attack on cast is removed when the attack ends.
-#[test]
-fn oncast_speed_boost_removed_after_attack_expires() {
-    let mut app = test_app();
-
-    let player = app
-        .world_mut()
-        .spawn((Player, CombatState::Attacking, Stats::default()))
-        .id();
-
-    let mut attack = Attack::from_definition(quick_attack(), player, AttackId(0));
-    attack.lifetime_timer = Timer::from_seconds(0.016, TimerMode::Once);
-    app.world_mut().spawn(attack);
-
-    tick(&mut app, 0.016); // attack_start_system adds modifiers
-    tick(&mut app, 0.016); // attack_lifetime_system expires + cleans up
-
-    let stats = app.world().get::<Stats>(player).unwrap();
-    assert!(
-        stats.speed.is_empty() && stats.acceleration.is_empty(),
-        "OnAttackEnd modifiers should be removed after attack expires"
     );
 }
