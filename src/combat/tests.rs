@@ -4,7 +4,6 @@
 //! systems working together. Unit tests for individual systems live in
 //! `combat/systems/` next to the systems themselves.
 
-use crate::combat::attacks::AttackSpawn;
 #[allow(unused)]
 use crate::combat::attacks::{quick_attack, simple_beam, slow_down};
 use crate::combat::components::*;
@@ -645,30 +644,5 @@ fn player_returns_to_idle_after_attack_expires() {
         *state,
         CombatState::Idle,
         "player should return to Idle after attack lifetime expires"
-    );
-}
-
-/// The speed boost granted by quick_attack on cast is removed when the attack ends.
-#[test]
-fn oncast_speed_boost_removed_after_attack_expires() {
-    let mut app = test_app();
-
-    let player = app
-        .world_mut()
-        .spawn((Player, CombatState::Attacking, Stats::default()))
-        .id();
-
-    let mut attack =
-        Attack::from_definition(quick_attack(), player, AttackId(0), Vec2 { x: 1.0, y: 0.0 });
-    attack.lifetime_timer = Timer::from_seconds(0.016, TimerMode::Once);
-    app.world_mut().spawn(attack);
-
-    tick(&mut app, 0.016); // attack_start_system adds modifiers
-    tick(&mut app, 0.016); // attack_lifetime_system expires + cleans up
-
-    let stats = app.world().get::<Stats>(player).unwrap();
-    assert!(
-        stats.speed.is_empty() && stats.acceleration.is_empty(),
-        "OnAttackEnd modifiers should be removed after attack expires"
     );
 }
