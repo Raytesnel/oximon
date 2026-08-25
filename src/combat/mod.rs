@@ -36,7 +36,6 @@ impl Plugin for CombatPlugin {
         app.add_systems(
             Update,
             (
-                debug_collisions,
                 apply_damage_system,
                 despawn_dead_system,
                 tick_hitstun,

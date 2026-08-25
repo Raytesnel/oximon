@@ -74,8 +74,10 @@ pub struct AttackDefinition {
     pub cooldown: f32,
 
     pub spawn: AttackSpawn,
+    pub residue: Option<Box<AttackDefinition>>,
     pub offset: Vec3,
     pub hit_behavior: HitBehavior,
     pub follow_caster: bool,
     pub projectile: Option<ProjectileDef>,
 }
+

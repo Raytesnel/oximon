@@ -3,10 +3,7 @@ use super::events::*;
 use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget, StatusEffect,
 };
-use crate::combat::attacks::{
-    AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, shoot_square, simple_beam,
-    slow_down, speedo,
-};
+use crate::combat::attacks::{AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, shoot_square, simple_beam, slow_down, speedo, fireball, stone_block};
 use avian2d::prelude::*; // This should include collision events
 use bevy::prelude::*; // For EventReader
 
@@ -28,8 +25,8 @@ fn get_attack_for_key(key: KeyCode) -> Option<AttackDefinition> {
         QUICK_ATTACK => Some(quick_attack()),
         JUMP_BUTTON => Some(speedo()),
         PEW => Some(shoot_square()),
-        PEWPEW => Some(slow_down()),
-        POWPOW => Some(simple_beam()),
+        PEWPEW => Some(fireball()),
+        POWPOW => Some(stone_block()),
 
         _ => None,
     }
@@ -174,25 +171,60 @@ pub fn check_facing(
 
 pub fn projectile_obstacle_collision_system(
     mut commands: Commands,
-    mut attacks: Query<(Entity, &Attack, &CollidingEntities)>,
+    mut attacks: Query<(Entity, &Transform, &Attack, &CollidingEntities)>,
+    enemies: Query<Entity, Or<(With<Enemy>, With<Player>)>>,
 ) {
-    for (attack_entity, attack, colliding) in &mut attacks {
+    for (attack_entity, transform, attack, colliding) in &mut attacks {
         if attack.definition.projectile.is_none() {
             continue;
         }
 
-        // Check if anything OTHER than the owner is colliding
         for &colliding_entity in colliding.iter() {
             if colliding_entity == attack.owner {
-                continue; // Skip owner
+                continue;
+            }
+            if enemies.contains(colliding_entity) {
+                continue;
             }
 
-            info!("🎯 Projectile hit obstacle, despawning");
+            // Spawn residue if it exists (handles fire patches, stone blocks, etc.)
+            if let Some(residue_def) = &attack.definition.residue {
+                spawn_residue_attack(&mut commands, *residue_def.clone(), transform.translation, attack.owner);
+            }
+
+            info!("🎯 Projectile hit, despawning");
             commands.entity(attack_entity).despawn();
-            break; // Stop checking once we hit something
+            break;
         }
     }
 }
+
+fn spawn_residue_attack(
+    commands: &mut Commands,
+    def: AttackDefinition,
+    position: Vec3,
+    owner: Entity,
+) {
+    let spawn_size = match &def.spawn {
+        AttackSpawn::Hitbox { size, .. } => *size,
+    };
+
+    let sprite = def.spawn.build_sprite();
+
+    commands.spawn((
+        Attack::from_definition(def, owner, AttackId(999), Vec2::X),
+        Transform::from_translation(position),
+        CombatEntity,
+        sprite,
+        Collider::rectangle(spawn_size.x, spawn_size.y),
+        Sensor,
+        CollidingEntities::default(),
+        CollisionLayers::new(GameLayer::Combat, [GameLayer::Combat]),
+        Hitbox { size: spawn_size },
+        RigidBody::Static,
+    ));
+}
+
 pub fn attack_hit_system(
     mut commands: Commands,
     mut attacks: Query<(&Transform, &Hitbox, &mut Attack)>,
@@ -231,7 +263,11 @@ pub fn attack_hit_system(
                         &mut writer,
                         &mut stats_query,
                     );
-
+                    if attack.definition.projectile.is_some() {
+                        if let Some(residue_def) = &attack.definition.residue {
+                            spawn_residue_attack(&mut commands, *residue_def.clone(), attack_pos, attack.owner);
+                        }
+                    }
                     attack.has_hit = true;
                     attack.hit_timer.finish();
                     attack.lifetime_timer.finish();
@@ -579,6 +615,7 @@ mod tests {
         let def = AttackDefinition {
             name: "test_attack".to_string(),
             follow_caster: true,
+            residue:None,
             projectile: None,
             effects: vec![TimedEffect {
                 trigger: EffectTrigger::OnHit,
@@ -606,6 +643,7 @@ mod tests {
             name: "test_multihit".to_string(),
             follow_caster: true,
             projectile: None,
+            residue: None,
             effects: vec![TimedEffect {
                 trigger: EffectTrigger::OnHit,
                 effect: AttackEffect::Damage(DamageEffect {
