@@ -56,7 +56,7 @@ pub fn fireball() -> AttackDefinition {
             TimedEffect {
                 trigger: EffectTrigger::OnHit,
                 effect: AttackEffect::Damage(DamageEffect {
-                    amount: 1.0,
+                    amount: 10.0,
                     target: ModifierTarget::TargetEntity,
                 }),
             },
@@ -68,6 +68,23 @@ pub fn fireball() -> AttackDefinition {
                     _mode: KnockbackMode::Impulse,
                     hitstun: 0.01,
                     target: ModifierTarget::TargetEntity,
+                }),
+            },
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Damage(DamageEffect {
+                    amount: 5.0,
+                    target: ModifierTarget::SelfEntity,
+                }),
+            },
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Knockback(KnockbackEffectDef {
+                    force: 10.0,
+                    direction: KnockbackDirection::SourceToTarget,
+                    _mode: KnockbackMode::Override,
+                    hitstun: 1.0,
+                    target: ModifierTarget::SelfEntity,
                 }),
             },
         ],
