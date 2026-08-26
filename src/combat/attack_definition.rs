@@ -68,7 +68,7 @@ pub struct ProjectileDef {
 pub struct AttackDefinition {
     pub name: String,
     pub effects: Vec<TimedEffect>,
-
+    pub collision: bool,
     pub lifetime: f32,
     pub hit_interval: f32,
     pub cooldown: f32,
@@ -80,4 +80,3 @@ pub struct AttackDefinition {
     pub follow_caster: bool,
     pub projectile: Option<ProjectileDef>,
 }
-

@@ -48,6 +48,7 @@ pub fn fireball() -> AttackDefinition {
     let residue = AttackDefinition {
         name: "fire_patch".to_string(),
         cooldown: 0.01,
+        collision: false,
         follow_caster: false,
         projectile: None,
         residue: None,
@@ -62,31 +63,31 @@ pub fn fireball() -> AttackDefinition {
             TimedEffect {
                 trigger: EffectTrigger::OnHit,
                 effect: AttackEffect::Knockback(KnockbackEffectDef {
-                    force: 300.0,
+                    force: 10.0,
                     direction: KnockbackDirection::SourceToTarget,
                     _mode: KnockbackMode::Impulse,
-                    hitstun: 0.05,
+                    hitstun: 0.01,
                     target: ModifierTarget::TargetEntity,
                 }),
             },
         ],
         lifetime: 20.0,
-        hit_interval: 0.01,  // Hits every 0.5 seconds
+        hit_interval: 0.5,
         hit_behavior: HitBehavior::MultiHit,
         offset: Vec3::ZERO,
         spawn: AttackSpawn::Hitbox {
-            color: Color::srgb(1.0, 0.5, 0.0),
-            size: Vec2::new(30.0, 30.0),
+            color: Color::srgba(1.0, 0.5, 0.0, 0.2),
+            size: Vec2::new(60.0, 60.0),
         },
     };
 
     AttackDefinition {
         name: "fireball".to_string(),
         follow_caster: false,
+        collision: false,
         projectile: Some(ProjectileDef { speed: 500.0 }),
         residue: Some(Box::new(residue)),
         effects: vec![
-            // DAMAGE
             TimedEffect {
                 trigger: EffectTrigger::OnHit,
                 effect: AttackEffect::Damage(DamageEffect {
@@ -94,7 +95,6 @@ pub fn fireball() -> AttackDefinition {
                     target: ModifierTarget::TargetEntity,
                 }),
             },
-            // KNOCKBACK TARGET
             TimedEffect {
                 trigger: EffectTrigger::OnHit,
                 effect: AttackEffect::Knockback(KnockbackEffectDef {
@@ -126,6 +126,7 @@ pub fn stone_block() -> AttackDefinition {
         name: "stone_residue".to_string(),
         follow_caster: false,
         projectile: None,
+        collision: true,
         residue: None,
         effects: vec![],
         lifetime: 999.0,
@@ -142,8 +143,9 @@ pub fn stone_block() -> AttackDefinition {
     AttackDefinition {
         name: "stone_block".to_string(),
         follow_caster: false,
+        collision: false,
         projectile: Some(ProjectileDef { speed: 500.0 }),
-        residue: Some(Box::new(residue)),  // ← Stone spawns stone residue
+        residue: Some(Box::new(residue)),
         effects: vec![/* knockback only */],
         lifetime: 10.0,
         hit_interval: 0.1,
@@ -163,6 +165,7 @@ pub fn quick_attack() -> AttackDefinition {
         projectile: None,
         follow_caster: true,
         residue: None,
+        collision: false,
         effects: vec![
             // DAMAGE
             TimedEffect {
@@ -242,6 +245,7 @@ pub fn simple_beam() -> AttackDefinition {
         follow_caster: true,
         projectile: None,
         residue: None,
+        collision: false,
         effects: vec![
             TimedEffect {
                 trigger: EffectTrigger::OnHit,
@@ -282,6 +286,7 @@ pub fn speedo() -> AttackDefinition {
         follow_caster: true,
         residue: None,
         projectile: None,
+        collision: false,
         effects: vec![
             TimedEffect {
                 trigger: EffectTrigger::OnCast,
@@ -335,7 +340,7 @@ pub fn slow_down() -> AttackDefinition {
         lifetime: 2.0,
         hit_interval: 2.0,
         cooldown: 3.0,
-
+        collision: false,
         hit_behavior: HitBehavior::Single,
         offset: Vec3::ZERO,
         spawn: AttackSpawn::Hitbox {
@@ -373,6 +378,7 @@ pub fn shoot_square() -> AttackDefinition {
         projectile: Some(ProjectileDef { speed: 500.0 }),
         follow_caster: false,
         residue: None,
+        collision: false,
         effects: vec![
             // DAMAGE
             TimedEffect {

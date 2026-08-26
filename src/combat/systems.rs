@@ -3,7 +3,10 @@ use super::events::*;
 use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget, StatusEffect,
 };
-use crate::combat::attacks::{AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, shoot_square, simple_beam, slow_down, speedo, fireball, stone_block};
+use crate::combat::attacks::{
+    AttackSpawn, HitBehavior, KnockbackDirection, fireball, quick_attack, shoot_square,
+    simple_beam, slow_down, speedo, stone_block,
+};
 use avian2d::prelude::*; // This should include collision events
 use bevy::prelude::*; // For EventReader
 
@@ -189,7 +192,12 @@ pub fn projectile_obstacle_collision_system(
 
             // Spawn residue if it exists (handles fire patches, stone blocks, etc.)
             if let Some(residue_def) = &attack.definition.residue {
-                spawn_residue_attack(&mut commands, *residue_def.clone(), transform.translation, attack.owner);
+                spawn_residue_attack(
+                    &mut commands,
+                    *residue_def.clone(),
+                    transform.translation,
+                    attack.owner,
+                );
             }
 
             info!("🎯 Projectile hit, despawning");
@@ -208,21 +216,24 @@ fn spawn_residue_attack(
     let spawn_size = match &def.spawn {
         AttackSpawn::Hitbox { size, .. } => *size,
     };
-
+    let _is_collision = def.collision;
     let sprite = def.spawn.build_sprite();
 
-    commands.spawn((
+    let mut residue_command = commands.spawn((
         Attack::from_definition(def, owner, AttackId(999), Vec2::X),
         Transform::from_translation(position),
         CombatEntity,
         sprite,
         Collider::rectangle(spawn_size.x, spawn_size.y),
-        Sensor,
         CollidingEntities::default(),
-        CollisionLayers::new(GameLayer::Combat, [GameLayer::Combat]),
         Hitbox { size: spawn_size },
+        CollisionLayers::new(GameLayer::Combat, [GameLayer::Combat]),
         RigidBody::Static,
     ));
+    if !_is_collision {
+        debug!("collision added to residue attack");
+        residue_command.insert((Sensor,));
+    }
 }
 
 pub fn attack_hit_system(
@@ -263,10 +274,15 @@ pub fn attack_hit_system(
                         &mut writer,
                         &mut stats_query,
                     );
-                    if attack.definition.projectile.is_some() {
-                        if let Some(residue_def) = &attack.definition.residue {
-                            spawn_residue_attack(&mut commands, *residue_def.clone(), attack_pos, attack.owner);
-                        }
+                    if attack.definition.projectile.is_some()
+                        && let Some(residue_def) = &attack.definition.residue
+                    {
+                        spawn_residue_attack(
+                            &mut commands,
+                            *residue_def.clone(),
+                            attack_pos,
+                            attack.owner,
+                        );
                     }
                     attack.has_hit = true;
                     attack.hit_timer.finish();
@@ -615,7 +631,8 @@ mod tests {
         let def = AttackDefinition {
             name: "test_attack".to_string(),
             follow_caster: true,
-            residue:None,
+            collision: false,
+            residue: None,
             projectile: None,
             effects: vec![TimedEffect {
                 trigger: EffectTrigger::OnHit,
@@ -642,6 +659,7 @@ mod tests {
         let def = AttackDefinition {
             name: "test_multihit".to_string(),
             follow_caster: true,
+            collision: false,
             projectile: None,
             residue: None,
             effects: vec![TimedEffect {

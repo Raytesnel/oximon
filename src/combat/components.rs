@@ -1,7 +1,6 @@
 use crate::combat::attack_definition::AttackDefinition;
 use bevy::prelude::*;
 use std::collections::HashMap;
-use bevy::asset::AssetPath;
 
 #[derive(Component, Debug)]
 

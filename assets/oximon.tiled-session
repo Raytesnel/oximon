@@ -17,10 +17,10 @@
                 5
             ],
             "scale": 1,
-            "selectedLayer": 4,
+            "selectedLayer": 5,
             "viewCenter": {
-                "x": 960,
-                "y": 960
+                "x": 225,
+                "y": 1522
             }
         },
         "map/Sprite-lamp.tsx": {
