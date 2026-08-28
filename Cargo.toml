@@ -28,3 +28,6 @@ opt-level = 3
 codegen-units = 1
 incremental = false
 debug = false
+
+[lints.clippy]
+type_complexity = "allow"

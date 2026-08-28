@@ -11,7 +11,6 @@ use bevy_ecs_tiled::prelude::*;
 const ELEVATION_STEP: f32 = 10.0;
 const FLOOR_BACK_OFFSET: f32 = 1.0;
 
-#[allow(clippy::type_complexity)]
 pub fn sync_player_elevation_filter(
     mut player_q: Query<
         (&Elevation, &mut CollisionLayers),

@@ -256,6 +256,7 @@ pub fn quick_attack() -> AttackDefinition {
         },
     }
 }
+#[allow(dead_code)]
 pub fn simple_beam() -> AttackDefinition {
     AttackDefinition {
         name: "simple_beam".to_string(),
@@ -347,7 +348,7 @@ pub fn speedo() -> AttackDefinition {
         },
     }
 }
-
+#[allow(dead_code)]
 pub fn slow_down() -> AttackDefinition {
     AttackDefinition {
         name: "speedo".to_string(),

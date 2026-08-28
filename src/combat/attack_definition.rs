@@ -40,6 +40,7 @@ pub struct TimedEffect {
     pub effect: AttackEffect,
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum StatusEffect {
     Poison {
@@ -49,6 +50,7 @@ pub enum StatusEffect {
     },
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum AttackEffect {
     Damage(DamageEffect),
