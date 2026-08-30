@@ -4,8 +4,8 @@ use crate::combat::attack_definition::{
     AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget, StatusEffect,
 };
 use crate::combat::attacks::{
-    AttackSpawn, HitBehavior, KnockbackDirection, quick_attack, shoot_square, simple_beam,
-    slow_down, speedo,
+    AttackSpawn, HitBehavior, KnockbackDirection, fireball, quick_attack, shoot_square, speedo,
+    stone_block,
 };
 use avian2d::prelude::*; // This should include collision events
 use bevy::prelude::*; // For EventReader
@@ -28,8 +28,8 @@ fn get_attack_for_key(key: KeyCode) -> Option<AttackDefinition> {
         QUICK_ATTACK => Some(quick_attack()),
         JUMP_BUTTON => Some(speedo()),
         PEW => Some(shoot_square()),
-        PEWPEW => Some(slow_down()),
-        POWPOW => Some(simple_beam()),
+        PEWPEW => Some(fireball()),
+        POWPOW => Some(stone_block()),
 
         _ => None,
     }
@@ -174,25 +174,68 @@ pub fn check_facing(
 
 pub fn projectile_obstacle_collision_system(
     mut commands: Commands,
-    mut attacks: Query<(Entity, &Attack, &CollidingEntities)>,
+    mut attacks: Query<(Entity, &Transform, &Attack, &CollidingEntities)>,
+    enemies: Query<Entity, Or<(With<Enemy>, With<Player>)>>,
 ) {
-    for (attack_entity, attack, colliding) in &mut attacks {
+    for (attack_entity, transform, attack, colliding) in &mut attacks {
         if attack.definition.projectile.is_none() {
             continue;
         }
 
-        // Check if anything OTHER than the owner is colliding
         for &colliding_entity in colliding.iter() {
             if colliding_entity == attack.owner {
-                continue; // Skip owner
+                continue;
+            }
+            if enemies.contains(colliding_entity) {
+                continue;
             }
 
-            info!("🎯 Projectile hit obstacle, despawning");
+            // Spawn residue if it exists (handles fire patches, stone blocks, etc.)
+            if let Some(residue_def) = &attack.definition.residue {
+                spawn_residue_attack(
+                    &mut commands,
+                    *residue_def.clone(),
+                    transform.translation,
+                    attack.owner,
+                );
+            }
+
+            info!("🎯 Projectile hit, despawning");
             commands.entity(attack_entity).despawn();
-            break; // Stop checking once we hit something
+            break;
         }
     }
 }
+
+fn spawn_residue_attack(
+    commands: &mut Commands,
+    def: AttackDefinition,
+    position: Vec3,
+    owner: Entity,
+) {
+    let spawn_size = match &def.spawn {
+        AttackSpawn::Hitbox { size, .. } => *size,
+    };
+    let _is_collision = def.collision;
+    let sprite = def.spawn.build_sprite();
+
+    let mut residue_command = commands.spawn((
+        Attack::from_definition(def, owner, AttackId(999), Vec2::X),
+        Transform::from_translation(position),
+        CombatEntity,
+        sprite,
+        Collider::rectangle(spawn_size.x, spawn_size.y),
+        CollidingEntities::default(),
+        Hitbox { size: spawn_size },
+        CollisionLayers::new(GameLayer::Combat, [GameLayer::Combat]),
+        RigidBody::Static,
+    ));
+    if !_is_collision {
+        debug!("collision added to residue attack");
+        residue_command.insert((Sensor,));
+    }
+}
+
 pub fn attack_hit_system(
     mut commands: Commands,
     mut attacks: Query<(&Transform, &Hitbox, &mut Attack)>,
@@ -231,7 +274,16 @@ pub fn attack_hit_system(
                         &mut writer,
                         &mut stats_query,
                     );
-
+                    if attack.definition.projectile.is_some()
+                        && let Some(residue_def) = &attack.definition.residue
+                    {
+                        spawn_residue_attack(
+                            &mut commands,
+                            *residue_def.clone(),
+                            attack_pos,
+                            attack.owner,
+                        );
+                    }
                     attack.has_hit = true;
                     attack.hit_timer.finish();
                     attack.lifetime_timer.finish();
@@ -516,14 +568,6 @@ pub fn cleanup_combat(
     }
 }
 
-pub fn debug_collisions(query: Query<(Entity, &CollidingEntities), With<CombatEntity>>) {
-    for (e, colliding) in &query {
-        if !colliding.is_empty() {
-            info!("{:?} is colliding with {:?}", e, colliding);
-        }
-    }
-}
-
 pub fn projectile_movement_system(time: Res<Time>, mut query: Query<(&mut Transform, &Attack)>) {
     for (mut transform, attack) in &mut query {
         let Some(projectile) = &attack.definition.projectile else {
@@ -579,6 +623,8 @@ mod tests {
         let def = AttackDefinition {
             name: "test_attack".to_string(),
             follow_caster: true,
+            collision: false,
+            residue: None,
             projectile: None,
             effects: vec![TimedEffect {
                 trigger: EffectTrigger::OnHit,
@@ -605,7 +651,9 @@ mod tests {
         let def = AttackDefinition {
             name: "test_multihit".to_string(),
             follow_caster: true,
+            collision: false,
             projectile: None,
+            residue: None,
             effects: vec![TimedEffect {
                 trigger: EffectTrigger::OnHit,
                 effect: AttackEffect::Damage(DamageEffect {
@@ -1243,5 +1291,175 @@ mod tests {
 
         let hitstop = app.world().resource::<Hitstop>();
         assert!(hitstop.remaining > 0.0, "Hitstop should be set after a hit");
+    }
+
+    // ── projectile and residue ─────────────────────────────────────────
+
+    fn setup_residue_app() -> App {
+        let mut app = setup_app();
+        app.insert_resource(Hitstop { remaining: 0.0 }); // ← ADD THIS
+        app.add_systems(
+            Update,
+            (super::attack_hit_system, super::apply_damage_system).chain(),
+        );
+        app
+    }
+
+    #[test]
+    fn test_projectile_spawns_residue_on_obstacle_hit() {
+        let mut app = App::new();
+        app.init_resource::<Time>();
+
+        let owner = app.world_mut().spawn_empty().id();
+
+        let residue_def = AttackDefinition {
+            name: "residue_attack".to_string(),
+            follow_caster: false,
+            collision: false,
+            projectile: None,
+            residue: None,
+            effects: vec![],
+            lifetime: 5.0,
+            hit_interval: 0.1,
+            cooldown: 1.0,
+            hit_behavior: HitBehavior::Single,
+            offset: Vec3::ZERO,
+            spawn: AttackSpawn::Hitbox {
+                color: Color::WHITE,
+                size: Vec2::new(10.0, 10.0),
+            },
+        };
+
+        let entity = app
+            .world_mut()
+            .spawn((
+                Attack::from_definition(residue_def.clone(), owner, AttackId(999), Vec2::X),
+                Transform::from_translation(Vec3::ZERO),
+                CombatEntity,
+                residue_def.spawn.build_sprite(),
+                Collider::rectangle(20.0, 20.0),
+                CollidingEntities::default(),
+                Hitbox {
+                    size: Vec2::new(20.0, 20.0),
+                },
+                CollisionLayers::new(GameLayer::Combat, [GameLayer::Combat]),
+                RigidBody::Static,
+                Sensor,
+            ))
+            .id();
+
+        // Verify entity exists
+        assert!(
+            app.world().get_entity(entity).is_ok(),
+            "residue entity should exist"
+        );
+
+        // Verify it's an Attack with correct definition
+        let attack = app.world().get::<Attack>(entity).unwrap();
+        assert_eq!(attack.definition.name, "residue_attack");
+    }
+    #[test]
+    fn test_residue_attack_has_proper_components() {
+        let mut app = setup_residue_app();
+
+        let owner = app.world_mut().spawn_empty().id();
+
+        let residue_def = AttackDefinition {
+            name: "fire_patch".to_string(),
+            follow_caster: false,
+            collision: false,
+            projectile: None,
+            residue: None,
+            effects: vec![],
+            lifetime: 20.0,
+            hit_interval: 0.5,
+            cooldown: 0.01,
+            hit_behavior: HitBehavior::MultiHit,
+            offset: Vec3::ZERO,
+            spawn: AttackSpawn::Hitbox {
+                color: Color::srgba(1.0, 0.5, 0.0, 0.2),
+                size: Vec2::new(60.0, 60.0),
+            },
+        };
+
+        let mut commands = app.world_mut().commands();
+        super::spawn_residue_attack(
+            &mut commands,
+            residue_def,
+            Vec3::new(100.0, 50.0, 0.0),
+            owner,
+        );
+        app.update();
+
+        // Find the spawned residue
+        let residue_entity = app
+            .world_mut()
+            .query::<(Entity, &Attack, &Transform, &Hitbox)>()
+            .iter(app.world())
+            .find(|(_, attack, _, _)| attack.definition.name == "fire_patch")
+            .map(|(entity, _, _, _)| entity);
+
+        assert!(
+            residue_entity.is_some(),
+            "residue should be spawned with proper components"
+        );
+
+        let entity = residue_entity.unwrap();
+        let attack = app.world().get::<Attack>(entity).unwrap();
+        let transform = app.world().get::<Transform>(entity).unwrap();
+        let hitbox = app.world().get::<Hitbox>(entity).unwrap();
+
+        assert_eq!(attack.definition.name, "fire_patch");
+        assert_eq!(attack.owner, owner);
+        assert_eq!(transform.translation, Vec3::new(100.0, 50.0, 0.0));
+        assert_eq!(hitbox.size, Vec2::new(60.0, 60.0));
+    }
+
+    #[test]
+    fn test_residue_with_collision_has_rigidbody_static() {
+        let mut app = setup_residue_app();
+
+        let owner = app.world_mut().spawn_empty().id();
+
+        let stone_residue = AttackDefinition {
+            name: "stone_residue".to_string(),
+            follow_caster: false,
+            collision: true, // ← Has collision
+            projectile: None,
+            residue: None,
+            effects: vec![],
+            lifetime: 999.0,
+            hit_interval: 0.1,
+            cooldown: 1.0,
+            hit_behavior: HitBehavior::MultiHit,
+            offset: Vec3::ZERO,
+            spawn: AttackSpawn::Hitbox {
+                color: Color::srgb(0.5, 0.5, 0.5),
+                size: Vec2::new(20.0, 20.0),
+            },
+        };
+
+        let mut commands = app.world_mut().commands();
+        super::spawn_residue_attack(&mut commands, stone_residue, Vec3::ZERO, owner);
+        app.update();
+
+        let residue_entity = app
+            .world_mut()
+            .query::<(Entity, &Attack)>()
+            .iter(app.world())
+            .find(|(_, attack)| attack.definition.name == "stone_residue")
+            .map(|(entity, _)| entity);
+
+        assert!(residue_entity.is_some(), "stone residue should be spawned");
+
+        let entity = residue_entity.unwrap();
+        let has_rigidbody = app.world().get::<RigidBody>(entity).is_some();
+        let has_collider = app.world().get::<Collider>(entity).is_some();
+
+        assert!(
+            has_rigidbody,
+            "residue with collision should have RigidBody::Static"
+        );
+        assert!(has_collider, "residue with collision should have Collider");
     }
 }

@@ -40,6 +40,7 @@ pub struct TimedEffect {
     pub effect: AttackEffect,
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum StatusEffect {
     Poison {
@@ -49,6 +50,7 @@ pub enum StatusEffect {
     },
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum AttackEffect {
     Damage(DamageEffect),
@@ -68,12 +70,13 @@ pub struct ProjectileDef {
 pub struct AttackDefinition {
     pub name: String,
     pub effects: Vec<TimedEffect>,
-
+    pub collision: bool,
     pub lifetime: f32,
     pub hit_interval: f32,
     pub cooldown: f32,
 
     pub spawn: AttackSpawn,
+    pub residue: Option<Box<AttackDefinition>>,
     pub offset: Vec3,
     pub hit_behavior: HitBehavior,
     pub follow_caster: bool,

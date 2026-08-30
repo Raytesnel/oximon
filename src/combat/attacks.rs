@@ -44,11 +44,145 @@ pub enum HitBehavior {
     _Limited(u32), // e.g. triple kick (3 hits max)
 }
 
+pub fn fireball() -> AttackDefinition {
+    let residue = AttackDefinition {
+        name: "fire_patch".to_string(),
+        cooldown: 0.01,
+        collision: false,
+        follow_caster: false,
+        projectile: None,
+        residue: None,
+        effects: vec![
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Damage(DamageEffect {
+                    amount: 10.0,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            },
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Knockback(KnockbackEffectDef {
+                    force: 10.0,
+                    direction: KnockbackDirection::SourceToTarget,
+                    _mode: KnockbackMode::Impulse,
+                    hitstun: 0.01,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            },
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Damage(DamageEffect {
+                    amount: 5.0,
+                    target: ModifierTarget::SelfEntity,
+                }),
+            },
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Knockback(KnockbackEffectDef {
+                    force: 10.0,
+                    direction: KnockbackDirection::SourceToTarget,
+                    _mode: KnockbackMode::Override,
+                    hitstun: 1.0,
+                    target: ModifierTarget::SelfEntity,
+                }),
+            },
+        ],
+        lifetime: 20.0,
+        hit_interval: 0.5,
+        hit_behavior: HitBehavior::MultiHit,
+        offset: Vec3::ZERO,
+        spawn: AttackSpawn::Hitbox {
+            color: Color::srgba(1.0, 0.5, 0.0, 0.2),
+            size: Vec2::new(60.0, 60.0),
+        },
+    };
+
+    AttackDefinition {
+        name: "fireball".to_string(),
+        follow_caster: false,
+        collision: false,
+        projectile: Some(ProjectileDef { speed: 500.0 }),
+        residue: Some(Box::new(residue)),
+        effects: vec![
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Damage(DamageEffect {
+                    amount: 10.0,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            },
+            TimedEffect {
+                trigger: EffectTrigger::OnHit,
+                effect: AttackEffect::Knockback(KnockbackEffectDef {
+                    force: 800.0,
+                    direction: KnockbackDirection::SourceToTarget,
+                    _mode: KnockbackMode::Override,
+                    hitstun: 1.0,
+                    target: ModifierTarget::TargetEntity,
+                }),
+            },
+        ],
+
+        lifetime: 2.0,
+        hit_interval: 0.1,
+        cooldown: 0.1,
+
+        hit_behavior: HitBehavior::Single,
+        offset: Vec3::ZERO,
+
+        spawn: AttackSpawn::Hitbox {
+            color: Color::srgb(1.0, 0.5, 0.5),
+            size: Vec2::new(20.0, 20.0),
+        },
+    }
+}
+
+pub fn stone_block() -> AttackDefinition {
+    let residue = AttackDefinition {
+        name: "stone_residue".to_string(),
+        follow_caster: false,
+        projectile: None,
+        collision: true,
+        residue: None,
+        effects: vec![],
+        lifetime: 999.0,
+        hit_interval: 0.1,
+        cooldown: 1.0,
+        hit_behavior: HitBehavior::MultiHit,
+        offset: Vec3::ZERO,
+        spawn: AttackSpawn::Hitbox {
+            color: Color::srgb(0.5, 0.5, 0.5),
+            size: Vec2::new(20.0, 20.0),
+        },
+    };
+
+    AttackDefinition {
+        name: "stone_block".to_string(),
+        follow_caster: false,
+        collision: false,
+        projectile: Some(ProjectileDef { speed: 500.0 }),
+        residue: Some(Box::new(residue)),
+        effects: vec![/* knockback only */],
+        lifetime: 10.0,
+        hit_interval: 0.1,
+        cooldown: 1.0,
+        hit_behavior: HitBehavior::Single,
+        offset: Vec3::ZERO,
+        spawn: AttackSpawn::Hitbox {
+            color: Color::srgb(0.6, 0.6, 0.6),
+            size: Vec2::new(20.0, 20.0),
+        },
+    }
+}
+
 pub fn quick_attack() -> AttackDefinition {
     AttackDefinition {
         name: "quick_attack".to_string(),
         projectile: None,
         follow_caster: true,
+        residue: None,
+        collision: false,
         effects: vec![
             // DAMAGE
             TimedEffect {
@@ -122,11 +256,14 @@ pub fn quick_attack() -> AttackDefinition {
         },
     }
 }
+#[allow(dead_code)]
 pub fn simple_beam() -> AttackDefinition {
     AttackDefinition {
         name: "simple_beam".to_string(),
         follow_caster: true,
         projectile: None,
+        residue: None,
+        collision: false,
         effects: vec![
             TimedEffect {
                 trigger: EffectTrigger::OnHit,
@@ -165,7 +302,9 @@ pub fn speedo() -> AttackDefinition {
     AttackDefinition {
         name: "speedo".to_string(),
         follow_caster: true,
+        residue: None,
         projectile: None,
+        collision: false,
         effects: vec![
             TimedEffect {
                 trigger: EffectTrigger::OnCast,
@@ -209,16 +348,17 @@ pub fn speedo() -> AttackDefinition {
         },
     }
 }
-
+#[allow(dead_code)]
 pub fn slow_down() -> AttackDefinition {
     AttackDefinition {
         name: "speedo".to_string(),
         follow_caster: true,
         projectile: None,
+        residue: None,
         lifetime: 2.0,
         hit_interval: 2.0,
         cooldown: 3.0,
-
+        collision: false,
         hit_behavior: HitBehavior::Single,
         offset: Vec3::ZERO,
         spawn: AttackSpawn::Hitbox {
@@ -255,6 +395,8 @@ pub fn shoot_square() -> AttackDefinition {
         name: "shoot_square".to_string(),
         projectile: Some(ProjectileDef { speed: 500.0 }),
         follow_caster: false,
+        residue: None,
+        collision: false,
         effects: vec![
             // DAMAGE
             TimedEffect {

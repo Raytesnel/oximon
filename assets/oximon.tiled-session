@@ -13,14 +13,14 @@
         },
         "map/2d_main.tmx": {
             "expandedObjectLayers": [
-                5,
-                7
+                7,
+                5
             ],
             "scale": 1,
-            "selectedLayer": 4,
+            "selectedLayer": 5,
             "viewCenter": {
-                "x": 960,
-                "y": 960
+                "x": 225,
+                "y": 1522
             }
         },
         "map/Sprite-lamp.tsx": {
@@ -72,8 +72,8 @@
         "map/main.tmx": {
             "expandedGroupLayers": [
                 34,
-                32,
-                33
+                33,
+                32
             ],
             "expandedObjectLayers": [
                 12

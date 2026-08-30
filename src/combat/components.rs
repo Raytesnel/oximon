@@ -1,6 +1,7 @@
 use crate::combat::attack_definition::AttackDefinition;
 use bevy::prelude::*;
 use std::collections::HashMap;
+
 #[derive(Component, Debug)]
 
 pub struct CombatEntity;
