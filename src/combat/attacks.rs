@@ -47,6 +47,7 @@ pub enum HitBehavior {
 pub fn fireball() -> AttackDefinition {
     let residue = AttackDefinition {
         name: "fire_patch".to_string(),
+        residue_tile_key: Some("fire_patch".to_string()),
         cooldown: 0.01,
         collision: false,
         follow_caster: false,
@@ -70,23 +71,6 @@ pub fn fireball() -> AttackDefinition {
                     target: ModifierTarget::TargetEntity,
                 }),
             },
-            TimedEffect {
-                trigger: EffectTrigger::OnHit,
-                effect: AttackEffect::Damage(DamageEffect {
-                    amount: 5.0,
-                    target: ModifierTarget::SelfEntity,
-                }),
-            },
-            TimedEffect {
-                trigger: EffectTrigger::OnHit,
-                effect: AttackEffect::Knockback(KnockbackEffectDef {
-                    force: 10.0,
-                    direction: KnockbackDirection::SourceToTarget,
-                    _mode: KnockbackMode::Override,
-                    hitstun: 1.0,
-                    target: ModifierTarget::SelfEntity,
-                }),
-            },
         ],
         lifetime: 20.0,
         hit_interval: 0.5,
@@ -100,6 +84,7 @@ pub fn fireball() -> AttackDefinition {
 
     AttackDefinition {
         name: "fireball".to_string(),
+        residue_tile_key: None,
         follow_caster: false,
         collision: false,
         projectile: Some(ProjectileDef { speed: 500.0 }),
@@ -141,6 +126,7 @@ pub fn fireball() -> AttackDefinition {
 pub fn stone_block() -> AttackDefinition {
     let residue = AttackDefinition {
         name: "stone_residue".to_string(),
+        residue_tile_key: Some("stone_residue".to_string()),
         follow_caster: false,
         projectile: None,
         collision: true,
@@ -159,6 +145,7 @@ pub fn stone_block() -> AttackDefinition {
 
     AttackDefinition {
         name: "stone_block".to_string(),
+        residue_tile_key: None,
         follow_caster: false,
         collision: false,
         projectile: Some(ProjectileDef { speed: 500.0 }),
@@ -179,6 +166,7 @@ pub fn stone_block() -> AttackDefinition {
 pub fn quick_attack() -> AttackDefinition {
     AttackDefinition {
         name: "quick_attack".to_string(),
+        residue_tile_key: None,
         projectile: None,
         follow_caster: true,
         residue: None,
@@ -260,6 +248,7 @@ pub fn quick_attack() -> AttackDefinition {
 pub fn simple_beam() -> AttackDefinition {
     AttackDefinition {
         name: "simple_beam".to_string(),
+        residue_tile_key: None,
         follow_caster: true,
         projectile: None,
         residue: None,
@@ -301,6 +290,7 @@ pub fn simple_beam() -> AttackDefinition {
 pub fn speedo() -> AttackDefinition {
     AttackDefinition {
         name: "speedo".to_string(),
+        residue_tile_key: None,
         follow_caster: true,
         residue: None,
         projectile: None,
@@ -352,6 +342,7 @@ pub fn speedo() -> AttackDefinition {
 pub fn slow_down() -> AttackDefinition {
     AttackDefinition {
         name: "speedo".to_string(),
+        residue_tile_key: None,
         follow_caster: true,
         projectile: None,
         residue: None,
@@ -393,6 +384,7 @@ pub fn slow_down() -> AttackDefinition {
 pub fn shoot_square() -> AttackDefinition {
     AttackDefinition {
         name: "shoot_square".to_string(),
+        residue_tile_key: None,
         projectile: Some(ProjectileDef { speed: 500.0 }),
         follow_caster: false,
         residue: None,

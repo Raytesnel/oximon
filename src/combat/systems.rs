@@ -223,6 +223,7 @@ fn spawn_residue_attack(
         Attack::from_definition(def, owner, AttackId(999), Vec2::X),
         Transform::from_translation(position),
         CombatEntity,
+        BattleResidue,
         sprite,
         Collider::rectangle(spawn_size.x, spawn_size.y),
         CollidingEntities::default(),
@@ -622,6 +623,7 @@ mod tests {
     fn damage_only_attack(owner: Entity, amount: f32) -> Attack {
         let def = AttackDefinition {
             name: "test_attack".to_string(),
+            residue_tile_key: None,
             follow_caster: true,
             collision: false,
             residue: None,
@@ -651,6 +653,7 @@ mod tests {
         let def = AttackDefinition {
             name: "test_multihit".to_string(),
             follow_caster: true,
+            residue_tile_key: None,
             collision: false,
             projectile: None,
             residue: None,
@@ -1315,6 +1318,7 @@ mod tests {
         let residue_def = AttackDefinition {
             name: "residue_attack".to_string(),
             follow_caster: false,
+            residue_tile_key: None,
             collision: false,
             projectile: None,
             residue: None,
@@ -1368,6 +1372,7 @@ mod tests {
             name: "fire_patch".to_string(),
             follow_caster: false,
             collision: false,
+            residue_tile_key: None,
             projectile: None,
             residue: None,
             effects: vec![],
@@ -1425,6 +1430,7 @@ mod tests {
             name: "stone_residue".to_string(),
             follow_caster: false,
             collision: true, // ← Has collision
+            residue_tile_key: None,
             projectile: None,
             residue: None,
             effects: vec![],

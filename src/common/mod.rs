@@ -15,6 +15,7 @@ impl Plugin for CommonPlugin {
                 update_stat_timers,
                 tick_hitstop,
                 tick_domain_anim,
+                update_residue_timers,
             ),
         )
         .insert_resource(Hitstop { remaining: 0.0 });

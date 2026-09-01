@@ -122,3 +122,19 @@ pub struct StairZone {
 }
 #[derive(Component)]
 pub struct FixedElevation(pub f32);
+
+#[derive(Component, Clone)]
+pub struct OverworldResidue {
+    pub timer: Timer,
+}
+
+impl OverworldResidue {
+    pub fn new(duration: f32) -> Self {
+        Self {
+            timer: Timer::from_seconds(duration, TimerMode::Once),
+        }
+    }
+    pub fn progress(&self) -> f32 {
+        self.timer.remaining_secs() / self.timer.duration().as_secs_f32()
+    }
+}
