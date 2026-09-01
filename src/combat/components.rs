@@ -117,3 +117,6 @@ pub struct Slow {
 pub struct Stun {
     pub duration: Timer,
 }
+
+#[derive(Component)]
+pub struct BattleResidue;

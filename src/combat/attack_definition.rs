@@ -74,7 +74,7 @@ pub struct AttackDefinition {
     pub lifetime: f32,
     pub hit_interval: f32,
     pub cooldown: f32,
-
+    pub residue_tile_key: Option<String>,
     pub spawn: AttackSpawn,
     pub residue: Option<Box<AttackDefinition>>,
     pub offset: Vec3,
