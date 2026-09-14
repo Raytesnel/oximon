@@ -1,5 +1,7 @@
+use crate::combat::attack_definition::AttackDefinition;
 use crate::combat::attacks::AttackSpawn;
 use crate::combat::components::{Attack, BattleResidue, Hitbox, Hitstop};
+use crate::combat::systems::spawn_residue_attack;
 use crate::common::components::*;
 use crate::overworld::components::{
     DomainExpansionAsset, OverworldPlayer, OverworldResidue, SpriteSheetHandle, YSort,
@@ -60,7 +62,8 @@ pub fn tick_domain_anim(
     mut layouts: Option<ResMut<Assets<TextureAtlasLayout>>>,
     player_q: Query<&Transform, With<OverworldPlayer>>,
     time: Res<Time>,
-    attacks: Query<(Entity, &Attack, &Transform), With<BattleResidue>>,
+    attacks_combat: Query<(Entity, &Attack, &Transform), With<BattleResidue>>,
+    attacks_overworld: Query<(Entity, &OverworldResidue, &Transform)>,
 ) {
     let (Some(asset_server), Some(layouts)) = (asset_server, layouts.as_mut()) else {
         return;
@@ -136,6 +139,7 @@ pub fn tick_domain_anim(
             anim.current_radius =
                 (anim.current_frame as f32 / anim.swap_frame as f32) * anim.max_radius;
             if anim.current_frame == anim.swap_frame {
+                spawn_residue_in_battle(commands, attacks_overworld);
                 next_game_state.set(GameState::Combat);
             }
             if anim.current_frame >= anim.total_frames - 1 {
@@ -157,7 +161,7 @@ pub fn tick_domain_anim(
                 return;
             }
             if anim.current_frame == anim.swap_frame {
-                spawn_residue_in_overworld(commands, attacks);
+                spawn_residue_in_overworld(commands, attacks_combat);
                 next_game_state.set(GameState::Overworld);
             }
             anim.current_frame -= 1;
@@ -178,10 +182,17 @@ pub struct ResidueSpawnData {
     pub size: Vec2,
     pub remaining_duration: f32,
     pub name: String,
+    pub owner: Entity,
+    pub attack_definition: AttackDefinition,
 }
 
 impl ResidueSpawnData {
-    pub fn from_attack(attack: &Attack, transform: &Transform) -> Option<Self> {
+    pub fn from_attack(
+        attack: &Attack,
+        transform: &Transform,
+        owner: Entity,
+        attack_def: AttackDefinition,
+    ) -> Option<Self> {
         // Only spawn if has residue_tile_key
         let _tile_key = attack.definition.residue_tile_key.as_ref()?;
 
@@ -195,7 +206,24 @@ impl ResidueSpawnData {
             size,
             remaining_duration: attack.lifetime_timer.remaining_secs(),
             name: format!("residue_{}", attack.definition.name),
+            owner,
+            attack_definition: attack_def,
         })
+    }
+}
+pub fn spawn_residue_in_battle(
+    mut commands: Commands,
+    residue_query: Query<(Entity, &OverworldResidue, &Transform)>,
+) {
+    for (entity, residue, transform) in residue_query.iter() {
+        spawn_residue_attack(
+            &mut commands,
+            residue.attack_definition.clone(),
+            transform.translation,
+            residue.owner,
+            Some(residue.timer.remaining_secs()),
+        );
+        commands.entity(entity).despawn();
     }
 }
 
@@ -204,17 +232,24 @@ pub fn spawn_residue_in_overworld(
     attacks: Query<(Entity, &Attack, &Transform), With<BattleResidue>>,
 ) {
     for (attack_entity, attack, transform) in attacks.iter() {
-        let Some(spawn_data) = ResidueSpawnData::from_attack(attack, transform) else {
+        let Some(spawn_data) = ResidueSpawnData::from_attack(
+            attack,
+            transform,
+            attack_entity,
+            attack.definition.clone(),
+        ) else {
             continue;
         };
-
         info!("🌋 Spawning residue: {}", spawn_data.name);
-
         let mut command_spawn = commands.spawn((
             spawn_data.sprite,
             Transform::from_translation(spawn_data.position),
             GlobalTransform::default(),
-            OverworldResidue::new(spawn_data.remaining_duration),
+            OverworldResidue::new(
+                spawn_data.remaining_duration,
+                spawn_data.owner,
+                spawn_data.attack_definition,
+            ),
             YSort,
             Name::new(spawn_data.name),
             Collider::rectangle(spawn_data.size.x, spawn_data.size.y),
@@ -242,9 +277,8 @@ pub fn update_residue_timers(
         residue.timer.tick(time.delta());
 
         let progress = residue.progress().max(0.0);
-        if let color = &mut sprite.color {
-            color.set_alpha(progress);
-        }
+        let color = &mut sprite.color;
+        color.set_alpha(progress);
 
         if residue.timer.is_finished() {
             commands.entity(entity).despawn();

@@ -1,5 +1,5 @@
 pub mod ai;
-mod attack_definition;
+pub mod attack_definition;
 pub mod attacks;
 pub mod components;
 pub mod events;

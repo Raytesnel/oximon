@@ -197,6 +197,7 @@ pub fn projectile_obstacle_collision_system(
                     *residue_def.clone(),
                     transform.translation,
                     attack.owner,
+                    None,
                 );
             }
 
@@ -207,20 +208,24 @@ pub fn projectile_obstacle_collision_system(
     }
 }
 
-fn spawn_residue_attack(
+pub fn spawn_residue_attack(
     commands: &mut Commands,
     def: AttackDefinition,
     position: Vec3,
     owner: Entity,
+    remaining_duration: Option<f32>,
 ) {
     let spawn_size = match &def.spawn {
         AttackSpawn::Hitbox { size, .. } => *size,
     };
     let _is_collision = def.collision;
     let sprite = def.spawn.build_sprite();
-
+    let mut attack = Attack::from_definition(def, owner, AttackId(999), Vec2::X);
+    if let Some(remaining) = remaining_duration {
+        attack.lifetime_timer = Timer::from_seconds(remaining, TimerMode::Once);
+    }
     let mut residue_command = commands.spawn((
-        Attack::from_definition(def, owner, AttackId(999), Vec2::X),
+        attack,
         Transform::from_translation(position),
         CombatEntity,
         BattleResidue,
@@ -283,6 +288,7 @@ pub fn attack_hit_system(
                             *residue_def.clone(),
                             attack_pos,
                             attack.owner,
+                            None,
                         );
                     }
                     attack.has_hit = true;
@@ -1393,6 +1399,7 @@ mod tests {
             residue_def,
             Vec3::new(100.0, 50.0, 0.0),
             owner,
+            None,
         );
         app.update();
 
@@ -1446,7 +1453,7 @@ mod tests {
         };
 
         let mut commands = app.world_mut().commands();
-        super::spawn_residue_attack(&mut commands, stone_residue, Vec3::ZERO, owner);
+        super::spawn_residue_attack(&mut commands, stone_residue, Vec3::ZERO, owner, None);
         app.update();
 
         let residue_entity = app

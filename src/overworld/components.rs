@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::combat::attack_definition::AttackDefinition;
+
 #[derive(Component)]
 pub struct LampAnimationState {
     pub timer: Timer,
@@ -126,12 +128,16 @@ pub struct FixedElevation(pub f32);
 #[derive(Component, Clone)]
 pub struct OverworldResidue {
     pub timer: Timer,
+    pub owner: Entity,
+    pub attack_definition: AttackDefinition,
 }
 
 impl OverworldResidue {
-    pub fn new(duration: f32) -> Self {
+    pub fn new(duration: f32, owner: Entity, attack_def: AttackDefinition) -> Self {
         Self {
             timer: Timer::from_seconds(duration, TimerMode::Once),
+            owner,
+            attack_definition: attack_def,
         }
     }
     pub fn progress(&self) -> f32 {
