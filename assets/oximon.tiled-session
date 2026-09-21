@@ -1,9 +1,9 @@
 {
-    "activeFile": "map/main.tmx",
+    "activeFile": "map/Block-0003_topdown.tsx",
     "expandedProjectPaths": [
-        ".",
-        "tiles/dungeon",
         "map",
+        "tiles/dungeon",
+        ".",
         "tiles"
     ],
     "fileStates": {
@@ -16,12 +16,16 @@
                 7,
                 5
             ],
-            "scale": 1,
-            "selectedLayer": 5,
+            "scale": 1.6,
+            "selectedLayer": 4,
             "viewCenter": {
-                "x": 225,
-                "y": 1522
+                "x": 340.9375,
+                "y": 1613.125
             }
+        },
+        "map/Block-0003_topdown.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         },
         "map/Sprite-lamp.tsx": {
             "scaleInDock": 1,
@@ -78,11 +82,11 @@
             "expandedObjectLayers": [
                 12
             ],
-            "scale": 1.4328,
-            "selectedLayer": 4,
+            "scale": 1.6,
+            "selectedLayer": 9,
             "viewCenter": {
-                "x": 341.2897822445561,
-                "y": 1574.539363484087
+                "x": 340.9375,
+                "y": 1610.625
             }
         },
         "map/main.tmx#TX Struct": {
@@ -125,28 +129,29 @@
         "map/block_push.tsx",
         "tiles/dungeon/top_down_tree.tsx",
         "map/top_down_Sprite-lamp.tsx",
-        "map/transition_bol_prototype.tsx"
+        "map/transition_bol_prototype.tsx",
+        "map/Block-0003_topdown.tsx"
     ],
     "project": "oximon.tiled-project",
     "property.type": "int",
     "recentFiles": [
-        "map/transition_bol_prototype.tsx",
-        "map/top_down_Sprite-lamp.tsx",
-        "tiles/dungeon/top_down_tree.tsx",
-        "map/block_push.tsx",
-        "map/Sprite-lamp.tsx",
-        "map/TX Struct.tsx",
-        "map/TXPlant-ezgif.com-crop.tsx",
-        "map/TX Tileset Wall.tsx",
-        "map/TX Props.tsx",
-        "map/TX Plant.tsx",
+        "map/main.tmx",
+        "map/2d_main.tmx",
         "map/TilesetFloorDetail.tsx",
-        "map/2d_main.tmx"
+        "map/TX Plant.tsx",
+        "map/TX Props.tsx",
+        "map/TX Tileset Wall.tsx",
+        "map/TXPlant-ezgif.com-crop.tsx",
+        "map/TX Struct.tsx",
+        "map/Sprite-lamp.tsx",
+        "map/block_push.tsx",
+        "tiles/dungeon/top_down_tree.tsx",
+        "map/top_down_Sprite-lamp.tsx"
     ],
     "tileset.lastUsedFilter": "Tiled tileset files (*.tsx *.xml)",
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {
-        "height": 525,
-        "width": 525
+        "height": 32,
+        "width": 32
     }
 }
