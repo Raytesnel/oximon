@@ -11,6 +11,15 @@ pub struct LampAnimationState {
 }
 
 #[derive(Component)]
+pub struct NpcDialogue {
+    pub name: String,
+    pub lines: Vec<String>,
+}
+
+#[derive(Component)]
+pub struct DialogueTitle;
+
+#[derive(Component)]
 pub struct OverworldEntity;
 
 #[derive(Component)]
@@ -53,6 +62,7 @@ pub enum InteractionType {
     Sign,
     Block,
     Monster,
+    NPC,
 }
 
 #[derive(Component, PartialEq, Debug)]
