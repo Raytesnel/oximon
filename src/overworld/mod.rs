@@ -1,5 +1,6 @@
 use crate::GameState;
 use crate::overworld::components::{DomainExpansionAsset, LayerElevations};
+use crate::overworld::dialogs::{CurrentDialogue, spawn_dialogue_ui};
 use crate::overworld::interactables::*;
 use crate::overworld::player_movement::*;
 use bevy::prelude::*;
@@ -8,6 +9,7 @@ use interactables::{on_sign_interaction, tick_sign_popups};
 use setup::*;
 
 pub mod components;
+mod dialogs;
 mod input_systems;
 mod interactables;
 mod player_movement;
@@ -22,7 +24,7 @@ pub struct OverworldPlugin;
 
 impl Plugin for OverworldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_overworld)
+        app.add_systems(Startup, (setup_overworld, spawn_dialogue_ui))
             .add_systems(
                 Update,
                 (
@@ -40,6 +42,8 @@ impl Plugin for OverworldPlugin {
                     apply_fixed_elevation,
                     sync_player_elevation_filter,
                     debug_collision_layers,
+                    dialogs::handle_dialogue_input,
+                    dialogs::show_dialogue,
                 )
                     .run_if(in_state(GameState::Overworld)),
             )
@@ -55,5 +59,6 @@ impl Plugin for OverworldPlugin {
             .add_observer(on_lamp_interaction);
         app.init_resource::<DomainExpansionAsset>();
         app.init_resource::<LayerElevations>();
+        app.init_resource::<CurrentDialogue>();
     }
 }

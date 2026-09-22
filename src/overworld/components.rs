@@ -10,6 +10,16 @@ pub struct LampAnimationState {
     pub hold_on_last: bool, // true = stop at last frame, false = loop
 }
 
+#[allow(dead_code)]
+#[derive(Component)]
+pub struct NpcDialogue {
+    pub name: String,
+    pub lines: Vec<String>,
+}
+
+#[derive(Component)]
+pub struct DialogueTitle;
+
 #[derive(Component)]
 pub struct OverworldEntity;
 
@@ -46,6 +56,7 @@ pub struct SpriteSheetProps {
     pub rows: u32,
 }
 
+#[allow(dead_code)]
 #[derive(Component)]
 pub enum InteractionType {
     Chest,
@@ -53,6 +64,7 @@ pub enum InteractionType {
     Sign,
     Block,
     Monster,
+    NPC,
 }
 
 #[derive(Component, PartialEq, Debug)]

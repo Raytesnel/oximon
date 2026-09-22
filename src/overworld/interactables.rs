@@ -1,8 +1,8 @@
 use crate::common::components::{BattleState, CombatSpawnContext};
 use crate::overworld::components::*;
+use crate::overworld::dialogs::{CurrentDialogue, DialogueState};
 use avian2d::prelude::*;
 use bevy::asset::AssetServer;
-use bevy::color::Color;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 
@@ -38,34 +38,40 @@ pub struct LampInteractionContext<'w, 's> {
     pub name_q: Query<'w, 's, &'static Name>,
     pub sprite_q: Query<'w, 's, &'static mut Sprite>,
 }
+#[allow(dead_code)]
+pub fn on_npc_interaction(
+    trigger: On<InteractionEvent>,
+    query: Query<(&InteractionType, &NpcDialogue)>,
+    mut current_dialogue: ResMut<CurrentDialogue>,
+) {
+    let entity = trigger.event().entity;
+    let Ok((InteractionType::NPC, npc_dialogue)) = query.get(entity) else {
+        return;
+    };
+
+    current_dialogue.state = Some(DialogueState {
+        lines: npc_dialogue.lines.clone(), // Vec<String>
+        current_line: 0,
+        speaker_name: npc_dialogue.name.clone(),
+    });
+}
 
 pub fn on_sign_interaction(
     trigger: On<InteractionEvent>,
     query: Query<(&InteractionType, &SignText)>,
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
+    mut current_dialogue: ResMut<CurrentDialogue>,
 ) {
     let entity = trigger.event().entity;
     let Ok((InteractionType::Sign, sign_text)) = query.get(entity) else {
         return;
     };
 
-    // Spawn popup as a child — inherits the sign's Transform
-    commands.entity(entity).with_children(|parent| {
-        parent.spawn((
-            SignPopup {
-                timer: Timer::from_seconds(3.0, TimerMode::Once),
-            },
-            Text2d::new(sign_text.0.clone()),
-            TextFont {
-                font: asset_server.load("fonts/your_font.otf"),
-                font_size: 12.0,
-                ..default()
-            },
-            TextColor(Color::WHITE),
-            // Float 32px above the sign
-            Transform::from_xyz(0.0, 32.0, 5.0),
-        ));
+    let lines: Vec<String> = sign_text.0.split('\n').map(|s| s.to_string()).collect();
+
+    current_dialogue.state = Some(DialogueState {
+        lines,
+        current_line: 0,
+        speaker_name: "Sign".to_string(),
     });
 }
 

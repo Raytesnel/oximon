@@ -4,6 +4,7 @@ use crate::movement::input::{
 use crate::overworld::components::{
     InteractionEvent, InteractionField, InteractionFieldMarker, OverworldPlayer,
 };
+use crate::overworld::dialogs::CurrentDialogue;
 use avian2d::prelude::{CollidingEntities, LinearVelocity};
 use bevy::input::ButtonInput;
 use bevy::log::info;
@@ -11,12 +12,18 @@ use bevy::math::Vec2;
 use bevy::prelude::{Commands, Entity, KeyCode, Query, Res, With};
 
 pub const INTERACTION_KEY: KeyCode = KeyCode::KeyE;
+
 pub fn interaction_input_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     player_q: Query<Entity, With<OverworldPlayer>>,
     fields: Query<(&InteractionField, &CollidingEntities), With<InteractionFieldMarker>>,
+    current_dialogue: Res<CurrentDialogue>,
     mut commands: Commands,
 ) {
+    if current_dialogue.state.is_some() {
+        return;
+    }
+
     if !keyboard.just_pressed(INTERACTION_KEY) {
         return;
     }
@@ -68,6 +75,7 @@ mod tests {
     use crate::overworld::components::{
         InteractionEvent, InteractionField, InteractionFieldMarker, OverworldPlayer,
     };
+    use crate::overworld::dialogs::CurrentDialogue;
     use crate::overworld::input_systems::{
         INTERACTION_KEY, interaction_input_system, overworld_movement,
     };
@@ -259,11 +267,13 @@ mod tests {
     #[test]
     fn interaction_does_not_trigger_without_e_press() {
         let mut app = app_with_interaction();
+        app.init_resource::<CurrentDialogue>();
         spawn_interaction_setup(&mut app);
         // No key press
         tick(&mut app, 0.016);
 
         let log = app.world().resource::<InteractionLog>();
+
         assert!(log.0.is_empty(), "no event expected without key press");
     }
 
@@ -282,6 +292,7 @@ mod tests {
             InteractionField { owner },
             CollidingEntities::default(), // empty — player not inside
         ));
+        app.init_resource::<CurrentDialogue>();
 
         let _ = player;
 
