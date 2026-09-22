@@ -1,3 +1,4 @@
+use crate::overworld::dialogs::CurrentDialogue;
 use crate::overworld::{
     components::*, input_systems::interaction_input_system, interactables::*,
     player_movement::y_sort,
@@ -87,12 +88,12 @@ fn moving_player_down_increases_z_relative_to_static_object() {
 }
 
 #[test]
-fn interacting_with_sign_spawns_popup_child() {
+fn interacting_with_sign_starts_dialogue() {
     let mut app = make_app();
     app.add_plugins(bevy::asset::AssetPlugin::default());
     app.init_asset::<bevy::text::Font>();
     app.add_observer(on_sign_interaction);
-    app.add_systems(Update, tick_sign_popups);
+    app.init_resource::<CurrentDialogue>();
 
     let sign = app
         .world_mut()
@@ -104,93 +105,16 @@ fn interacting_with_sign_spawns_popup_child() {
         ))
         .id();
 
-    // Fire the interaction event.
-    app.world_mut()
-        .commands()
-        .trigger(InteractionEvent { entity: sign });
+    app.world_mut().trigger(InteractionEvent { entity: sign });
     app.update();
 
-    // The sign should now have a child with SignPopup.
-    let children = app
+    let state = app
         .world()
-        .get::<Children>(sign)
-        .expect("sign must have children after interaction");
-
-    let has_popup = children
-        .iter()
-        .any(|c| app.world().get::<SignPopup>(c).is_some());
-
-    assert!(
-        has_popup,
-        "sign should have a SignPopup child after interaction"
-    );
-}
-
-#[test]
-fn sign_popup_despawns_after_three_seconds() {
-    let mut app = make_app();
-    app.add_plugins(bevy::asset::AssetPlugin::default());
-    app.init_asset::<bevy::text::Font>();
-    app.add_observer(on_sign_interaction);
-    app.add_systems(Update, tick_sign_popups);
-
-    let sign = app
-        .world_mut()
-        .spawn((
-            InteractionType::Sign,
-            SignText("Hello".to_string()),
-            Transform::default(),
-            GlobalTransform::default(),
-        ))
-        .id();
-
-    // immediate trigger
-    app.world_mut().trigger(InteractionEvent { entity: sign });
-    app.update(); // observer runs, children spawned
-    app.update(); // children flushed into world
-
-    // verify popup exists before testing despawn
-    let popup = app
-        .world()
-        .get::<Children>(sign)
-        .expect("sign must have children")
-        .iter()
-        .find(|c| app.world().get::<SignPopup>(*c).is_some())
-        .expect("must have a SignPopup child");
-
-    // use a short timer instead of fighting the time issue
-    // OR just do enough ticks — at ~0.25s each, 25 ticks = ~6.25s > 3s
-    // but first check the popup actually has time ticking:
-    let remaining = app
-        .world()
-        .get::<SignPopup>(popup)
-        .unwrap()
-        .timer
-        .remaining_secs();
-    println!("remaining before loop: {remaining}");
-
-    for _ in 0..15 {
-        if app.world().get_entity(popup).is_err() {
-            break; // already despawned, no need to continue
-        }
-        app.world_mut()
-            .get_mut::<SignPopup>(popup)
-            .unwrap()
-            .timer
-            .tick(std::time::Duration::from_secs_f32(0.5));
-        app.update();
-    }
-
-    let remaining_after = app
-        .world()
-        .get::<SignPopup>(popup)
-        .map(|p| p.timer.remaining_secs());
-    println!("remaining after loop: {remaining_after:?}");
-
-    assert!(
-        app.world().get_entity(popup).is_err(),
-        "SignPopup must despawn"
-    );
+        .resource::<CurrentDialogue>()
+        .state
+        .as_ref()
+        .expect("sign interaction should start a dialogue");
+    assert_eq!(state.lines, vec!["Hello".to_string()]);
 }
 
 #[test]
@@ -258,13 +182,14 @@ fn pushing_block_right_sets_sliding_target_to_the_right() {
     app.add_plugins(bevy::asset::AssetPlugin::default());
     app.add_observer(on_block_interaction);
     app.init_resource::<Assets<TextureAtlasLayout>>();
+    app.init_resource::<CurrentDialogue>();
 
     let player = app
         .world_mut()
         .spawn((
             OverworldPlayer,
             Facing::Right,
-            Transform::from_xyz(0.0, 0.0, 0.0),
+            Transform::from_xyz(16.0, 16.0, 0.0),
         ))
         .id();
 
@@ -355,6 +280,7 @@ fn e_press_outside_field_fires_no_event() {
     let mut app = make_app();
     app.add_systems(Update, interaction_input_system);
     app.init_resource::<EventLog>();
+    app.init_resource::<CurrentDialogue>();
     app.add_observer(|trigger: On<InteractionEvent>, mut log: ResMut<EventLog>| {
         log.0.push(trigger.event().entity);
     });

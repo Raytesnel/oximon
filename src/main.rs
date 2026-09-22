@@ -20,7 +20,7 @@ enum GameState {
     Combat,
 }
 const SCALING: f32 = 2.0;
-const PIXELS_PER_VIEW: f32 = 650.0;
+const PIXELS_PER_VIEW: f32 = 450.0;
 
 fn main() {
     App::new()
