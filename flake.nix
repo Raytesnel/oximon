@@ -2,38 +2,57 @@
   description = "A reproducible development environment";
 
   inputs = {
-    # Pin to a stable or unstable branch of nixpkgs
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };
 
   outputs = { self, nixpkgs }:
     let
-      # Define supported systems (e.g., x86_64-linux, aarch64-darwin for M1/M2/M3 Macs)
       supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-
-      # Helper function to generate attributes for all systems
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
       devShells = forAllSystems (system:
         let
           pkgs = import nixpkgs { inherit system; };
+
+          # Libraries Bevy needs at build time and loads at runtime (Linux only)
+          bevyLibs = pkgs.lib.optionals pkgs.stdenv.isLinux (with pkgs; [
+            alsa-lib
+            udev
+            vulkan-loader
+            libxkbcommon
+            wayland
+            libx11
+            libxcursor
+            libxi
+            libxrandr
+          ]);
         in
         {
           default = pkgs.mkShell {
-            # Add build/runtime tools here
+            nativeBuildInputs = with pkgs; [
+              pkg-config
+            ];
+
+            buildInputs = bevyLibs;
+
             packages = with pkgs; [
               git
               ripgrep
+              just
               cargo
               rustc
-              just
+              rustfmt
+              clippy
+              rust-analyzer
             ];
 
-            # Environment variables to set inside the shell
             shellHook = ''
-              echo "🔨 Welcome to your Nix development shell!"
               export PROJECT_ENV="development"
+              export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath bevyLibs}:$LD_LIBRARY_PATH"
+
+              echo -e "\033[1;33m Welcome to your Nix development shell!\033[0m"
+              echo -e "\033[1;33m to run the game use the command: just run\033[0m"
             '';
           };
         });
