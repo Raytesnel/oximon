@@ -240,7 +240,7 @@ pub fn spawn_residue_in_overworld(
         ) else {
             continue;
         };
-        info!("🌋 Spawning residue: {}", spawn_data.name);
+        info!("Spawning residue: {}", spawn_data.name);
         let mut command_spawn = commands.spawn((
             spawn_data.sprite,
             Transform::from_translation(spawn_data.position),
