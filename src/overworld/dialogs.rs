@@ -109,11 +109,10 @@ pub fn show_dialogue(
         }
 
         // Update text
-        if dialogue_state.current_line < dialogue_state.lines.len() {
-            if let Ok(mut text) = param_set.p0().single_mut() {
+        if dialogue_state.current_line < dialogue_state.lines.len()
+            && let Ok(mut text) = param_set.p0().single_mut() {
                 text.0 = dialogue_state.lines[dialogue_state.current_line].clone();
             }
-        }
     } else {
         // Hide box
         for mut node in dialogue_box.iter_mut() {

@@ -1,11 +1,6 @@
 use crate::common::components::{BattleState, CombatSpawnContext};
 use crate::overworld::components::*;
-use avian2d::prelude::*;
 use bevy::prelude::*;
-
-type PlayerQueryItem = (&'static Facing, &'static Transform);
-type ObstacleQueryItem = &'static Transform;
-type ObstacleFilter = (With<RigidBody>, With<PushableBlock>);
 
 pub fn on_monster_interaction(
     trigger: On<InteractionEvent>,

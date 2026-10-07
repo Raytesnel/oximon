@@ -118,20 +118,20 @@ pub fn on_block_interaction(
     }
 
     // Spritesheet lazily opbouwen bij eerste push
-    if maybe_handle.is_none() {
-        if let Some(props) = maybe_props {
-            let layout = layouts.add(TextureAtlasLayout::from_grid(
-                UVec2::new(props.width, props.height),
-                props.columns,
-                props.rows,
-                None,
-                None,
-            ));
-            commands.entity(entity).insert(SpriteSheetHandle {
-                image: asset_server.load(props.path.clone()),
-                layout,
-            });
-        }
+    if maybe_handle.is_none()
+        && let Some(props) = maybe_props
+    {
+        let layout = layouts.add(TextureAtlasLayout::from_grid(
+            UVec2::new(props.width, props.height),
+            props.columns,
+            props.rows,
+            None,
+            None,
+        ));
+        commands.entity(entity).insert(SpriteSheetHandle {
+            image: asset_server.load(props.path.clone()),
+            layout,
+        });
     }
 
     commands.entity(entity).insert(BlockSliding {
@@ -212,8 +212,13 @@ mod tests {
     use bevy::prelude::*;
     use bevy::time::TimeUpdateStrategy;
 
+    use crate::overworld::components::Facing;
     use crate::overworld::components::{BlockSliding, InteractionState, SpriteSheetHandle};
     use crate::overworld::interactables::*;
+    const GRID: f32 = 32.0;
+    // Block origin = bottom-left corner, so its centre is at (80, 80).
+    const BLOCK_ORIGIN: Vec2 = Vec2::new(64.0, 64.0);
+    const BLOCK_CENTER: Vec2 = Vec2::new(80.0, 80.0);
 
     fn make_app_with_time(step_seconds: f32) -> App {
         let mut app = App::new();
@@ -321,150 +326,142 @@ mod tests {
         };
         assert_eq!(next, InteractionState::Off);
     }
-}
 
-// ── push_direction ────────────────────────────────────────────────────────
+    // ── push_direction ────────────────────────────────────────────────────────
 
-use crate::overworld::components::Facing;
+    fn all_facings() -> [Facing; 4] {
+        [Facing::Up, Facing::Down, Facing::Left, Facing::Right]
+    }
 
-const GRID: f32 = 32.0;
-// Block origin = bottom-left corner, so its centre is at (80, 80).
-const BLOCK_ORIGIN: Vec2 = Vec2::new(64.0, 64.0);
-const BLOCK_CENTER: Vec2 = Vec2::new(80.0, 80.0);
-
-fn all_facings() -> [Facing; 4] {
-    [Facing::Up, Facing::Down, Facing::Left, Facing::Right]
-}
-
-/// Player centre one cell away from the block centre, plus the facing that
-/// looks at the block and the direction the block must move.
-fn sides() -> [(Vec2, Facing, IVec2); 4] {
-    [
-        (
-            BLOCK_CENTER + Vec2::new(-GRID, 0.0),
-            Facing::Right,
-            IVec2::X,
-        ), // player left  -> push right
-        (BLOCK_CENTER + Vec2::new(GRID, 0.0), Facing::Left, -IVec2::X), // player right -> push left
-        (BLOCK_CENTER + Vec2::new(0.0, -GRID), Facing::Up, IVec2::Y),   // player below -> push up
-        (BLOCK_CENTER + Vec2::new(0.0, GRID), Facing::Down, -IVec2::Y), // player above -> push down
-    ]
-}
-
-/// Regression test for the offset bug: the block origin is its bottom-left
-/// corner, so comparing origin-vs-player made "push right" resolve to
-/// "down". Standing left of the block and facing it must push right.
-#[test]
-fn push_right_works_when_player_is_left_of_block() {
-    let player = Vec2::new(48.0, 80.0); // centre-to-centre diff = (32, 0)
-    assert_eq!(
-        push_direction(BLOCK_ORIGIN, player, &Facing::Right, GRID),
-        Some(IVec2::X)
-    );
-}
-
-#[test]
-fn push_left_works_when_player_is_right_of_block() {
-    let player = Vec2::new(112.0, 80.0);
-    assert_eq!(
-        push_direction(BLOCK_ORIGIN, player, &Facing::Left, GRID),
-        Some(-IVec2::X)
-    );
-}
-
-/// The "stand in the bottom corner" workaround must no longer be needed:
-/// pushing right works at any height along the block's left side.
-#[test]
-fn push_right_works_at_any_height_along_the_side() {
-    for dy in [-12.0, -6.0, 0.0, 6.0, 12.0] {
-        let player = Vec2::new(48.0, 80.0 + dy);
+    /// Player centre one cell away from the block centre, plus the facing that
+    /// looks at the block and the direction the block must move.
+    fn sides() -> [(Vec2, Facing, IVec2); 4] {
+        [
+            (
+                BLOCK_CENTER + Vec2::new(-GRID, 0.0),
+                Facing::Right,
+                IVec2::X,
+            ), // player left  -> push right
+            (BLOCK_CENTER + Vec2::new(GRID, 0.0), Facing::Left, -IVec2::X), // player right -> push left
+            (BLOCK_CENTER + Vec2::new(0.0, -GRID), Facing::Up, IVec2::Y), // player below -> push up
+            (BLOCK_CENTER + Vec2::new(0.0, GRID), Facing::Down, -IVec2::Y), // player above -> push down
+        ]
+    }
+    /// Regression test for the offset bug: the block origin is its bottom-left
+    /// corner, so comparing origin-vs-player made "push right" resolve to
+    /// "down". Standing left of the block and facing it must push right.
+    #[test]
+    fn push_right_works_when_player_is_left_of_block() {
+        let player = Vec2::new(48.0, 80.0); // centre-to-centre diff = (32, 0)
         assert_eq!(
             push_direction(BLOCK_ORIGIN, player, &Facing::Right, GRID),
-            Some(IVec2::X),
-            "dy = {dy}"
+            Some(IVec2::X)
         );
     }
-}
 
-#[test]
-fn push_direction_is_always_away_from_player_on_all_sides() {
-    for (player, facing, expected) in sides() {
+    #[test]
+    fn push_left_works_when_player_is_right_of_block() {
+        let player = Vec2::new(112.0, 80.0);
         assert_eq!(
-            push_direction(BLOCK_ORIGIN, player, &facing, GRID),
-            Some(expected),
-            "player at {player:?}"
+            push_direction(BLOCK_ORIGIN, player, &Facing::Left, GRID),
+            Some(-IVec2::X)
         );
     }
-}
 
-/// The core "only one direction" guarantee: for a given player position,
-/// at most one facing may push, and it must be the one away from the player.
-#[test]
-fn only_one_facing_can_push_from_each_side() {
-    for (player, _, expected) in sides() {
-        let results: Vec<IVec2> = all_facings()
-            .iter()
-            .filter_map(|f| push_direction(BLOCK_ORIGIN, player, f, GRID))
-            .collect();
-        assert_eq!(
-            results,
-            vec![expected],
-            "exactly one facing should push from {player:?}"
-        );
+    /// The "stand in the bottom corner" workaround must no longer be needed:
+    /// pushing right works at any height along the block's left side.
+    #[test]
+    fn push_right_works_at_any_height_along_the_side() {
+        for dy in [-12.0, -6.0, 0.0, 6.0, 12.0] {
+            let player = Vec2::new(48.0, 80.0 + dy);
+            assert_eq!(
+                push_direction(BLOCK_ORIGIN, player, &Facing::Right, GRID),
+                Some(IVec2::X),
+                "dy = {dy}"
+            );
+        }
     }
-}
 
-/// Quickly turning while pressing interact must not push the block sideways.
-#[test]
-fn turning_away_from_block_does_not_push() {
-    let player = Vec2::new(48.0, 80.0); // left of block
-    for facing in [Facing::Up, Facing::Down, Facing::Left] {
-        assert_eq!(push_direction(BLOCK_ORIGIN, player, &facing, GRID), None);
+    #[test]
+    fn push_direction_is_always_away_from_player_on_all_sides() {
+        for (player, facing, expected) in sides() {
+            assert_eq!(
+                push_direction(BLOCK_ORIGIN, player, &facing, GRID),
+                Some(expected),
+                "player at {player:?}"
+            );
+        }
     }
-}
 
-#[test]
-fn too_far_away_does_not_push() {
-    let player = Vec2::new(-100.0, 80.0);
-    assert_eq!(
-        push_direction(BLOCK_ORIGIN, player, &Facing::Right, GRID),
-        None
-    );
-}
+    /// The core "only one direction" guarantee: for a given player position,
+    /// at most one facing may push, and it must be the one away from the player.
+    #[test]
+    fn only_one_facing_can_push_from_each_side() {
+        for (player, _, expected) in sides() {
+            let results: Vec<IVec2> = all_facings()
+                .iter()
+                .filter_map(|f| push_direction(BLOCK_ORIGIN, player, f, GRID))
+                .collect();
+            assert_eq!(
+                results,
+                vec![expected],
+                "exactly one facing should push from {player:?}"
+            );
+        }
+    }
 
-#[test]
-fn player_exactly_on_block_centre_does_not_push() {
-    for facing in all_facings() {
+    /// Quickly turning while pressing interact must not push the block sideways.
+    #[test]
+    fn turning_away_from_block_does_not_push() {
+        let player = Vec2::new(48.0, 80.0); // left of block
+        for facing in [Facing::Up, Facing::Down, Facing::Left] {
+            assert_eq!(push_direction(BLOCK_ORIGIN, player, &facing, GRID), None);
+        }
+    }
+
+    #[test]
+    fn too_far_away_does_not_push() {
+        let player = Vec2::new(-100.0, 80.0);
         assert_eq!(
-            push_direction(BLOCK_ORIGIN, BLOCK_CENTER, &facing, GRID),
+            push_direction(BLOCK_ORIGIN, player, &Facing::Right, GRID),
             None
         );
     }
-}
 
-/// With several blocks around the player, only the one in the facing
-/// direction is selected.
-#[test]
-fn only_the_faced_block_is_selected_among_neighbours() {
-    let player = Vec2::new(80.0, 80.0);
-    // Block origins (bottom-left) one cell left, right, above, below the player.
-    let blocks = [
-        Vec2::new(32.0, 64.0), // left
-        Vec2::new(96.0, 64.0), // right
-        Vec2::new(64.0, 96.0), // above
-        Vec2::new(64.0, 32.0), // below
-    ];
+    #[test]
+    fn player_exactly_on_block_centre_does_not_push() {
+        for facing in all_facings() {
+            assert_eq!(
+                push_direction(BLOCK_ORIGIN, BLOCK_CENTER, &facing, GRID),
+                None
+            );
+        }
+    }
 
-    let selected: Vec<usize> = blocks
-        .iter()
-        .enumerate()
-        .filter(|(_, origin)| push_direction(**origin, player, &Facing::Right, GRID).is_some())
-        .map(|(i, _)| i)
-        .collect();
+    /// With several blocks around the player, only the one in the facing
+    /// direction is selected.
+    #[test]
+    fn only_the_faced_block_is_selected_among_neighbours() {
+        let player = Vec2::new(80.0, 80.0);
+        // Block origins (bottom-left) one cell left, right, above, below the player.
+        let blocks = [
+            Vec2::new(32.0, 64.0), // left
+            Vec2::new(96.0, 64.0), // right
+            Vec2::new(64.0, 96.0), // above
+            Vec2::new(64.0, 32.0), // below
+        ];
 
-    assert_eq!(
-        selected,
-        vec![1],
-        "only the right-hand block should be pushable"
-    );
+        let selected: Vec<usize> = blocks
+            .iter()
+            .enumerate()
+            .filter(|(_, origin)| push_direction(**origin, player, &Facing::Right, GRID).is_some())
+            .map(|(i, _)| i)
+            .collect();
+
+        assert_eq!(
+            selected,
+            vec![1],
+            "only the right-hand block should be pushable"
+        );
+    }
 }

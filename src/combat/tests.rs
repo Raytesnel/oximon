@@ -177,7 +177,7 @@ fn cooldown_expiry_allows_attack_again() {
         .collect();
 
     assert!(
-        attacks.len() >= 1,
+        !attacks.is_empty(),
         "should be able to attack again after cooldown expires"
     );
 }

@@ -9,7 +9,7 @@ pub fn on_npc_interaction(
     mut current_dialogue: ResMut<CurrentDialogue>,
 ) {
     let entity = trigger.event().entity;
-    let Ok((InteractionType::NPC, npc_dialogue)) = query.get(entity) else {
+    let Ok((InteractionType::Npc, npc_dialogue)) = query.get(entity) else {
         return;
     };
 
