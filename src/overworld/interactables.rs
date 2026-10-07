@@ -252,6 +252,45 @@ pub fn on_monster_interaction(
     next_battle_state.set(BattleState::Entering);
 }
 
+fn facing_to_grid_dir(facing: &Facing) -> IVec2 {
+    match facing {
+        Facing::Up => IVec2::Y,
+        Facing::Down => -IVec2::Y,
+        Facing::Left => -IVec2::X,
+        Facing::Right => IVec2::X,
+    }
+}
+
+/// Returns the push direction (grid unit vector, away from the player) if the
+/// player is close enough AND facing the block. `block_origin` is the entity
+/// origin (bottom-left corner for Tiled objects), `player_pos` is the player's
+/// centre.
+pub(crate) fn push_direction(
+    block_origin: Vec2,
+    player_pos: Vec2,
+    facing: &Facing,
+    grid_size: f32,
+) -> Option<IVec2> {
+    // Entity-origin is the bottom-left corner; compare the block's centre.
+    let block_center = block_origin + Vec2::splat(grid_size * 0.5);
+    let diff = block_center - player_pos;
+
+    // Too far away, or standing exactly on the block centre (no direction)
+    if diff.length() > grid_size * 1.5 || diff.length_squared() < f32::EPSILON {
+        return None;
+    }
+
+    // Dominant axis decides the direction (always away from the player)
+    let delta = if diff.x.abs() > diff.y.abs() {
+        IVec2::new(diff.x.signum() as i32, 0)
+    } else {
+        IVec2::new(0, diff.y.signum() as i32)
+    };
+
+    // Player must be facing the block
+    (facing_to_grid_dir(facing) == delta).then_some(delta)
+}
+
 pub fn on_block_interaction(
     trigger: On<InteractionEvent>,
     block_ctx: BlockInteractionContext,
@@ -268,51 +307,52 @@ pub fn on_block_interaction(
     if block_ctx.sliding_q.get(entity).is_ok() {
         return;
     }
-    let Ok((facing, _player_tf)) = block_ctx.player_q.single() else {
+    let Ok((facing, player_tf)) = block_ctx.player_q.single() else {
         return;
     };
 
-    let push_dir: Vec2 = match facing {
-        Facing::Up => Vec2::Y,
-        Facing::Down => -Vec2::Y,
-        Facing::Left => -Vec2::X,
-        Facing::Right => Vec2::X,
-    };
+    let grid_size = block.grid_size;
     let current_pos = block_tf.translation.truncate();
-    let target_pos = current_pos + push_dir * block.grid_size;
-    let target_grid = to_grid(target_pos, block.grid_size);
+    let block_grid = to_grid(current_pos, grid_size);
+
+    let Some(delta) = push_direction(
+        current_pos,
+        player_tf.translation.truncate(),
+        facing,
+        grid_size,
+    ) else {
+        return;
+    };
+
+    // Duwrichting is altijd weg van de speler
+    let push_dir = delta.as_vec2();
+    let target_pos = current_pos + push_dir * grid_size;
+    let target_grid = block_grid + delta;
 
     let is_blocked = block_ctx.obstacle_q.iter().any(|obs_tf| {
-        let obs_pos = obs_tf.translation.truncate();
-        if to_grid(obs_pos, block.grid_size) == to_grid(current_pos, block.grid_size) {
-            return false;
-        }
-        to_grid(obs_pos, block.grid_size) == target_grid
+        let obs_grid = to_grid(obs_tf.translation.truncate(), grid_size);
+        obs_grid != block_grid && obs_grid == target_grid
     });
     if is_blocked {
         return;
     }
 
-    // Build spritesheet handle lazily on first push
-    let _handle = if let Some(h) = maybe_handle {
-        Some(h.clone())
-    } else if let Some(props) = maybe_props {
-        let layout = layouts.add(TextureAtlasLayout::from_grid(
-            UVec2::new(props.width, props.height),
-            props.columns,
-            props.rows,
-            None,
-            None,
-        ));
-        let h = SpriteSheetHandle {
-            image: asset_server.load(props.path.clone()),
-            layout,
-        };
-        commands.entity(entity).insert(h.clone());
-        Some(h)
-    } else {
-        None
-    };
+    // Spritesheet lazily opbouwen bij eerste push
+    if maybe_handle.is_none() {
+        if let Some(props) = maybe_props {
+            let layout = layouts.add(TextureAtlasLayout::from_grid(
+                UVec2::new(props.width, props.height),
+                props.columns,
+                props.rows,
+                None,
+                None,
+            ));
+            commands.entity(entity).insert(SpriteSheetHandle {
+                image: asset_server.load(props.path.clone()),
+                layout,
+            });
+        }
+    }
 
     commands.entity(entity).insert(BlockSliding {
         from: current_pos,
