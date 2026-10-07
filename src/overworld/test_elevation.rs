@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod test_elevation {
+mod tests {
     use crate::overworld::components::{
         Elevation, FixedElevation, OverworldPlayer, StairZone, YSort,
     };

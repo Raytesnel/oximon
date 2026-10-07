@@ -354,7 +354,7 @@ mod tests {
     // one full frame period plus a hair, so the repeating timer fires exactly once
     const ONE_FRAME: f32 = 1.0 / 12.0 + 0.001;
 
-    fn anim_of<'a>(app: &'a mut App) -> DomainExpansionAnim {
+    fn anim_of(app: &mut App) -> DomainExpansionAnim {
         app.world_mut()
             .query::<&DomainExpansionAnim>()
             .single(app.world())

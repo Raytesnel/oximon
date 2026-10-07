@@ -64,7 +64,7 @@ pub enum InteractionType {
     Sign,
     Block,
     Monster,
-    NPC,
+    Npc,
 }
 
 #[derive(Component, PartialEq, Debug)]
