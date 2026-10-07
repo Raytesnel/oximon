@@ -21,10 +21,15 @@ build:
 run:
     cargo run --features bevy/dynamic_linking
 
+# Run the game with faster incremental builds
+[group('dev')]
+test:
+    cargo test --features bevy/dynamic_linking
+
 # Clippy: static analysis
 [group('dev')]
 lint:
-    cargo clippy --all-targets
+    cargo clippy --all-targets --features bevy/dynamic_linking
 
 # Format the code
 [group('dev')]
