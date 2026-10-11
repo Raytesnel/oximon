@@ -294,6 +294,7 @@ pub fn setup_combat_world(mut commands: Commands, asset_server: Option<Res<Asset
     let Some(asset_server) = asset_server else {
         return; // skip in tests
     };
+    println!("BEVY_ASSET_ROOT = {:?}", std::env::var("BEVY_ASSET_ROOT"));
     let map_handle: Handle<TiledMapAsset> = asset_server.load("map/2d_main.tmx");
     commands
         .spawn((

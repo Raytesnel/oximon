@@ -1,0 +1,3 @@
+
+[env]
+BEVY_ASSET_ROOT = { value = ".", relative = true, force = true }

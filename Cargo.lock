@@ -2687,6 +2687,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "game_data"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "geo"
 version = "0.33.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
