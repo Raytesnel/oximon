@@ -1,0 +1,35 @@
+{
+  "id": "fireball",
+  "name": "fireball",
+  "effects": [
+    {
+      "trigger": "OnHit",
+      "effect": { "Damage": { "amount": 10.0, "target": "TargetEntity" } }
+    },
+    {
+      "trigger": "OnHit",
+      "effect": {
+        "Knockback": {
+          "force": 800.0,
+          "direction": "SourceToTarget",
+          "mode": "Override",
+          "hitstun": 1.0,
+          "target": "TargetEntity"
+        }
+      }
+    }
+  ],
+  "collision": false,
+  "lifetime": 2.0,
+  "hit_interval": 0.1,
+  "cooldown": 0.1,
+  "residue_tile_key": null,
+  "spawn": {
+    "Hitbox": { "size": [20.0, 20.0], "color": [1.0, 0.5, 0.5, 1.0] }
+  },
+  "residue": "fire_patch",
+  "offset": [0.0, 0.0, 0.0],
+  "hit_behavior": "Single",
+  "follow_caster": false,
+  "projectile": { "speed": 500.0 }
+}

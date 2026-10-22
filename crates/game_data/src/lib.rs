@@ -1,10 +1,9 @@
-use serde::{Deserialize, Serialize};
+mod attack;
+pub mod errors;
+pub mod json_store;
+pub mod store;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct MonsterId(pub String);
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MonsterDef {
-    pub id: MonsterId,
-    pub name: String,
-}
+pub use attack::*;
+pub use errors::*;
+pub use json_store::JsonStore;
+pub use store::*;

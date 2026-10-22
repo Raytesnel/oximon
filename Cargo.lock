@@ -2690,8 +2690,11 @@ dependencies = [
 name = "game_data"
 version = "0.1.0"
 dependencies = [
+ "bevy_color",
+ "bevy_math",
  "serde",
  "serde_json",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
