@@ -1,7 +1,5 @@
-use crate::combat::attack_definition::AttackDefinition;
-use crate::combat::attacks::AttackSpawn;
-use crate::combat::components::{Attack, BattleResidue, Hitbox, Hitstop};
-use crate::combat::systems::spawn_residue_attack;
+use crate::combat::components::{Attack, AttackIdCounter, BattleResidue, Hitbox, Hitstop};
+use crate::combat::systems::{build_sprite, spawn_residue_attack};
 use crate::common::components::*;
 use crate::overworld::components::{
     DomainExpansionAsset, OverworldPlayer, OverworldResidue, SpriteSheetHandle, YSort,
@@ -9,6 +7,7 @@ use crate::overworld::components::{
 use crate::{GameState, overworld::components::DomainExpansionAnim};
 use avian2d::prelude::*;
 use bevy::prelude::*;
+use game_data::{AttackDefinition, AttackSpawn};
 
 pub fn compute_stats_system(mut query: Query<(&Stats, &mut ComputedStats)>) {
     for (stats, mut computed) in &mut query {
@@ -64,6 +63,7 @@ pub fn tick_domain_anim(
     time: Res<Time>,
     attacks_combat: Query<(Entity, &Attack, &Transform), With<BattleResidue>>,
     attacks_overworld: Query<(Entity, &OverworldResidue, &Transform)>,
+    mut id_counter: ResMut<AttackIdCounter>,
 ) {
     let (Some(asset_server), Some(layouts)) = (asset_server, layouts.as_mut()) else {
         return;
@@ -139,7 +139,7 @@ pub fn tick_domain_anim(
             anim.current_radius =
                 (anim.current_frame as f32 / anim.swap_frame as f32) * anim.max_radius;
             if anim.current_frame == anim.swap_frame {
-                spawn_residue_in_battle(commands, attacks_overworld);
+                spawn_residue_in_battle(commands, attacks_overworld, &mut id_counter);
                 next_game_state.set(GameState::Combat);
             }
             if anim.current_frame >= anim.total_frames - 1 {
@@ -196,7 +196,7 @@ impl ResidueSpawnData {
         // Only spawn if has residue_tile_key
         let _tile_key = attack.definition.residue_tile_key.as_ref()?;
 
-        let sprite = attack.definition.spawn.build_sprite();
+        let sprite = build_sprite(&attack.definition.spawn);
         let size = match &attack.definition.spawn {
             AttackSpawn::Hitbox { size, .. } => *size,
         };
@@ -214,6 +214,7 @@ impl ResidueSpawnData {
 pub fn spawn_residue_in_battle(
     mut commands: Commands,
     residue_query: Query<(Entity, &OverworldResidue, &Transform)>,
+    id_counter: &mut AttackIdCounter,
 ) {
     for (entity, residue, transform) in residue_query.iter() {
         spawn_residue_attack(
@@ -222,6 +223,7 @@ pub fn spawn_residue_in_battle(
             transform.translation,
             residue.owner,
             Some(residue.timer.remaining_secs()),
+            id_counter.next_id(),
         );
         commands.entity(entity).despawn();
     }
@@ -288,6 +290,8 @@ pub fn update_residue_timers(
 
 #[cfg(test)]
 mod tests {
+    use crate::combat::attack_loaders::Attacks;
+
     use super::*;
     use bevy::app::App;
     use bevy::state::app::StatesPlugin;
@@ -296,6 +300,8 @@ mod tests {
 
     fn anim_test_app() -> App {
         let mut app = App::new();
+        app.init_resource::<AttackIdCounter>();
+        app.init_resource::<Attacks>();
         app.add_plugins(MinimalPlugins);
         app.add_plugins(StatesPlugin);
         app.add_plugins(AssetPlugin::default());
@@ -562,6 +568,8 @@ mod tests {
         app.init_state::<GameState>();
         app.init_state::<BattleState>();
         app.init_resource::<DomainExpansionAsset>();
+        app.init_resource::<AttackIdCounter>();
+        app.init_resource::<Attacks>();
         app.add_systems(Update, tick_domain_anim);
 
         // should not panic

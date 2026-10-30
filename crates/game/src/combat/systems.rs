@@ -1,17 +1,16 @@
 use super::components::*;
 use super::events::*;
-use crate::combat::attack_definition::{
-    AttackDefinition, AttackEffect, EffectTrigger, ModifierTarget, StatusEffect,
-};
-use crate::combat::attacks::{
-    AttackSpawn, HitBehavior, KnockbackDirection, fireball, quick_attack, shoot_square, speedo,
-    stone_block,
-};
+use crate::combat::attack_loaders::Attacks;
+use crate::common::components::to_runtime;
 use avian2d::prelude::*; // This should include collision events
-use bevy::prelude::*; // For EventReader
+use bevy::prelude::*;
+use game_data::{
+    AttackDefinition, AttackEffect, AttackSpawn, EffectTrigger, HitBehavior, KnockbackDirection,
+    ModifierLifetime, ModifierTarget, StatusEffect,
+}; // For EventReader
 
 use crate::common::components::{BattleState, GameLayer, Player};
-use crate::common::components::{Enemy, ModifierLifetime, RuntimeModifier, Stats};
+use crate::common::components::{Enemy, RuntimeModifier, Stats};
 use crate::movement::components::Facing;
 use crate::movement::types::AllowedMovable;
 use avian2d::collision::collider::CollidingEntities;
@@ -23,20 +22,31 @@ pub const QUICK_ATTACK: KeyCode = KeyCode::KeyQ;
 pub const PEWPEW: KeyCode = KeyCode::KeyW;
 pub const POWPOW: KeyCode = KeyCode::KeyE;
 
-fn get_attack_for_key(key: KeyCode) -> Option<AttackDefinition> {
+fn attack_id_for_key(key: KeyCode) -> Option<&'static str> {
     match key {
-        QUICK_ATTACK => Some(quick_attack()),
-        JUMP_BUTTON => Some(speedo()),
-        PEW => Some(shoot_square()),
-        PEWPEW => Some(fireball()),
-        POWPOW => Some(stone_block()),
-
+        QUICK_ATTACK => Some("quick_attack"),
+        JUMP_BUTTON => Some("speedo"),
+        PEW => Some("shoot_square"),
+        PEWPEW => Some("fireball"),
+        POWPOW => Some("stone_throw"),
         _ => None,
     }
 }
+
+pub fn build_sprite(spawn: &AttackSpawn) -> Sprite {
+    match spawn {
+        AttackSpawn::Hitbox { size, color } => Sprite {
+            color: *color,
+            custom_size: Some(*size),
+            ..default()
+        },
+    }
+}
+
 pub fn attack_input_system(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
+    attacks: Res<Attacks>,
     mut id_counter: ResMut<AttackIdCounter>,
     mut query: Query<
         (
@@ -51,7 +61,7 @@ pub fn attack_input_system(
 ) {
     for (entity, caster_transform, mut cooldowns, mut combat_state, facing) in &mut query {
         for key in keyboard.get_just_pressed() {
-            let Some(def) = get_attack_for_key(*key) else {
+            let Some(def) = attack_id_for_key(*key).and_then(|id| attacks.get(id)) else {
                 continue;
             };
 
@@ -69,14 +79,15 @@ pub fn attack_input_system(
             );
 
             // id
-            let id = AttackId(id_counter.next);
+            let id = AttackInstanceId(id_counter.next);
             id_counter.next += 1;
 
-            let sprite = def.spawn.build_sprite();
+            let sprite = build_sprite(&def.spawn);
             let spawn_position = caster_transform.translation + def.offset;
-            let spawn_size = match &def.spawn {
-                AttackSpawn::Hitbox { size, .. } => *size,
-            };
+            let AttackSpawn::Hitbox {
+                size: spawn_size, ..
+            } = &def.spawn;
+            let spawn_size = *spawn_size;
 
             commands.spawn((
                 Attack::from_definition(def.clone(), entity, id, facing.0),
@@ -139,7 +150,7 @@ pub fn attack_start_system(mut attacks: Query<&mut Attack>, mut stats_query: Que
                 };
 
                 if let Ok(mut stats) = stats_query.get_mut(entity) {
-                    stats.add_modifier(stat.modifier.to_runtime(attack.id));
+                    stats.add_modifier(to_runtime(stat.modifier.clone(), attack.id));
                 }
             }
         }
@@ -174,34 +185,34 @@ pub fn check_facing(
 
 pub fn projectile_obstacle_collision_system(
     mut commands: Commands,
-    mut attacks: Query<(Entity, &Transform, &Attack, &CollidingEntities)>,
+    attack_defs: Res<Attacks>,
+    mut id_counter: ResMut<AttackIdCounter>,
+    mut attacks: Query<(Entity, &Transform, &mut Attack, &CollidingEntities)>,
+    other_attacks: Query<(), With<Attack>>,
     enemies: Query<Entity, Or<(With<Enemy>, With<Player>)>>,
 ) {
-    for (attack_entity, transform, attack, colliding) in &mut attacks {
-        if attack.definition.projectile.is_none() {
+    for (attack_entity, transform, mut attack, colliding) in &mut attacks {
+        if attack.definition.projectile.is_none() || attack.has_hit {
             continue;
         }
-
         for &colliding_entity in colliding.iter() {
-            if colliding_entity == attack.owner {
+            if colliding_entity == attack.owner
+                || enemies.contains(colliding_entity)
+                || other_attacks.contains(colliding_entity)
+            {
                 continue;
             }
-            if enemies.contains(colliding_entity) {
-                continue;
-            }
-
-            // Spawn residue if it exists (handles fire patches, stone blocks, etc.)
-            if let Some(residue_def) = &attack.definition.residue {
+            if let Some(residue_def) = attack_defs.residue_of(&attack.definition) {
                 spawn_residue_attack(
                     &mut commands,
-                    *residue_def.clone(),
+                    residue_def.clone(),
                     transform.translation,
                     attack.owner,
                     None,
+                    id_counter.next_id(),
                 );
             }
-
-            info!("🎯 Projectile hit, despawning");
+            attack.has_hit = true;
             commands.entity(attack_entity).despawn();
             break;
         }
@@ -214,13 +225,14 @@ pub fn spawn_residue_attack(
     position: Vec3,
     owner: Entity,
     remaining_duration: Option<f32>,
+    instance_id: AttackInstanceId,
 ) {
     let spawn_size = match &def.spawn {
         AttackSpawn::Hitbox { size, .. } => *size,
     };
     let _is_collision = def.collision;
-    let sprite = def.spawn.build_sprite();
-    let mut attack = Attack::from_definition(def, owner, AttackId(999), Vec2::X);
+    let sprite = build_sprite(&def.spawn);
+    let mut attack = Attack::from_definition(def, owner, instance_id, Vec2::X);
     if let Some(remaining) = remaining_duration {
         attack.lifetime_timer = Timer::from_seconds(remaining, TimerMode::Once);
     }
@@ -241,7 +253,7 @@ pub fn spawn_residue_attack(
         residue_command.insert((Sensor,));
     }
 }
-
+#[allow(clippy::too_many_arguments)]
 pub fn attack_hit_system(
     mut commands: Commands,
     mut attacks: Query<(&Transform, &Hitbox, &mut Attack)>,
@@ -249,7 +261,8 @@ pub fn attack_hit_system(
     mut hitstop: ResMut<Hitstop>,
     mut writer: MessageWriter<DamageEvent>,
     mut stats_query: Query<&mut Stats>,
-
+    mut id_counter: ResMut<AttackIdCounter>,
+    attack_defs: Res<Attacks>,
     time: Res<Time>,
 ) {
     for (attack_transform, hitbox, mut attack) in &mut attacks {
@@ -281,14 +294,15 @@ pub fn attack_hit_system(
                         &mut stats_query,
                     );
                     if attack.definition.projectile.is_some()
-                        && let Some(residue_def) = &attack.definition.residue
+                        && let Some(residue_def) = attack_defs.residue_of(&attack.definition)
                     {
                         spawn_residue_attack(
                             &mut commands,
-                            *residue_def.clone(),
+                            residue_def.clone(),
                             attack_pos,
                             attack.owner,
                             None,
+                            id_counter.next_id(),
                         );
                     }
                     attack.has_hit = true;
@@ -313,7 +327,7 @@ pub fn attack_hit_system(
                     }
                 }
 
-                HitBehavior::_Limited(max_hits) => {
+                HitBehavior::Limited(max_hits) => {
                     if attack.hits_done >= max_hits {
                         continue;
                     }
@@ -386,7 +400,7 @@ fn apply_hit_effects(
                     KnockbackDirection::SourceToTarget => (attack_hit_connection.target_position
                         - attack_hit_connection.attack_pos)
                         .normalize_or_zero(),
-                    KnockbackDirection::_TargetToSource => (attack_hit_connection.attack_pos
+                    KnockbackDirection::TargetToSource => (attack_hit_connection.attack_pos
                         - attack_hit_connection.target_position)
                         .normalize_or_zero(),
                     KnockbackDirection::Fixed(v) => v.normalize_or_zero(),
@@ -411,7 +425,10 @@ fn apply_hit_effects(
                 };
 
                 if let Ok(mut stats) = stats_query.get_mut(entity) {
-                    stats.add_modifier(stat.modifier.to_runtime(attack_hit_connection.attack.id));
+                    stats.add_modifier(to_runtime(
+                        stat.modifier.clone(),
+                        attack_hit_connection.attack.id,
+                    ));
                 }
             }
             AttackEffect::ApplyStatus(status) => match status {
@@ -433,12 +450,12 @@ fn apply_hit_effects(
     }
 }
 
-fn remove_attack_modifiers(stats: &mut Stats, attack_id: AttackId) {
+fn remove_attack_modifiers(stats: &mut Stats, attack_id: AttackInstanceId) {
     let should_remove = |m: &RuntimeModifier| {
         m.source == attack_id
             && matches!(
                 m.lifetime,
-                ModifierLifetime::_WhileAttacking | ModifierLifetime::OnAttackEnd
+                ModifierLifetime::WhileAttacking | ModifierLifetime::OnAttackEnd
             )
     };
 
@@ -589,10 +606,10 @@ pub fn projectile_movement_system(time: Res<Time>, mut query: Query<(&mut Transf
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::combat::attack_definition::*;
-    use crate::combat::attacks::*;
+    use crate::combat::systems::build_sprite;
     use crate::common::components::*;
     use bevy::app::FixedMain;
+    use game_data::*;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -613,6 +630,8 @@ mod tests {
     fn setup_app() -> App {
         let mut app = App::new();
         app.init_resource::<Time>();
+        app.init_resource::<AttackIdCounter>();
+        app.init_resource::<Attacks>();
         app.insert_resource(Time::<Fixed>::from_seconds(0.016));
         app.add_message::<DamageEvent>();
         app
@@ -651,7 +670,7 @@ mod tests {
                 size: Vec2::new(10.0, 10.0),
             },
         };
-        Attack::from_definition(def, owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 })
+        Attack::from_definition(def, owner, AttackInstanceId(0), Vec2 { x: 1.0, y: 0.0 })
     }
 
     /// A minimal multi-hit attack (no damage, just to test tick behavior).
@@ -680,7 +699,7 @@ mod tests {
                 size: Vec2::new(10.0, 10.0),
             },
         };
-        Attack::from_definition(def, owner, AttackId(1), Vec2 { x: 1.0, y: 0.0 })
+        Attack::from_definition(def, owner, AttackInstanceId(1), Vec2 { x: 1.0, y: 0.0 })
     }
 
     // ── apply_damage_system ───────────────────────────────────────────────────
@@ -1084,7 +1103,7 @@ mod tests {
         let mut stats = Stats::default();
         // Pre-insert a modifier that should be cleaned up on attack end
         stats.speed.push(RuntimeModifier {
-            source: AttackId(0),
+            source: AttackInstanceId(0),
             stat_type: StatType::Speed,
             flat: 0.0,
             multiplier: 3.0,
@@ -1318,6 +1337,8 @@ mod tests {
     fn test_projectile_spawns_residue_on_obstacle_hit() {
         let mut app = App::new();
         app.init_resource::<Time>();
+        app.init_resource::<AttackIdCounter>();
+        app.init_resource::<Attacks>();
 
         let owner = app.world_mut().spawn_empty().id();
 
@@ -1343,10 +1364,10 @@ mod tests {
         let entity = app
             .world_mut()
             .spawn((
-                Attack::from_definition(residue_def.clone(), owner, AttackId(999), Vec2::X),
+                Attack::from_definition(residue_def.clone(), owner, AttackInstanceId(999), Vec2::X),
                 Transform::from_translation(Vec3::ZERO),
                 CombatEntity,
-                residue_def.spawn.build_sprite(),
+                build_sprite(&residue_def.spawn),
                 Collider::rectangle(20.0, 20.0),
                 CollidingEntities::default(),
                 Hitbox {
@@ -1400,6 +1421,7 @@ mod tests {
             Vec3::new(100.0, 50.0, 0.0),
             owner,
             None,
+            AttackInstanceId(999),
         );
         app.update();
 
@@ -1453,7 +1475,14 @@ mod tests {
         };
 
         let mut commands = app.world_mut().commands();
-        super::spawn_residue_attack(&mut commands, stone_residue, Vec3::ZERO, owner, None);
+        super::spawn_residue_attack(
+            &mut commands,
+            stone_residue,
+            Vec3::ZERO,
+            owner,
+            None,
+            AttackInstanceId(999),
+        );
         app.update();
 
         let residue_entity = app

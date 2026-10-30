@@ -1,10 +1,10 @@
 use crate::combat::ai::{AI, AIConfig, AIIntent, AIState, Target};
 use crate::combat::components::{
-    AttackId, AttackStats, CombatEntity, CombatSceneEntity, CombatState, Cooldowns, Health, Hurtbox,
+    AttackInstanceId, AttackStats, CombatEntity, CombatSceneEntity, CombatState, Cooldowns, Health,
+    Hurtbox,
 };
 use crate::common::components::{
-    CombatSpawnContext, ComputedStats, Enemy, GameLayer, ModifierLifetime, Player, RuntimeModifier,
-    StatType, Stats,
+    CombatSpawnContext, ComputedStats, Enemy, GameLayer, Player, RuntimeModifier, Stats,
 };
 use crate::movement::components::{Facing, Movable, MoveIntent, MovementState};
 use avian2d::prelude::*;
@@ -12,6 +12,7 @@ use bevy::color::Color;
 use bevy::math::{Vec2, Vec3};
 use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::*;
+use game_data::{ModifierLifetime, StatType};
 use std::collections::HashMap;
 
 pub fn setup_combat_players(mut commands: Commands, spawn_ctx: Res<CombatSpawnContext>) {
@@ -81,7 +82,7 @@ fn spawn_combat_player(commands: &mut Commands, pos: Vec3) -> Entity {
             },
             Stats {
                 speed: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 250.0,
                     multiplier: 1.0,
                     timer: None,
@@ -89,7 +90,7 @@ fn spawn_combat_player(commands: &mut Commands, pos: Vec3) -> Entity {
                     lifetime: ModifierLifetime::Permanent,
                 }],
                 acceleration: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 1250.0,
                     multiplier: 1.0,
                     timer: None,
@@ -97,7 +98,7 @@ fn spawn_combat_player(commands: &mut Commands, pos: Vec3) -> Entity {
                     stat_type: StatType::Acceleration,
                 }],
                 friction: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 625.0,
                     multiplier: 1.0,
                     timer: None,
@@ -105,7 +106,7 @@ fn spawn_combat_player(commands: &mut Commands, pos: Vec3) -> Entity {
                     stat_type: StatType::Friction,
                 }],
                 dash_speed: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 600.0,
                     multiplier: 1.0,
                     timer: None,
@@ -113,7 +114,7 @@ fn spawn_combat_player(commands: &mut Commands, pos: Vec3) -> Entity {
                     stat_type: StatType::DashSpeed,
                 }],
                 dash_time: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 0.01,
                     multiplier: 1.0,
                     timer: None,
@@ -121,7 +122,7 @@ fn spawn_combat_player(commands: &mut Commands, pos: Vec3) -> Entity {
                     stat_type: StatType::DashTime,
                 }],
                 dash_friction: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 500.0,
                     multiplier: 1.0,
                     timer: None,
@@ -129,7 +130,7 @@ fn spawn_combat_player(commands: &mut Commands, pos: Vec3) -> Entity {
                     stat_type: StatType::DashFriction,
                 }],
                 dash_stop_time: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 0.01,
                     multiplier: 1.0,
                     timer: None,
@@ -173,7 +174,7 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
 
             stats: Stats {
                 speed: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 250.0,
                     multiplier: 1.0,
                     timer: None,
@@ -181,7 +182,7 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
                     stat_type: StatType::Speed,
                 }],
                 acceleration: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 1250.0,
                     multiplier: 1.0,
                     timer: None,
@@ -189,7 +190,7 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
                     stat_type: StatType::Acceleration,
                 }],
                 friction: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 625.0,
                     multiplier: 1.0,
                     timer: None,
@@ -197,7 +198,7 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
                     stat_type: StatType::Friction,
                 }],
                 dash_speed: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 600.0,
                     multiplier: 1.0,
                     timer: None,
@@ -205,7 +206,7 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
                     stat_type: StatType::DashSpeed,
                 }],
                 dash_time: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 0.01,
                     multiplier: 1.0,
                     timer: None,
@@ -213,7 +214,7 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
                     stat_type: StatType::DashTime,
                 }],
                 dash_friction: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 500.0,
                     multiplier: 1.0,
                     timer: None,
@@ -221,7 +222,7 @@ pub fn spawn_enemy(commands: &mut Commands, target: Entity, pos: Vec3) {
                     stat_type: StatType::DashFriction,
                 }],
                 dash_stop_time: vec![RuntimeModifier {
-                    source: AttackId(0),
+                    source: AttackInstanceId(0),
                     flat: 0.01,
                     multiplier: 1.0,
                     timer: None,

@@ -1,6 +1,7 @@
-use crate::combat::components::AttackId;
+use crate::combat::components::AttackInstanceId;
 use avian2d::prelude::PhysicsLayer;
 use bevy::prelude::*;
+use game_data::{ModifierLifetime, StatModifier, StatType};
 
 #[derive(Resource)]
 pub struct CombatSpawnContext {
@@ -21,17 +22,6 @@ pub struct Player;
 
 #[derive(Component, Debug)]
 pub struct Enemy;
-
-#[derive(Clone, Copy, Debug)]
-pub enum StatType {
-    Speed,
-    Acceleration,
-    Friction,
-    DashSpeed,
-    DashTime,
-    DashFriction,
-    DashStopTime,
-}
 
 #[derive(Component, Debug, Default)]
 pub struct Stats {
@@ -54,38 +44,22 @@ pub struct ComputedStats {
     pub dash_friction: f32,
     pub dash_stop_time: f32,
 }
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub enum ModifierLifetime {
-    Duration, // ignores all, always waiting till defined lifetime.
-    _WhileAttacking,
-    OnAttackEnd,
-    Permanent,
-}
-#[derive(Clone, Debug)]
-pub struct StatModifier {
-    pub stat_type: StatType,
-    pub flat: f32,
-    pub multiplier: f32,
-    pub duration: Option<f32>,
-    pub lifetime: ModifierLifetime,
-}
-impl StatModifier {
-    pub fn to_runtime(&self, source: AttackId) -> RuntimeModifier {
-        RuntimeModifier {
-            source,
-            stat_type: self.stat_type,
-            flat: self.flat,
-            multiplier: self.multiplier,
-            lifetime: self.lifetime.clone(),
-            timer: self
-                .duration
-                .map(|d| Timer::from_seconds(d, TimerMode::Once)),
-        }
+
+pub fn to_runtime(current_stat: StatModifier, source: AttackInstanceId) -> RuntimeModifier {
+    RuntimeModifier {
+        source,
+        stat_type: current_stat.stat_type,
+        flat: current_stat.flat,
+        multiplier: current_stat.multiplier,
+        lifetime: current_stat.lifetime.clone(),
+        timer: current_stat
+            .duration
+            .map(|d| Timer::from_seconds(d, TimerMode::Once)),
     }
 }
 #[derive(Clone, Debug)]
 pub struct RuntimeModifier {
-    pub source: AttackId,
+    pub source: AttackInstanceId,
     pub stat_type: StatType,
     pub flat: f32,
     pub multiplier: f32,

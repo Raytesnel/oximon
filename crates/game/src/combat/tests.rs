@@ -4,8 +4,8 @@
 //! systems working together. Unit tests for individual systems live in
 //! `combat/systems/` next to the systems themselves.
 
+use crate::combat::attack_loaders::Attacks;
 #[allow(unused)]
-use crate::combat::attacks::{quick_attack, simple_beam, slow_down};
 use crate::combat::components::*;
 use crate::combat::*;
 use crate::common::CommonPlugin;
@@ -19,7 +19,27 @@ use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
 #[allow(unused)]
 use bevy::time::TimeUpdateStrategy;
+use game_data::AttackDefinition;
+use game_data::AttackId;
+use game_data::JsonStore;
+use game_data::Store;
 use std::collections::HashMap;
+
+fn load_test_attacks() -> Attacks {
+    let store = JsonStore::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets"));
+    Attacks::load(
+        &store,
+        &[
+            "quick_attack",
+            "speedo",
+            "shoot_square",
+            "fireball",
+            "stone_throw",
+            "slow_down",
+        ],
+    )
+    .expect("test attacks should load")
+}
 
 fn test_app() -> App {
     let mut app = App::new();
@@ -28,10 +48,15 @@ fn test_app() -> App {
     app.add_plugins(CombatPlugin);
     app.add_plugins(CommonPlugin);
     app.add_plugins(MovementPlugin);
+    app.add_systems(
+        PreStartup,
+        load_attacks.run_if(not(resource_exists::<Attacks>)),
+    );
+    app.init_resource::<AttackIdCounter>();
+    app.insert_resource(load_test_attacks());
     app.insert_resource(Time::<Fixed>::from_seconds(0.016));
     app.init_state::<BattleState>();
     app.init_resource::<DomainExpansionAsset>();
-    app.add_plugins(bevy::log::LogPlugin::default());
     app.insert_resource(ButtonInput::<KeyCode>::default());
     app.insert_resource(Hitstop { remaining: 0.0 });
     app.insert_resource(AttackIdCounter::default());
@@ -65,6 +90,24 @@ fn tick(app: &mut App, dt: f32) {
     }
     app.world_mut().run_schedule(FixedMain);
     app.update();
+}
+
+const ASSETS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets");
+
+fn attack_def(id: &str) -> AttackDefinition {
+    JsonStore::new(ASSETS)
+        .get_attack(&AttackId(id.into()))
+        .unwrap_or_else(|e| panic!("could not load {id}: {e}"))
+}
+
+fn quick_attack() -> AttackDefinition {
+    attack_def("quick_attack")
+}
+fn simple_beam() -> AttackDefinition {
+    attack_def("shoot_square")
+}
+fn slow_down() -> AttackDefinition {
+    attack_def("slow_down")
 }
 
 /// Pressing an attack key spawns an Attack entity in the world.
@@ -194,7 +237,7 @@ fn attack_applies_oncast_stat_modifiers_to_owner() {
     app.world_mut().spawn(Attack::from_definition(
         def,
         player,
-        AttackId(1),
+        AttackInstanceId(1),
         Vec2 { x: 1.0, y: 0.0 },
     ));
 
@@ -220,7 +263,12 @@ fn attack_follows_owner_transform() {
     let attack = app
         .world_mut()
         .spawn((
-            Attack::from_definition(simple_beam(), player, AttackId(1), Vec2 { x: 1.0, y: 0.0 }),
+            Attack::from_definition(
+                simple_beam(),
+                player,
+                AttackInstanceId(1),
+                Vec2 { x: 1.0, y: 0.0 },
+            ),
             Transform::default(),
         ))
         .id();
@@ -268,7 +316,12 @@ fn hitting_enemy_reduces_health() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(quick_attack(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
+        Attack::from_definition(
+            quick_attack(),
+            owner,
+            AttackInstanceId(0),
+            Vec2 { x: 1.0, y: 0.0 },
+        ),
         Transform::default(),
         Hitbox {
             size: Vec2::new(20.0, 20.0),
@@ -310,7 +363,12 @@ fn hitting_enemy_applies_knockback_to_enemy() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(quick_attack(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
+        Attack::from_definition(
+            quick_attack(),
+            owner,
+            AttackInstanceId(0),
+            Vec2 { x: 1.0, y: 0.0 },
+        ),
         Transform::default(),
         Hitbox {
             size: Vec2::new(20.0, 20.0),
@@ -349,7 +407,12 @@ fn hitting_enemy_applies_hitstun_to_enemy() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(quick_attack(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
+        Attack::from_definition(
+            quick_attack(),
+            owner,
+            AttackInstanceId(0),
+            Vec2 { x: 1.0, y: 0.0 },
+        ),
         Transform::default(),
         Hitbox {
             size: Vec2::new(20.0, 20.0),
@@ -388,7 +451,12 @@ fn hitstun_wears_off_after_duration() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(quick_attack(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
+        Attack::from_definition(
+            quick_attack(),
+            owner,
+            AttackInstanceId(0),
+            Vec2 { x: 1.0, y: 0.0 },
+        ),
         Transform::default(),
         Hitbox {
             size: Vec2::new(20.0, 20.0),
@@ -432,7 +500,12 @@ fn hitting_enemy_with_slow_attack_applies_slow() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(slow_down(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
+        Attack::from_definition(
+            slow_down(),
+            owner,
+            AttackInstanceId(0),
+            Vec2 { x: 1.0, y: 0.0 },
+        ),
         Transform::default(),
         Hitbox {
             size: Vec2::new(200.0, 200.0),
@@ -473,7 +546,12 @@ fn slow_adds_speed_modifier_to_enemy_stats() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(slow_down(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
+        Attack::from_definition(
+            slow_down(),
+            owner,
+            AttackInstanceId(0),
+            Vec2 { x: 1.0, y: 0.0 },
+        ),
         Transform::default(),
         Hitbox {
             size: Vec2::new(200.0, 200.0),
@@ -514,7 +592,12 @@ fn hitting_enemy_with_slow_attack_applies_poison() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(slow_down(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
+        Attack::from_definition(
+            slow_down(),
+            owner,
+            AttackInstanceId(0),
+            Vec2 { x: 1.0, y: 0.0 },
+        ),
         Transform::default(),
         Hitbox {
             size: Vec2::new(200.0, 200.0),
@@ -554,7 +637,12 @@ fn poisoned_enemy_loses_health_over_time() {
         .id();
 
     app.world_mut().spawn((
-        Attack::from_definition(slow_down(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
+        Attack::from_definition(
+            slow_down(),
+            owner,
+            AttackInstanceId(0),
+            Vec2 { x: 1.0, y: 0.0 },
+        ),
         Transform::default(),
         Hitbox {
             size: Vec2::new(200.0, 200.0),
@@ -603,7 +691,12 @@ fn enemy_at_zero_health_is_marked_dead() {
         .id();
     tick(&mut app, 0.016);
     app.world_mut().spawn((
-        Attack::from_definition(quick_attack(), owner, AttackId(0), Vec2 { x: 1.0, y: 0.0 }),
+        Attack::from_definition(
+            quick_attack(),
+            owner,
+            AttackInstanceId(0),
+            Vec2 { x: 1.0, y: 0.0 },
+        ),
         Transform::default(),
         Hitbox {
             size: Vec2::new(20.0, 20.0),
@@ -631,8 +724,12 @@ fn player_returns_to_idle_after_attack_expires() {
         .spawn((Player, CombatState::Attacking, Stats::default()))
         .id();
 
-    let mut attack =
-        Attack::from_definition(quick_attack(), player, AttackId(0), Vec2 { x: 1.0, y: 0.0 });
+    let mut attack = Attack::from_definition(
+        quick_attack(),
+        player,
+        AttackInstanceId(0),
+        Vec2 { x: 1.0, y: 0.0 },
+    );
     attack.lifetime_timer = Timer::from_seconds(0.016, TimerMode::Once);
     app.world_mut().spawn(attack);
 

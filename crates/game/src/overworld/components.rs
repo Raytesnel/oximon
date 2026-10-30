@@ -1,6 +1,7 @@
 use bevy::prelude::*;
+use game_data::AttackDefinition;
 
-use crate::combat::attack_definition::AttackDefinition;
+// use crate::combat::attack_definition::AttackDefinition;
 
 #[derive(Component)]
 pub struct LampAnimationState {

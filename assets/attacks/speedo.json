@@ -1,0 +1,49 @@
+{
+  "id": "speedo",
+  "name": "speedo",
+  "effects": [
+    {
+      "trigger": "OnCast",
+      "effect": {
+        "StatModifier": {
+          "target": "SelfEntity",
+          "modifier": {
+            "stat_type": "Speed",
+            "flat": 0.0,
+            "multiplier": 2.0,
+            "duration": 20.0,
+            "lifetime": "Duration"
+          }
+        }
+      }
+    },
+    {
+      "trigger": "OnCast",
+      "effect": {
+        "StatModifier": {
+          "target": "SelfEntity",
+          "modifier": {
+            "stat_type": "Acceleration",
+            "flat": 0.0,
+            "multiplier": 2.0,
+            "duration": 20.0,
+            "lifetime": "Duration"
+          }
+        }
+      }
+    }
+  ],
+  "collision": false,
+  "lifetime": 0.1,
+  "hit_interval": 0.0,
+  "cooldown": 3.0,
+  "residue_tile_key": null,
+  "spawn": {
+    "Hitbox": { "size": [10.0, 10.0], "color": [0.0, 1.0, 0.0, 1.0] }
+  },
+  "residue": null,
+  "offset": [0.0, 0.0, 0.0],
+  "hit_behavior": "Single",
+  "follow_caster": true,
+  "projectile": null
+}

@@ -1,6 +1,5 @@
 pub mod ai;
-pub mod attack_definition;
-pub mod attacks;
+pub mod attack_loaders;
 pub mod components;
 pub mod events;
 mod setup;
@@ -11,6 +10,7 @@ mod tests;
 
 use crate::GameState;
 use crate::combat::ai::*;
+use crate::combat::attack_loaders::load_attacks;
 use crate::combat::components::{AttackEvent, AttackIdCounter};
 use crate::combat::events::DamageEvent;
 use crate::combat::setup::{hide_combat, setup_combat_players, setup_combat_world, show_combat};
@@ -26,6 +26,7 @@ impl Plugin for CombatPlugin {
             OnEnter(GameState::Combat),
             (setup_combat_players, show_combat),
         );
+        app.add_systems(PreStartup, load_attacks);
         app.add_systems(
             Startup,
             (setup_combat_world, hide_combat.after(setup_combat_world)),

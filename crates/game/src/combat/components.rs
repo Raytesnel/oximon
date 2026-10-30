@@ -1,5 +1,5 @@
-use crate::combat::attack_definition::AttackDefinition;
 use bevy::prelude::*;
+use game_data::AttackDefinition;
 use std::collections::HashMap;
 
 #[derive(Component, Debug)]
@@ -32,7 +32,7 @@ pub struct Cooldowns {
 
 #[derive(Component, Debug)]
 pub struct Attack {
-    pub id: AttackId,
+    pub id: AttackInstanceId,
     pub owner: Entity,
     pub definition: AttackDefinition,
     pub lifetime_timer: Timer,
@@ -46,7 +46,7 @@ impl Attack {
     pub fn from_definition(
         def: AttackDefinition,
         owner: Entity,
-        id: AttackId,
+        id: AttackInstanceId,
         direction: Vec2,
     ) -> Self {
         Self {
@@ -63,11 +63,18 @@ impl Attack {
     }
 }
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct AttackId(pub u32);
+pub struct AttackInstanceId(pub u32);
 
 #[derive(Resource, Default)]
 pub struct AttackIdCounter {
     pub next: u32,
+}
+impl AttackIdCounter {
+    pub fn next_id(&mut self) -> AttackInstanceId {
+        let id = AttackInstanceId(self.next);
+        self.next += 1;
+        id
+    }
 }
 
 #[derive(Message, Debug)]

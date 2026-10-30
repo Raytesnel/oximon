@@ -1,0 +1,42 @@
+{
+  "id": "slow_down",
+  "name": "slow_down",
+  "effects": [
+    {
+      "trigger": "OnHit",
+      "effect": {
+        "StatModifier": {
+          "target": "TargetEntity",
+          "modifier": {
+            "stat_type": "Speed",
+            "flat": 0.0,
+            "multiplier": 0.9,
+            "duration": 2.0,
+            "lifetime": "Duration"
+          }
+        }
+      }
+    },
+    {
+      "trigger": "OnHit",
+      "effect": {
+        "ApplyStatus": {
+          "Poison": { "dps": 5.0, "duration": 20.0, "tick_rate": 2.0 }
+        }
+      }
+    }
+  ],
+  "collision": false,
+  "lifetime": 2.0,
+  "hit_interval": 2.0,
+  "cooldown": 3.0,
+  "residue_tile_key": null,
+  "spawn": {
+    "Hitbox": { "size": [100.0, 10.0], "color": [1.0, 0.0, 0.0, 1.0] }
+  },
+  "residue": null,
+  "offset": [0.0, 0.0, 0.0],
+  "hit_behavior": "Single",
+  "follow_caster": true,
+  "projectile": null
+}

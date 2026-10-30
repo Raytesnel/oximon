@@ -1,7 +1,8 @@
-use crate::combat::components::{AttackId, KnockbackEffect, Poison, Slow, Stun};
+use crate::combat::components::{AttackInstanceId, KnockbackEffect, Poison, Slow, Stun};
 use crate::combat::events::DamageEvent;
-use crate::common::components::{ModifierLifetime, RuntimeModifier, StatType, Stats};
+use crate::common::components::{RuntimeModifier, Stats};
 use bevy::prelude::*;
+use game_data::{ModifierLifetime, StatType};
 
 pub fn poison_system(
     time: Res<Time>,
@@ -39,7 +40,7 @@ pub fn slow_system(
         // apply ONCE
         if !slow.applied {
             stats.add_modifier(RuntimeModifier {
-                source: AttackId(9999),
+                source: AttackInstanceId(9999),
                 stat_type: StatType::Speed,
                 flat: 0.0,
                 multiplier: slow.multiplier,

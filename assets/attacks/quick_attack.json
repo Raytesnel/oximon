@@ -1,0 +1,77 @@
+{
+  "id": "quick_attack",
+  "name": "quick_attack",
+  "effects": [
+    {
+      "trigger": "OnHit",
+      "effect": { "Damage": { "amount": 10.0, "target": "TargetEntity" } }
+    },
+    {
+      "trigger": "OnHit",
+      "effect": {
+        "Knockback": {
+          "force": 3000.0,
+          "direction": "SourceToTarget",
+          "mode": "Override",
+          "hitstun": 1.0,
+          "target": "TargetEntity"
+        }
+      }
+    },
+    {
+      "trigger": "OnHit",
+      "effect": {
+        "Knockback": {
+          "force": 1.0,
+          "direction": { "Fixed": [0.0, 0.0, 0.0] },
+          "mode": "Override",
+          "hitstun": 0.5,
+          "target": "SelfEntity"
+        }
+      }
+    },
+    {
+      "trigger": "OnCast",
+      "effect": {
+        "StatModifier": {
+          "target": "SelfEntity",
+          "modifier": {
+            "stat_type": "Speed",
+            "flat": 0.0,
+            "multiplier": 3.0,
+            "duration": 2.0,
+            "lifetime": "OnAttackEnd"
+          }
+        }
+      }
+    },
+    {
+      "trigger": "OnCast",
+      "effect": {
+        "StatModifier": {
+          "target": "SelfEntity",
+          "modifier": {
+            "stat_type": "Acceleration",
+            "flat": 0.0,
+            "multiplier": 15.0,
+            "duration": 2.0,
+            "lifetime": "OnAttackEnd"
+          }
+        }
+      }
+    }
+  ],
+  "collision": false,
+  "lifetime": 2.0,
+  "hit_interval": 0.1,
+  "cooldown": 3.0,
+  "residue_tile_key": null,
+  "spawn": {
+    "Hitbox": { "size": [20.0, 20.0], "color": [1.0, 0.0, 0.0, 1.0] }
+  },
+  "residue": null,
+  "offset": [0.0, 0.0, 0.0],
+  "hit_behavior": "Single",
+  "follow_caster": true,
+  "projectile": null
+}
